@@ -1,0 +1,5 @@
+/.lein-*
+/.nrepl-port
+/docs
+/target
+publish

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Find the directory containing this script
+# http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+# Executable jar file
+JAR=$DIR/target/video-server.jar
+
+# Build the jar
+if [ ! -f $JAR ]; then
+  pushd $DIR
+  lein do clean, uberjar
+  popd
+fi
+
+# Execute the jar, passing the arguments
+java -jar $JAR $@
+
