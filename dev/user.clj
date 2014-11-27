@@ -23,8 +23,6 @@
 (def url (main/host-url port))
 (def folder (->Folder "video" (io/file dir)))
 
-(def info (edn/read-string (slurp "info.edn")))
-
 (defn rescan []
   (watcher/scan-folder url folder))
 
