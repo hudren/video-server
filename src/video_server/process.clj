@@ -72,7 +72,9 @@
           (log/trace "processing" (str file-or-video))
           (try (when encode?
                  (if (instance? File file-or-video)
-                   (process-subtitle folder file-or-video)
+                   (cond
+                     (file/video? file-or-video) (process-video folder (library/video-for-file folder file-or-video) fmt size)
+                     (file/subtitles? file-or-video) (process-subtitle folder file-or-video))
                    (process-video folder file-or-video fmt size)))
                (catch Exception e (log/error e "error processing video" (str file-or-video))))))))
 
