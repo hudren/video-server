@@ -167,11 +167,16 @@
   "Returns the File representing the encoder output."
   [video file fmt width height]
   (let [ext (str "." (name fmt))
-        filename (file/video-filename video width height ext)]
-    (io/file (.getParent file)
-             (if (= filename (.getName file))
-               (file/video-filename video width height ext (format/video-dimension width height))
-               filename))))
+        filename (file/video-filename video ext)
+        output (io/file (.getParent file) filename)]
+    (if (.exists output)
+      (let [filename (file/video-filename video ext width height)
+            output (io/file (.getParent file) filename)]
+        (if (.exists output)
+          (let [filename (file/video-filename video ext width height (format/video-dimension width height))]
+            (io/file (.getParent file) filename))
+          output))
+      output)))
 
 (defn encode-video
   "Transcodes the video suitable for downloading and casting."
@@ -179,15 +184,13 @@
   (log/info "encoding video" (:title video))
   (let [container (container-to-encode (:containers video))
         file (io/file (:file folder) (:filename container))
+        info (video-info file)
         crop-resize (crop-resize-options file container size)
         [width height] (output-size container (last crop-resize))
         output (output-file video file fmt width height)
-        info (video-info file)
         cmd ["ffmpeg" "-i" (.getCanonicalPath file)
-             (video-options info size)
-             crop-resize
-             (audio-options info)
-             (subtitle-options info fmt)
+             (video-options info size) crop-resize
+             (audio-options info) (subtitle-options info fmt)
              "-f" (ffmpeg-format fmt) (.getCanonicalPath output)]]
     (log/info "encoding" (:title video) "into" (.getName output))
     (let [exec (encode cmd)]
