@@ -41,53 +41,53 @@
 
 (defn add-subtitles
   "Performs the initial scan for subtitles."
-  ([url folder]
+  ([folder]
    (doseq [video (library/current-videos)]
-     (add-subtitles url folder video)))
-  ([url folder video]
+     (add-subtitles folder video)))
+  ([folder video]
    (doseq [file (.listFiles (:file folder) (file/subtitle-filter (:title video)))]
      (log/info "adding subtitles" (str file))
-     (library/add-subtitle url folder file video))))
+     (library/add-subtitle folder file video))))
 
 (defn add-videos
   "Performs the initial folder scan, adding videos to the library."
-  [url folder]
+  [folder]
   (let [files (.listFiles (:file folder) (file/movie-filter))]
     (doseq [file files]
       (log/info "adding file" (str file))
-      (library/add-video url folder file))
+      (library/add-video folder file))
     (doseq [video (sort-by video/last-modified (library/current-videos))]
-      (add-subtitles url folder video)
+      (add-subtitles folder video)
       (process/process-file folder video))))
 
 (defn add-file
   "Adds a newly discovered file to the library."
-  [url folder file]
+  [folder file]
   (log/info "adding file" (str file))
   (when-let [video (library/video-for-file folder file)]
     (library/remove-file folder file))
   (cond
-    (file/video? file) (library/add-video url folder file)
-    (file/subtitles? file) (library/add-subtitle url folder file)))
+    (file/video? file) (library/add-video folder file)
+    (file/subtitles? file) (library/add-subtitle folder file)))
 
 (defn check-pending-files
   "Checks the pending files and adds the stable ones to the library."
-  [url folder]
+  [folder]
   (when (seq @pending-files)
     (log/trace "checking pending files")
     (doseq [file @pending-files]
       (try (when (stable? file)
-             (add-file url folder file)
+             (add-file folder file)
              (dosync (alter pending-files disj file))
              (process/process-file folder file))
            (catch Exception e (log/error e "adding pending file" (str file)))))))
 
 (defn scan-folder
   "Loads all of the videos and subtitles in the folder."
-  [url folder]
+  [folder]
   (log/info "scanning" (str (:file folder)) "as" (:name folder))
   (library/remove-all) ; TODO this shouldn't be necessary
-  (add-videos url folder))
+  (add-videos folder))
 
 (defn add-pending-file
   "Adds a new or changing file to the list of pending files."
@@ -116,12 +116,12 @@
 
 (defn start-watcher
   "Watches for file system changes in the video folder."
-  [url folder]
-  (scan-folder url folder)
+  [folder]
+  (scan-folder folder)
   (let [path (-> folder :file .getAbsolutePath)]
     (log/info "starting watcher on" path)
     (start-watch [{:path path
                    :event-types [:create :modify :delete]
                    :callback (partial file-event-callback folder)}])
-    (periodically (partial check-pending-files url folder) check-time)))
+    (periodically (partial check-pending-files folder) check-time)))
 

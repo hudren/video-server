@@ -21,10 +21,10 @@
 
 (def dir (main/default-folder))
 (def url (main/host-url port))
-(def folder (->Folder "video" (io/file dir)))
+(def folder (->Folder "video" (io/file dir) (str url "/" "video")))
 
 (defn rescan []
-  (watcher/scan-folder url folder))
+  (watcher/scan-folder folder))
 
 (defn video-for-title [title]
   (first (filter #(.contains (:title %) title) (library/current-videos))))
@@ -33,7 +33,7 @@
   (main/set-log-level (main/log-level "debug"))
   (binding [encoder/*fake-encode* true]
     (process/start-processing encode output-format output-size))
-  (watcher/start-watcher url folder)
+  (watcher/start-watcher folder)
   (server/start-server url folder port handler/app)
   (discovery/start-discovery url main/discovery-port))
 

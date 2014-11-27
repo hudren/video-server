@@ -61,9 +61,9 @@
 (defn add-video
   "Returns true if a new video was added, false if it was added to an
   existing video."
-  [url folder file]
+  [folder file]
   (when-let [info (encoder/video-info file)]
-    (when-let [container (video/video-container file info (str url "/" (:name folder)))]
+    (when-let [container (video/video-container file info (:url folder))]
       (when-let [video (video/video-record container info)]
         (let [key (video-key video)
               exists (get-in @library [folder key])]
@@ -89,13 +89,13 @@
 
 (defn add-subtitle
   "Returns true if the subtitle was added to an existing video."
-  ([url folder file]
+  ([folder file]
    (when-let [video (video-for-file folder file)]
-     (add-subtitle url folder file video)))
-  ([url folder file video]
+     (add-subtitle folder file video)))
+  ([folder file video]
    (log/debug "adding subtitle" (str file))
    (let [[_ lang _] (str/split (.getName file) #"\.")
-         subtitle-url (video/encoded-url url folder file)
+         subtitle-url (video/encoded-url (:url folder) file)
          subtitle (->Subtitle (lang-name lang) lang (.getName file) subtitle-url (video/mimetype file))]
      (dosync
        (alter library update-in [folder (video-key video) :subtitles] conj subtitle)

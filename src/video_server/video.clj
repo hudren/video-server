@@ -32,11 +32,9 @@
 (defn encoded-url
   "Returns an encoded url for the file (and folder) that can be used
   by clients to access the file."
-  ([url file]
-   (let [filename (URLEncoder/encode (.getName file) "UTF-8")]
-     (str url "/" (str/replace filename "+" "%20"))))
-  ([url folder file]
-   (encoded-url (str url "/" (:name folder)) file)))
+  [url file]
+  (let [filename (URLEncoder/encode (.getName file) "UTF-8")]
+    (str url "/" (str/replace filename "+" "%20"))))
 
 (defn mimetype
   "Returns a mimetype based on the file metadata or extension."

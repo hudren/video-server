@@ -93,8 +93,8 @@
   [& args]
   (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)
         dir (or (first arguments) (default-folder))
-        folder (->Folder "video" (io/file dir))
-        url (host-url (:port options))]
+        url (host-url (:port options))
+        folder (->Folder "video" (io/file dir) (str url "/" "video"))]
     (cond
       (:help options) (exit 0 (usage summary))
       (> (count arguments) 1) (exit 1 "Only one video folder is allowed.")

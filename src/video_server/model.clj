@@ -11,7 +11,7 @@
 (ns video-server.model
   (:import (java.lang.reflect Modifier)))
 
-(defrecord Folder [name file])
+(defrecord Folder [name file url])
 
 (defrecord VideoKey [title season episode])
 
