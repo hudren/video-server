@@ -18,8 +18,8 @@
             [video-server.process :refer [start-processing]]
             [video-server.server :refer [start-server]]
             [video-server.watcher :refer [start-watcher]])
-  (:import (java.net InetAddress)
-           (ch.qos.logback.classic Level Logger)
+  (:import (ch.qos.logback.classic Level Logger)
+           (java.net InetAddress)
            (org.slf4j LoggerFactory))
   (:gen-class))
 
@@ -94,13 +94,15 @@
   (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)
         dir (or (first arguments) (default-folder))
         url (host-url (:port options))
-        folder (->Folder "video" (io/file dir) (str url "/" "video"))]
+        folder (->Folder "video" (io/file dir) (str url "/" "video"))
+        fmt (keyword (:format options))
+        size (-> (:size options) str keyword)]
     (cond
       (:help options) (exit 0 (usage summary))
       (> (count arguments) 1) (exit 1 "Only one video folder is allowed.")
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
-    (start-processing (:encode options) (keyword (:format options)) (:size options))
+    (start-processing (:encode options) fmt size)
     (start-watcher url folder)
     (let [server (start-server url folder (:port options) app)]
       (start-discovery url discovery-port)

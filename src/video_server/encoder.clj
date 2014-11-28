@@ -11,32 +11,23 @@
 (ns video-server.encoder
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
-            [clojure.java.shell :as shell]
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.file :as file]
-            [video-server.format :as format]))
+            [video-server.format :as format]
+            [video-server.util :refer :all]))
 
 (def ^:dynamic *fake-encode* false)
 
 (def ffmpeg-format {:mkv "matroska" :mp4 "mp4" :m4v "mp4"})
 
-(defn exec
-  "Flattens and sanitizes the arguments before executing the shell
-  command."
-  [& cmd]
-  (let [args (->> cmd flatten (remove nil?) (map str))]
-    (log/trace "executing" (str/join " " args))
-    (apply shell/sh args)))
-
-(defn- encode
+(defn encode
   "Executes the specified command unless *fake-encode* is true."
   [& cmd]
   (if-not *fake-encode*
     (apply exec cmd)
     (let [args (->> cmd flatten (remove nil?) (map str))]
       (log/info "FAKE ENCODE" (str/join " " args))
-      #_(Thread/sleep (+ 5000 (rand-int 10000)))
       {:exit 0})))
 
 (defn video-info
@@ -60,7 +51,23 @@
 (defn container-to-encode
   "Selects the best (highest quality) container to encode."
   [containers]
-  (first (sort-by :size containers)))
+  (last (sort-by :size containers)))
+
+(defn smallest-encoded-size
+  "Returns the size of the smallest (last encoded) container."
+  [video]
+  (when-let [container (second (reverse (sort-by :size (:containers video))))]
+    ({1920 :1080 1280 :720 640 :480} (:width container))))
+
+(defn width-for-size
+  "Returns the video width for the given size."
+  [size]
+  ({:1080 1920 :720 1280 :480 640} size))
+
+(defn smaller-size
+  "Returns the next smaller size."
+  [size]
+  ({:1080 :720 :720 :480} size))
 
 (defn crop
   "Performs crop detection, returning the filter argument or nil."
@@ -74,11 +81,11 @@
 (defn scale
   "Returns a filter argument for scaling down to the preferred size, or nil."
   [container size crop]
-  (let [new-width ({1080 1920 720 1280 480 640} size)]
+  (let [new-width (width-for-size size)]
     (when (< new-width (:width container))
       (let [[width height] (if crop
-                             (map #(Integer/parseInt %) (re-seq #"\d+" crop))
-                             (select-keys container [:width :height]))
+                             (parse-ints crop)
+                             [(:width container) (:height container)])
             new-height (int (* height (/ new-width width)))
             new-height (if (even? new-height) new-height (dec new-height))]
         (str "scale=" new-width ":" new-height)))))
@@ -93,7 +100,7 @@
   stream."
   [info size]
   (let [video (video-stream info)
-        quality (if (< size 720) 18 19)]
+        quality (if (= size :480) 18 19)]
     (if (encode-video? video size)
       ["-map" (str "0:" (:index video)) "-c:v" "libx264" "-crf" quality "-profile:v" "high" "-level" 41]
       ["-map" (str "0:" (:index video)) "-c:v" "copy"])))
@@ -149,10 +156,6 @@
         (when (= "subtitle" (:codec_type stream))
           ["-map" (str "0:" (:index stream)) "-c:s" "copy"])))))
 
-(defn find-ints [pattern string]
-  "Returns the integers targeted by the regex pattern."
-  (->> (re-find pattern string) (drop 1) (map #(Integer/parseInt %))))
-
 (defn output-size
   "Returns the [width height] of the container based on the video
   filter options."
@@ -182,7 +185,8 @@
   "Transcodes the video suitable for downloading and casting."
   [folder video fmt size]
   (log/info "encoding video" (:title video))
-  (let [container (container-to-encode (:containers video))
+  (let [size (or (smaller-size (smallest-encoded-size video)) size)
+        container (container-to-encode (:containers video))
         file (io/file (:file folder) (:filename container))
         info (video-info file)
         crop-resize (crop-resize-options file container size)

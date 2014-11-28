@@ -9,25 +9,14 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.video
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [clojure.tools.logging :as log]
+  (:require [clojure.string :as str]
             [video-server.file :as file]
             [video-server.format :as format]
-            [video-server.model :refer :all])
+            [video-server.model :refer :all]
+            [video-server.util :refer :all])
   (:import (java.net URLEncoder)
            (java.util Locale)
            (video_server.model Container Video)))
-
-(defn parse-long
-  "Parses a long value from a string or number."
-  [v]
-  (when v (if (string? v) (Long/parseLong v) (long v))))
-
-(defn parse-double
-  "Parses a double value from a string or number."
-  [v]
-  (when v (if (string? v) (Double/parseDouble v) (double v))))
 
 (defn encoded-url
   "Returns an encoded url for the file (and folder) that can be used

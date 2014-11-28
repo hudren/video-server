@@ -104,7 +104,7 @@
 (defn file-event-callback
   "Processes the file system events."
   [folder event filename]
-  (log/debug "file event:" event filename)
+  (log/trace "file event:" event filename)
   (when (or (file/video? filename) (file/subtitles? filename))
     (let [file (io/file filename)]
       (try (case event
