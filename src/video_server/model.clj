@@ -9,6 +9,7 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.model
+  (:require [clojure.tools.logging :as log])
   (:import (java.lang.reflect Modifier)))
 
 (defrecord Folder [name file url])
@@ -23,19 +24,20 @@
 (defrecord Video [title duration season episode episode-title containers subtitles])
 
 (defn get-record-fields
-  "Returns the record fields as a sequence of keywords."
+  "Returns the record fields as a vector of keywords."
   [record]
   (->> record
        .getDeclaredFields
        (remove #(-> % .getModifiers Modifier/isStatic))
        (map #(.getName %))
        (remove #(.startsWith % "__"))
-       (map keyword)))
+       (mapv keyword)))
 
 (defmacro make-record
   "Contructs a new record by extracting only the defined fields from
   the data map. The resulting record will not have extra fields."
   [record data]
-  (let [constructor (symbol (str "map->" (name record)))]
-    `(~constructor (select-keys ~data @(delay (get-record-fields ~record))))))
+  (let [constructor (symbol (str "map->" (name record)))
+        fields (get-record-fields (resolve record))]
+    `(~constructor (select-keys ~data ~fields))))
 

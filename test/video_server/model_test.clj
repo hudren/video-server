@@ -5,6 +5,6 @@
 
 (deftest make-records
   (let [rec (make-record Video {:title "title" :part "part"})]
-    (is (= "title" (:title rec))
-        (nil? (:part rec)))))
+    (is (= "title" (:title rec)))
+    (is (nil? (:part rec)))))
 
