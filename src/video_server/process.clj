@@ -53,7 +53,7 @@
   (when (should-encode-video? video)
     (encoder/encode-video folder video fmt size))
   (when (should-encode-subtitles? video)
-    (encoder/encode-subtitles video)))
+    (encoder/encode-subtitles folder video)))
 
 (defn process-subtitle
   "Conditionally encodes the subtitle file."
