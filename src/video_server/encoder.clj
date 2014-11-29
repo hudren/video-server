@@ -50,26 +50,6 @@
   [size]
   ({:1080 :720 :720 :480} size))
 
-(defn output-file
-  "Returns the File representing the encoder output."
-  [{:keys [video file format width height] :as spec}]
-  (let [ext (str "." (name format))
-        filename (file/video-filename video ext)
-        output (io/file (.getParent file) filename)]
-    (if (.exists output)
-      (let [filename (file/video-filename video ext width height)
-            output (io/file (.getParent file) filename)]
-        (if (.exists output)
-          (let [filename (file/video-filename video ext width height (format/video-dimension width height))]
-            (io/file (.getParent file) filename))
-          output))
-      output)))
-
-(defn output-options
-  "Returns the spec with an appropriate output filename."
-  [spec]
-  (assoc spec :output (.getCanonicalPath (output-file spec))))
-
 (defn encode-spec
   "Returns the specification for an encoding job."
   [folder video fmt size]
@@ -89,6 +69,26 @@
      :video-stream (video/video-stream info)
      :audio-streams (video/audio-streams info)
      :subtitle-streams (video/subtitle-streams info)}))
+
+(defn output-file
+  "Returns the File representing the encoder output."
+  [{:keys [video file format width height] :as spec}]
+  (let [ext (str "." (name format))
+        filename (file/video-filename video ext)
+        output (io/file (.getParent file) filename)]
+    (if (.exists output)
+      (let [filename (file/video-filename video ext width height)
+            output (io/file (.getParent file) filename)]
+        (if (.exists output)
+          (let [filename (file/video-filename video ext width height (format/video-dimension width height))]
+            (io/file (.getParent file) filename))
+          output))
+      output)))
+
+(defn output-options
+  "Returns the spec with an appropriate output filename."
+  [spec]
+  (assoc spec :output (.getCanonicalPath (output-file spec))))
 
 (defn encode-video
   "Transcodes the video suitable for downloading and casting."
