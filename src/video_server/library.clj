@@ -14,6 +14,7 @@
             [video-server.encoder :as encoder]
             [video-server.ffmpeg :as ffmpeg]
             [video-server.file :as file]
+            [video-server.format :as format]
             [video-server.model :refer :all]
             [video-server.video :as video])
   (:import (java.io File)
@@ -25,17 +26,6 @@
 
 ; Map of file to video key
 (defonce ^:private files (ref {}))
-
-(defn locale
-  "Constructs a Locale object."
-  ([lang] (Locale. lang))
-  ([lang country] (Locale. lang country))
-  ([lang country variant] (Locale. lang country variant)))
-
-(defn lang-name
-  "Returns the human-readable language from the code."
-  [lang]
-  (when lang (.getDisplayLanguage (apply locale (take 3 (str/split lang #"_"))))))
 
 (defn remove-all
   "Removes all videos from the library."
@@ -97,7 +87,7 @@
    (log/debug "adding subtitle" (str file))
    (let [[_ lang _] (str/split (.getName file) #"\.")
          subtitle-url (video/encoded-url (:url folder) file)
-         subtitle (->Subtitle (lang-name lang) lang (.getName file) subtitle-url (video/mimetype file))]
+         subtitle (->Subtitle (format/lang-name lang) lang (.getName file) subtitle-url (video/mimetype file))]
      (dosync
        (alter library update-in [folder (video-key video) :subtitles] conj subtitle)
        (alter files assoc file (video-key video))

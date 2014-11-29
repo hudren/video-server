@@ -9,7 +9,20 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.format
-  (:import (java.util.concurrent TimeUnit)))
+  (:require [clojure.string :as str])
+  (:import (java.util.concurrent TimeUnit)
+           (java.util Locale)))
+
+(defn locale
+  "Constructs a Locale object."
+  ([lang] (Locale. lang))
+  ([lang country] (Locale. lang country))
+  ([lang country variant] (Locale. lang country variant)))
+
+(defn lang-name
+  "Returns the human-readable language from the code."
+  [lang]
+  (when lang (.getDisplayLanguage (apply locale (take 3 (str/split lang #"_"))))))
 
 (defn format-size
   "Returns the size in bytes as a human-readable string."
@@ -65,4 +78,22 @@
   "Returns a human-readable description of the audio codecs."
   [codec]
   (get {"aac" "AAC" "ac3" "AC-3" "dca" "DTS"} codec codec))
+
+(defn chan-desc
+  "Returns the channel description."
+  [chans]
+  (case chans
+    1 "Mono"
+    2 "Stereo"
+    6 "Surround 5.1"
+    8 "Surround 7.1"
+    "Surround"))
+
+(defn audio-title
+  "Returns the audio stream title."
+  [codec lang chans]
+  (let [audio (str/trim (str (audio-desc codec) " " (chan-desc chans)))]
+    (if-let [name (lang-name lang)]
+      (str name " (" audio ")")
+      audio)))
 

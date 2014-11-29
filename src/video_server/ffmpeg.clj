@@ -11,6 +11,7 @@
 (ns video-server.ffmpeg
   (:require [clojure.data.json :as json]
             [clojure.string :as str]
+            [video-server.format :as format]
             [video-server.util :refer :all]))
 
 (def ffmpeg-format {:mkv "matroska" :mp4 "mp4" :m4v "mp4"})
@@ -80,35 +81,43 @@
 
 (defn audio-stream
   "Returns the audio stream for the given codec, or nil."
-  [audio codec]
-  (first (filter #(= codec (:codec_name %)) audio)))
+  [audio-streams codec]
+  (first (filter #(= codec (:codec_name %)) audio-streams)))
 
 (defn audio-to-encode
   "Returns the best audio stream to use for the encoding source."
   [audio]
   (first audio)) ; TODO: check bitrate and language
 
-(defn aac-options
+(defn audio-codec-options
+  [index codec]
+  (case codec
+    "aac" ["-q:a" 100 (str "-ac:a:" index) 2 "-strict" "-2"]
+    "ac3" [(str "-b:0:" index) "640k"]
+    nil))
+
+(defn audio-title-options
+  [index codec lang chans]
+  [(str "-metadata:s:a:" index) (str "title=" (format/audio-title codec lang chans))])
+
+(defn audio-encoder-options
   "Returns the ffmpeg options for encoding / copying the aac audio
   stream."
-  [audio]
-  (if-let [aac (audio-stream audio "aac")]
-    ["-map" (str "0:" (:index aac)) "-c:a:0" "copy"]
-    ["-map" (str "0:" (:index (audio-to-encode audio))) "-c:a:0" "aac" "-q:a" 100 "-ac:a:0" 2 "-strict" "-2"]))
-
-(defn ac3-options
-  "Returns the ffmpeg options for encoding / copying the ac3 audio
-  stream."
-  [audio]
-  (if-let [ac3 (audio-stream audio "ac3")]
-    ["-map" (str "0:" (:index ac3)) "-c:a:1" "copy"]
-    ["-map" (str "0:" (:index (audio-to-encode audio))) "-c:a:1" "ac3" "-b:0:1" "640k"]))
+  [audio-streams index codec]
+  (let [existing (audio-stream audio-streams codec)
+        audio (or existing (audio-to-encode audio-streams))]
+    (conj ["-map" (str "0:" (:index audio))
+          (str "-c:a:" index) (if existing "copy" codec)]
+          (audio-codec-options index codec)
+          (audio-title-options index codec (-> audio :tags :language) (if (= codec "aac") 2 (:channels audio))))))
 
 (defn audio-options
   "Returns the ffmpeg options for encoding / copying the audio
   streams."
   [{:keys [audio-streams]}]
-  (into (aac-options audio-streams) (ac3-options audio-streams)))
+  (into (audio-encoder-options audio-streams 0 "aac")
+        (when (> (:channels (audio-to-encode audio-streams)) 2)
+          (audio-encoder-options audio-streams 1 "ac3"))))
 
 (defn subtitle-options
   "Returns the ffmpeg options for copying the subtitle streams."
