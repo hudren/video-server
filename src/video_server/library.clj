@@ -12,6 +12,7 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.encoder :as encoder]
+            [video-server.ffmpeg :as ffmpeg]
             [video-server.file :as file]
             [video-server.model :refer :all]
             [video-server.video :as video])
@@ -62,7 +63,7 @@
   "Returns true if a new video was added, false if it was added to an
   existing video."
   [folder file]
-  (when-let [info (encoder/video-info file)]
+  (when-let [info (ffmpeg/video-info file)]
     (when-let [container (video/video-container file info (:url folder))]
       (when-let [video (video/video-record container info)]
         (let [key (video-key video)

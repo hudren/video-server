@@ -17,7 +17,7 @@
 (def port 8090)
 (def encode true)
 (def output-format :mkv)
-(def output-size 720)
+(def output-size :720)
 
 (def dir (main/default-folder))
 (def url (main/host-url port))
