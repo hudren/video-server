@@ -103,7 +103,7 @@
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
     (start-processing (:encode options) fmt size)
-    (start-watcher url folder)
+    (start-watcher folder)
     (let [server (start-server url folder (:port options) app)]
       (start-discovery url discovery-port)
       (.join server))))
