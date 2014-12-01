@@ -1,4 +1,4 @@
-(defproject video-server "0.1.0-SNAPSHOT"
+(defproject com.hudren.homevideo/video-server "0.1.0-SNAPSHOT"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -8,6 +8,7 @@
                  [org.clojure/tools.cli "0.3.1"]
                  [org.clojure/tools.logging "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.2"]
+                 [trptcolin/versioneer "0.1.0"]
                  [org.eclipse.jetty/jetty-server "9.2.3.v20140905"]
                  [org.eclipse.jetty/jetty-servlet "9.2.3.v20140905"]
                  [org.eclipse.jetty/jetty-servlets "9.2.3.v20140905"]

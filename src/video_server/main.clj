@@ -12,6 +12,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.cli :refer [parse-opts]]
+            [trptcolin.versioneer.core :as version]
             [video-server.discovery :refer [start-discovery]]
             [video-server.handler :refer [app]]
             [video-server.model :refer [->Folder]]
@@ -78,7 +79,8 @@
   "Returns a console formatted usage message."
   [summary]
   (str/join \newline
-            ["Usage: video-server [options] [folder]" ""
+            [(str "Videos@Home " (version/get-version "com.hudren.homevideo" "video-server"))
+             "Usage: video-server [options] [folder]" ""
              (str "The default folder is " (default-folder)) ""
              "Options:" summary]))
 
