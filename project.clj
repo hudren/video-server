@@ -20,7 +20,7 @@
 
   :main video-server.main
   :aot [video-server.main]
-  :uberjar-name "video-server.jar"
+  :uberjar-name "videos@home.jar"
 
   :profiles {:dev {:source-paths ["dev"]}}
 

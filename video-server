@@ -11,7 +11,7 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 # Executable jar file
-JAR=$DIR/target/video-server.jar
+JAR=$DIR/target/videos@home.jar
 
 # Build the jar
 if [ ! -f $JAR ]; then
