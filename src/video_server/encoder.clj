@@ -53,22 +53,22 @@
 (defn encode-spec
   "Returns the specification for an encoding job."
   [folder video fmt size]
-  (let [container (container-to-encode (:containers video))
-        file (io/file (:file folder) (:filename container))
-        info (ffmpeg/video-info file)
-        size (or (smaller-size (smallest-encoded-size video)) size)]
-    {:format fmt
-     :size size
-     :width (:width container)
-     :height (:height container)
-     :target-width (width-for-size size)
-     :file file
-     :input (.getCanonicalPath file)
-     :info info
-     :video video
-     :video-stream (video/video-stream info)
-     :audio-streams (video/audio-streams info)
-     :subtitle-streams (video/subtitle-streams info)}))
+  (when-let [container (container-to-encode (:containers video))]
+    (let [file (io/file (:file folder) (:filename container))
+          info (ffmpeg/video-info file)
+          size (or (smaller-size (smallest-encoded-size video)) size)]
+      {:format fmt
+       :size size
+       :width (:width container)
+       :height (:height container)
+       :target-width (width-for-size size)
+       :file file
+       :input (.getCanonicalPath file)
+       :info info
+       :video video
+       :video-stream (video/video-stream info)
+       :audio-streams (video/audio-streams info)
+       :subtitle-streams (video/subtitle-streams info)})))
 
 (defn output-file
   "Returns the File representing the encoder output."
@@ -94,18 +94,18 @@
   "Transcodes the video suitable for downloading and casting."
   [folder video fmt size]
   (log/info "encoding video" (:title video))
-  (let [spec (encode-spec folder video fmt size)
-        spec (ffmpeg/filter-video spec)
-        spec (output-options spec)
-        output (:output spec)
-        cmd (ffmpeg/encode-cmd spec)]
-    (log/info "encoding" (:title video) "into" output)
-    (let [exec (encode cmd)]
-      (if (zero? (:exit exec))
-        (log/info "encoding was successful")
-        (do
-          (log/error "encoding failed:" \newline cmd \newline exec)
-          (io/delete-file output true))))))
+  (when-let [spec (encode-spec folder video fmt size)]
+    (let [spec (ffmpeg/filter-video spec)
+          spec (output-options spec)
+          output (:output spec)
+          cmd (ffmpeg/encode-cmd spec)]
+      (log/info "encoding" (:title video) "into" output)
+      (let [exec (encode cmd)]
+        (if (zero? (:exit exec))
+          (log/info "encoding was successful")
+          (do
+            (log/error "encoding failed:" \newline cmd \newline exec)
+            (io/delete-file output true)))))))
 
 (defn encode-subtitle
   "Encodes a single subtitle file into WebVTT format."

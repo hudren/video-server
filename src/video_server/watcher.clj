@@ -53,12 +53,19 @@
   "Performs the initial folder scan, adding videos to the library."
   [folder]
   (let [files (.listFiles (:file folder) (file/movie-filter))]
-    (doseq [file files]
+    (doseq [file (filter stable? files)]
       (log/info "adding file" (str file))
       (library/add-video folder file))
-    (doseq [video (sort-by video/last-modified (library/current-videos))]
+    (doseq [video (sort-by video/modified (library/current-videos))]
       (add-subtitles folder video)
       (process/process-file folder video))))
+
+(defn scan-folder
+  "Loads all of the videos and subtitles in the folder."
+  [folder]
+  (log/info "scanning" (str (:file folder)) "as" (:name folder))
+  (library/remove-all) ; TODO this shouldn't be necessary
+  (add-videos folder))
 
 (defn add-file
   "Adds a newly discovered file to the library."
@@ -77,17 +84,11 @@
     (log/trace "checking pending files")
     (doseq [file @pending-files]
       (try (when (stable? file)
-             (add-file folder file)
              (dosync (alter pending-files disj file))
-             (process/process-file folder file))
+             (when (.exists file)
+               (add-file folder file)
+               (process/process-file folder file)))
            (catch Exception e (log/error e "adding pending file" (str file)))))))
-
-(defn scan-folder
-  "Loads all of the videos and subtitles in the folder."
-  [folder]
-  (log/info "scanning" (str (:file folder)) "as" (:name folder))
-  (library/remove-all) ; TODO this shouldn't be necessary
-  (add-videos folder))
 
 (defn add-pending-file
   "Adds a new or changing file to the list of pending files."
