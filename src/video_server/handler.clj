@@ -29,7 +29,7 @@
 (defn index
   "Returns the index or home page."
   []
-  (let [videos (reverse (sort-by video/last-modified (library/current-videos)))]
+  (let [videos (reverse (sort-by video/modified (library/current-videos)))]
     (response (html/main-template videos))))
 
 (defn videos-api

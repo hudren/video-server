@@ -38,6 +38,11 @@
 
 (def locales (into {} (map #(vector (.getISO3Language %) %) (map #(Locale. %) (Locale/getISOLanguages)))))
 
+(defn modified
+  "Returns the modified time of the oldest container."
+  [video]
+  (apply min (map :modified (:containers video))))
+
 (defn last-modified
   "Returns the last modified time of all the containers."
   [video]
