@@ -81,7 +81,7 @@
   "Checks the pending files and adds the stable ones to the library."
   [folder]
   (when (seq @pending-files)
-    (log/trace "checking pending files")
+    #_(log/trace "checking pending files")
     (doseq [file @pending-files]
       (try (when (stable? file)
              (dosync (alter pending-files disj file))
@@ -93,8 +93,9 @@
 (defn add-pending-file
   "Adds a new or changing file to the list of pending files."
   [file]
-  (log/trace "adding pending file" (str file))
-  (dosync (alter pending-files conj file)))
+  (when-not (contains? @pending-files file)
+    (log/trace "adding pending file" (str file))
+    (dosync (alter pending-files conj file))))
 
 (defn remove-file
   "Removes the file from the video library."
@@ -105,11 +106,12 @@
 (defn file-event-callback
   "Processes the file system events."
   [folder event filename]
-  (log/trace "file event:" event filename)
   (when (or (file/video? filename) (file/subtitles? filename))
     (let [file (io/file filename)]
       (try (case event
-             :create (add-pending-file file)
+             :create (do
+                       (log/info "watching file" filename)
+                       (add-pending-file file))
              :modify (add-pending-file file)
              :delete (remove-file folder file)
              nil)
