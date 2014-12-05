@@ -24,6 +24,14 @@
     (when (zero? (:exit exec))
       (json/read-str (:out exec) :key-fn keyword))))
 
+(defn detect-interlace
+  [input]
+  (let [output (:err (exec "ffmpeg" "-y" "-ss" 300 "-i" input "-f" "matroska"
+                           "-t" 120 "-an" "-sn" "-vf" "idet" "/dev/null"))]
+    (when-let [frames (re-find #"Multi frame detection:.*" output)]
+      (let [[top bottom prog und] (parse-ints frames)]
+        #_(> (+ top bottom) (/ (+ top bottom prog und) 10))))))
+
 (defn detect-crop
   "Performs crop detection, returning the filter argument or nil."
   [input]
@@ -32,6 +40,12 @@
                            "-crf" 51 "-preset" "ultrafast" "/dev/null"))]
     (when-let [crop (-> (re-seq #"crop=[0-9:]*" output) distinct sort last)]
       (when-not (.endsWith crop ":0:0") crop))))
+
+(defn deinterlace
+  [spec]
+  (merge spec
+         (when (detect-interlace (:input spec))
+           {:deinterlace "pullup,dejudder,idet,yadif=deint=interlaced:mode=1"})))
 
 (defn crop
   "Returns an updated spec with crop information."
@@ -56,7 +70,7 @@
 (defn filter-video
   "Returns an updated spec with video filters applied (crop and scale)."
   [spec]
-  (-> spec crop scale))
+  (-> spec deinterlace crop scale))
 
 (defn encode-video?
   "Returns whether the video stream should be transcoded."
@@ -72,10 +86,11 @@
       ["-map" (str "0:" (:index video-stream)) "-c:v" "libx264" "-crf" quality "-profile:v" "high" "-level" 41]
       ["-map" (str "0:" (:index video-stream)) "-c:v" "copy"])))
 
-(defn crop-resize-options
-  "Returns the ffmpeg options for cropping and/or resizing the video."
-  [{:keys [crop scale]}]
-  (let [args (str/join "," (remove str/blank? [crop scale]))]
+(defn video-filter-options
+  "Returns the ffmpeg options for the video filter (de-interlace,
+  crop, resize)."
+  [{:keys [deinterlace crop scale]}]
+  (let [args (str/join "," (remove str/blank? [deinterlace crop scale]))]
     (when-not (str/blank? args)
       ["-vf" args])))
 
@@ -131,7 +146,7 @@
   [spec]
   ["ffmpeg" "-i" (:input spec)
    (video-options spec)
-   (crop-resize-options spec)
+   (video-filter-options spec)
    (audio-options spec)
    (subtitle-options spec)
    "-f" (ffmpeg-format (:format spec))
