@@ -1,6 +1,5 @@
 (ns user
-  (:require [clojure.edn :as edn]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [video-server.discovery :as discovery]
             [video-server.handler :as handler]
             [video-server.main :as main]
@@ -21,7 +20,7 @@
 
 (def dir (main/default-folder))
 (def url (main/host-url port))
-(def folder (->Folder "video" (io/file dir) (str url "/" "video")))
+(def folder (->Folder "videos" (io/file dir) (str url "/" "videos")))
 
 (defn rescan []
   (watcher/scan-folder folder))

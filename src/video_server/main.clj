@@ -96,7 +96,7 @@
   (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)
         dir (or (first arguments) (default-folder))
         url (host-url (:port options))
-        folder (->Folder "video" (io/file dir) (str url "/" "video"))
+        folder (->Folder "videos" (io/file dir) (str url "/" "videos"))
         fmt (keyword (:format options))
         size (-> (:size options) str keyword)]
     (cond
