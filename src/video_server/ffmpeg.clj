@@ -30,7 +30,7 @@
                            "-t" 120 "-an" "-sn" "-vf" "idet" "/dev/null"))]
     (when-let [frames (re-find #"Multi frame detection:.*" output)]
       (let [[top bottom prog und] (parse-ints frames)]
-        #_(> (+ top bottom) (/ (+ top bottom prog und) 10))))))
+        (> (+ top bottom) (/ (+ top bottom prog und) 10))))))
 
 (defn detect-crop
   "Performs crop detection, returning the filter argument or nil."
