@@ -41,13 +41,17 @@
 
 (defn add-subtitles
   "Performs the initial scan for subtitles."
-  ([folder]
-   (doseq [video (library/current-videos)]
-     (add-subtitles folder video)))
-  ([folder video]
-   (doseq [file (.listFiles (:file folder) (file/subtitle-filter (:title video)))]
-     (log/info "adding subtitles" (str file))
-     (library/add-subtitle folder file video))))
+  [folder video]
+  (doseq [file (.listFiles (:file folder) (file/subtitle-filter (:title video)))]
+    (log/info "adding subtitles" (str file))
+    (library/add-subtitle folder file video)))
+
+(defn add-images
+  "Performs the initial scan for image files."
+  [folder video]
+  (doseq [file (.listFiles (:file folder) (file/image-filter (:title video)))]
+    (log/info "adding image" (str file))
+    (library/add-image folder file video)))
 
 (defn add-videos
   "Performs the initial folder scan, adding videos to the library."
@@ -58,6 +62,7 @@
       (library/add-video folder file))
     (doseq [video (sort-by video/modified (library/current-videos))]
       (add-subtitles folder video)
+      (add-images folder video)
       (process/process-file folder video))))
 
 (defn scan-folder
@@ -67,6 +72,15 @@
   (library/remove-all) ; TODO this shouldn't be necessary
   (add-videos folder))
 
+(defn add-video
+  "Adds a video file to the library and checks for subtitles and
+  images if the video was added (is new) to the library."
+  [folder file]
+  (when (library/add-video folder file)
+    (let [video (library/video-for-file folder file)]
+      (add-subtitles folder video)
+      (add-images folder video))))
+
 (defn add-file
   "Adds a newly discovered file to the library."
   [folder file]
@@ -74,8 +88,9 @@
   (when-let [video (library/video-for-file folder file)]
     (library/remove-file folder file))
   (cond
-    (file/video? file) (library/add-video folder file)
-    (file/subtitles? file) (library/add-subtitle folder file)))
+    (file/video? file) (add-video folder file)
+    (file/subtitles? file) (library/add-subtitle folder file)
+    (file/image? file) (library/add-image folder file)))
 
 (defn check-pending-files
   "Checks the pending files and adds the stable ones to the library."
@@ -94,7 +109,7 @@
   "Adds a new or changing file to the list of pending files."
   [file]
   (when-not (contains? @pending-files file)
-    (log/trace "adding pending file" (str file))
+    (log/info "watching file" (str file))
     (dosync (alter pending-files conj file))))
 
 (defn remove-file
@@ -106,11 +121,11 @@
 (defn file-event-callback
   "Processes the file system events."
   [folder event filename]
-  (when (or (file/video? filename) (file/subtitles? filename))
+  (when ((some-fn file/video? file/subtitles? file/image?) filename)
     (let [file (io/file filename)]
       (try (case event
-             :create (do
-                       (log/info "watching file" filename)
+             :create (if (stable? file)
+                       (add-file folder file)
                        (add-pending-file file))
              :modify (add-pending-file file)
              :delete (remove-file folder file)

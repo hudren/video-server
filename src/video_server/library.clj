@@ -71,12 +71,13 @@
   [folder file video]
   (let [key (video-key video)
         containers (remove #(= (.getName file) (:filename %)) (:containers video))]
-    (log/debug "removing video" key)
+    (log/debug "removing video" (str file))
     (dosync
       (if (empty? containers)
-        (alter library update-in [folder] dissoc key)
-        (alter library update-in [folder key] assoc :containers containers))
-      (alter files dissoc file))))
+        (do (alter library update-in [folder] dissoc key)
+            (alter files (partial apply dissoc) (map clojure.core/key (filter #(= key (val %)) @files))))
+        (do (alter library update-in [folder key] assoc :containers containers)
+            (alter files dissoc file))))))
 
 (defn add-subtitle
   "Returns true if the subtitle was added to an existing video."
@@ -100,7 +101,31 @@
         subtitles (remove #(= (.getName file) (:filename %)) (:subtitles video))]
     (log/debug "removing subtitle" (str file))
     (dosync
-      (alter library update-in [folder key] assoc :subtitles subtitles)
+      (alter library assoc-in [folder key :subtitles] subtitles)
+      (alter files dissoc file))))
+
+(defn add-image
+  "Returns true if the image was added to an existing video."
+  ([folder file]
+   (when-let [video (video-for-file folder file)]
+     (add-image folder file video)))
+  ([folder file video]
+   (log/debug "adding image" (str file))
+   (let [url (video/encoded-url (:url folder) file)]
+     (dosync
+       (alter library assoc-in [folder (video-key video) :poster] url)
+       (alter files assoc file (video-key video))
+       true))))
+
+(defn remove-image
+  "Removes an image file from a video."
+  [folder file video]
+  (let [key (video-key video)
+        url (video/encoded-url (:url folder) file)]
+    (log/debug "removing image" (str file))
+    (dosync
+      (when (= url (get-in @library [folder key :poster]))
+        (alter library assoc-in [folder key :poster] nil))
       (alter files dissoc file))))
 
 (defn remove-file
@@ -109,7 +134,8 @@
   (when-let [video (video-for-file folder file)]
     (cond
       (file/video? file) (remove-video folder file video)
-      (file/subtitles? file) (remove-subtitle folder file video))))
+      (file/subtitles? file) (remove-subtitle folder file video)
+      (file/image? file) (remove-image folder file video))))
 
 (defn current-videos
   "Returns a sequence of all of the videos in the library."

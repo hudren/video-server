@@ -16,7 +16,7 @@
 
 (def movie-exts #{".mkv" ".mp4" ".m4v"})
 (def subtitle-exts #{".vtt" ".srt"})
-(def poster-exts #{".jpg" ".jpeg" ".png"})
+(def image-exts #{".jpg" ".jpeg" ".png" ".webp"})
 
 (defn file-base
   "Returns the base filename up to but not including the first period."
@@ -102,17 +102,27 @@
     (accept [this dir name]
       (and (= title (:title (title-info (file-base name)))) (ends-with? name exts)))))
 
+(defn- file-with-ext?
+  "Returns whether the file or filename ends with one of the given
+  file extensions."
+  [file exts]
+  (let [filename (if (string? file) file (.getName file))]
+    (ends-with? filename exts)))
+
 (defn video?
   "Returns whether the file is a movie file."
   [file]
-  (let [name (if (string? name) name (.getName (io/file file)))]
-    (ends-with? name movie-exts)))
+  (file-with-ext? file movie-exts))
 
 (defn subtitles?
   "Returns whether the file is a subtitle file."
   [file]
-  (let [name (if (string? name) name (.getName (io/file file)))]
-    (ends-with? name subtitle-exts)))
+  (file-with-ext? file subtitle-exts))
+
+(defn image?
+  "Returns whether the file is an image file."
+  [file]
+  (file-with-ext? file image-exts))
 
 (defn movie-filter
   "A filter for listing movie files."
@@ -124,6 +134,12 @@
   filter will only match files related to that title."
   ([] (ext-filter subtitle-exts))
   ([title] (title-filter title subtitle-exts)))
+
+(defn image-filter
+  "A filter for listing image files. If a title is specified, the
+  filter will only match files related to that title."
+  ([] (ext-filter image-exts))
+  ([title] (title-filter title image-exts)))
 
 (defn files-for-title
   "Returns the files related to the given title."

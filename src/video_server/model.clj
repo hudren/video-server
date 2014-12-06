@@ -21,7 +21,8 @@
 
 (defrecord Subtitle [title language filename url mimetype])
 
-(defrecord Video [title duration season episode episode-title containers subtitles])
+(defrecord Video [title duration season episode episode-title
+                  containers subtitles poster])
 
 (defn get-record-fields
   "Returns the record fields as a vector of keywords."
