@@ -99,7 +99,7 @@
           spec (output-options spec)
           output (:output spec)
           cmd (ffmpeg/encode-cmd spec)]
-      (log/info "encoding" (:title video) "into" output)
+      (log/info "encoding into" output)
       (let [exec (encode cmd)]
         (if (zero? (:exit exec))
           (log/info "encoding was successful")
