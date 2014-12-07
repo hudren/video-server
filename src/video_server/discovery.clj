@@ -12,23 +12,39 @@
   (:require [clojure.tools.logging :as log])
   (:import (java.net DatagramPacket DatagramSocket InetAddress)))
 
-(defn- listen-for-clients
+(defn receive-request
+  "Blocks waiting for a client to broadcast a discovery message."
+  [socket]
+  (let [buffer (byte-array 15000)
+        packet (DatagramPacket. buffer (count buffer))]
+    (.receive socket packet)
+    (log/trace "received request from" (.getAddress packet))
+    packet))
+
+(defn request-message
+  "Returns the message from the request packet."
+  [packet]
+  (-> (.getData packet) (String.) .trim))
+
+(defn send-response
+  "Sends the response back to the requester."
+  [socket request url hostname]
+  (let [response (str url "|" hostname)
+        data (.getBytes response)
+        packet (DatagramPacket. data (count data) (.getAddress request) (.getPort request))]
+    (log/trace "sending" response)
+    (.send socket packet)))
+
+(defn listen-for-clients
   "Listens for client requests and responds with information to
   identify this server."
   [url port hostname]
-  (let [socket (doto (DatagramSocket. port) (.setBroadcast true))
-        buffer (byte-array 15000)]
+  (let [socket (doto (DatagramSocket. port) (.setBroadcast true))]
     (while true
-      (try (let [packet (DatagramPacket. buffer (count buffer))]
-             (.receive socket packet)
-             (let [message (-> (.getData packet) (String.) .trim)]
-               (log/trace "received message" message "from" (.getAddress packet))
-               (when (= message "DISCOVER_VIDEO_SERVER_REQUEST")
-                 (let [response (str url "|" hostname)
-                       data (.getBytes response)
-                       send-packet (DatagramPacket. data (count data) (.getAddress packet) (.getPort packet))]
-                   (log/trace "sending" response)
-                   (.send socket send-packet)))))
+      (try (let [request (receive-request socket)
+                 message (request-message request)]
+             (when (= message "DISCOVER_VIDEO_SERVER_REQUEST")
+               (send-response socket request url hostname)))
            (catch Exception e (log/error e))))))
 
 (defn start-discovery
