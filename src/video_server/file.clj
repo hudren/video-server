@@ -17,6 +17,21 @@
 (def subtitle-exts #{".vtt" ".srt"})
 (def image-exts #{".jpg" ".jpeg" ".png" ".webp"})
 
+(defn mimetype
+  "Returns a mimetype based on the file metadata or extension."
+  [file]
+  (condp #(.endsWith %2 %1) (.getName file)
+    ".mp4" "video/mp4"
+    ".m4v" "video/mp4"
+    ".mkv" "video/x-matroska"
+    ".vtt" "text/vtt"
+    ".srt" "application/x-subrip"
+    ".png" "image/png"
+    ".jpg" "image/jpeg"
+    ".jpeg" "image/jpeg"
+    ".webp" "image/webp"
+    nil))
+
 (defn file-base
   "Returns the base filename up to but not including the first period."
   [file]
