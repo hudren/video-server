@@ -13,10 +13,10 @@
             [clojure.tools.logging :as log]
             [video-server.encoder :as encoder]
             [video-server.ffmpeg :refer [video-info]]
-            [video-server.file :refer [file-base image? subtitle? title-info video?]]
+            [video-server.file :refer [file-base image? mimetype subtitle? title-info video?]]
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
-            [video-server.video :refer [encoded-url mimetype video-container video-record]])
+            [video-server.video :refer [encoded-url video-container video-record]])
   (:import (java.io File)
            (java.util Locale)
            (video_server.model VideoKey)))

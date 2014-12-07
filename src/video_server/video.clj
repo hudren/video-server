@@ -10,7 +10,7 @@
 
 (ns video-server.video
   (:require [clojure.string :as str]
-            [video-server.file :as file]
+            [video-server.file :refer [file-base mimetype title-info]]
             [video-server.format :refer [audio-desc video-desc video-dimension]]
             [video-server.model :refer :all]
             [video-server.util :refer :all])
@@ -24,17 +24,6 @@
   [url file]
   (let [filename (URLEncoder/encode (.getName file) "UTF-8")]
     (str url "/" (str/replace filename "+" "%20"))))
-
-(defn mimetype
-  "Returns a mimetype based on the file metadata or extension."
-  [file & [info]]
-  (condp #(.endsWith %2 %1) (.getName file)
-    ".mp4" "video/mp4"
-    ".m4v" "video/mp4"
-    ".mkv" "video/x-matroska"
-    ".vtt" "text/vtt"
-    ".srt" "application/x-subrip"
-    nil))
 
 (def locales (into {} (map #(vector (.getISO3Language %) %) (map #(Locale. %) (Locale/getISOLanguages)))))
 
@@ -92,14 +81,14 @@
                 :audio (str/join ", " (map #(audio-desc (:codec_name %)) audio))
                 :modified (.lastModified file)
                 :url url
-                :mimetype (mimetype file info)}]
+                :mimetype (mimetype file)}]
     (make-record Container fields)))
 
 (defn video-title
   "Returns the video title based on the metadata or filename."
   [container info]
   (or (-> info :format :title)
-      (file/title-info (-> container :filename file/file-base))))
+      (title-info (-> container :filename file-base))))
 
 (defn video-record
   "Returns a new video record with the specified container."
