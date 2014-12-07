@@ -12,11 +12,11 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [video-server.ffmpeg :as ffmpeg]
-            [video-server.file :as file]
-            [video-server.format :as format]
+            [video-server.ffmpeg :refer [encode-cmd filter-video video-info]]
+            [video-server.file :refer [replace-ext video-filename]]
+            [video-server.format :refer [video-dimension]]
             [video-server.util :refer :all]
-            [video-server.video :as video]))
+            [video-server.video :refer [audio-streams subtitle-streams video-stream]]))
 
 (def ^:dynamic *fake-encode* false)
 
@@ -55,7 +55,7 @@
   [folder video fmt size]
   (when-let [container (container-to-encode (:containers video))]
     (let [file (io/file (:file folder) (:filename container))
-          info (ffmpeg/video-info file)
+          info (video-info file)
           size (or (smaller-size (smallest-encoded-size video)) size)]
       {:format fmt
        :size size
@@ -66,21 +66,21 @@
        :input (.getCanonicalPath file)
        :info info
        :video video
-       :video-stream (video/video-stream info)
-       :audio-streams (video/audio-streams info)
-       :subtitle-streams (video/subtitle-streams info)})))
+       :video-stream (video-stream info)
+       :audio-streams (audio-streams info)
+       :subtitle-streams (subtitle-streams info)})))
 
 (defn output-file
   "Returns the File representing the encoder output."
   [{:keys [video file format width height] :as spec}]
   (let [ext (str "." (name format))
-        filename (file/video-filename video ext)
+        filename (video-filename video ext)
         output (io/file (.getParent file) filename)]
     (if (.exists output)
-      (let [filename (file/video-filename video ext width height)
+      (let [filename (video-filename video ext width height)
             output (io/file (.getParent file) filename)]
         (if (.exists output)
-          (let [filename (file/video-filename video ext width height (format/video-dimension width height))]
+          (let [filename (video-filename video ext width height (video-dimension width height))]
             (io/file (.getParent file) filename))
           output))
       output)))
@@ -95,10 +95,10 @@
   [folder video fmt size]
   (log/info "encoding video" (:title video))
   (when-let [spec (encode-spec folder video fmt size)]
-    (let [spec (ffmpeg/filter-video spec)
+    (let [spec (filter-video spec)
           spec (output-options spec)
           output (:output spec)
-          cmd (ffmpeg/encode-cmd spec)]
+          cmd (encode-cmd spec)]
       (log/info "encoding into" output)
       (let [exec (encode cmd)]
         (if (zero? (:exit exec))
@@ -113,7 +113,7 @@
   (let [filename (.getCanonicalPath file)]
     (when-not (.endsWith filename ".vtt")
       (log/info "encoding subtitle" filename)
-      (let [cmd ["ffmpeg" "-i" filename (file/replace-ext filename ".vtt")]]
+      (let [cmd ["ffmpeg" "-i" filename (replace-ext filename ".vtt")]]
         (log/debug "executing" (str/join " " cmd))
         (exec cmd)))))
 

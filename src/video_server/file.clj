@@ -9,9 +9,8 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.file
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [video-server.format :as format])
+  (:require [clojure.string :as str]
+            [video-server.format :refer [video-dimension]])
   (:import (java.io File FilenameFilter)))
 
 (def movie-exts #{".mkv" ".mp4" ".m4v"})
@@ -77,7 +76,7 @@
   (str (->> [(:title video)
              (when (:season video) (format "S%02dE%02d" (:season video) (:episode video)))
              (:episode-title video)
-             (when (#{1280 1920} width) (format/video-dimension width height))]
+             (when (#{1280 1920} width) (video-dimension width height))]
             (remove nil?)
             (str/join " - "))
        (when qual (str "." qual))
@@ -114,7 +113,7 @@
   [file]
   (file-with-ext? file movie-exts))
 
-(defn subtitles?
+(defn subtitle?
   "Returns whether the file is a subtitle file."
   [file]
   (file-with-ext? file subtitle-exts))

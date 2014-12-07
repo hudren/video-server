@@ -11,7 +11,7 @@
 (ns video-server.ffmpeg
   (:require [clojure.data.json :as json]
             [clojure.string :as str]
-            [video-server.format :as format]
+            [video-server.format :refer [audio-title]]
             [video-server.util :refer :all]))
 
 (def ffmpeg-format {:mkv "matroska" :mp4 "mp4" :m4v "mp4"})
@@ -113,7 +113,7 @@
 
 (defn audio-title-options
   [index codec lang chans]
-  [(str "-metadata:s:a:" index) (str "title=" (format/audio-title codec lang chans))])
+  [(str "-metadata:s:a:" index) (str "title=" (audio-title codec lang chans))])
 
 (defn audio-encoder-options
   "Returns the ffmpeg options for encoding / copying the aac audio
@@ -122,7 +122,7 @@
   (let [existing (audio-stream audio-streams codec)
         audio (or existing (audio-to-encode audio-streams))]
     (conj ["-map" (str "0:" (:index audio))
-          (str "-c:a:" index) (if existing "copy" codec)]
+           (str "-c:a:" index) (if existing "copy" codec)]
           (audio-codec-options index codec)
           (audio-title-options index codec (-> audio :tags :language) (if (= codec "aac") 2 (:channels audio))))))
 

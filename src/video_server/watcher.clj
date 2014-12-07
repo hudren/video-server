@@ -12,10 +12,10 @@
   (:require [clojure-watch.core :refer [start-watch]]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [video-server.file :as file]
-            [video-server.library :as library]
-            [video-server.process :as process]
-            [video-server.video :as video]))
+            [video-server.file :refer [image-filter image? movie-filter subtitle-filter subtitle? video?]]
+            [video-server.library :as library :refer [add-image add-subtitle current-videos remove-all video-for-file]]
+            [video-server.process :refer [process-file]]
+            [video-server.video :refer [modified]]))
 
 (def ^:const stable-time 30000)
 (def ^:const check-time 15000)
@@ -42,34 +42,34 @@
 (defn add-subtitles
   "Performs the initial scan for subtitles."
   [folder video]
-  (doseq [file (.listFiles (:file folder) (file/subtitle-filter (:title video)))]
+  (doseq [file (.listFiles (:file folder) (subtitle-filter (:title video)))]
     (log/info "adding subtitles" (str file))
-    (library/add-subtitle folder file video)))
+    (add-subtitle folder file video)))
 
 (defn add-images
   "Performs the initial scan for image files."
   [folder video]
-  (doseq [file (.listFiles (:file folder) (file/image-filter (:title video)))]
+  (doseq [file (.listFiles (:file folder) (image-filter (:title video)))]
     (log/info "adding image" (str file))
-    (library/add-image folder file video)))
+    (add-image folder file video)))
 
 (defn add-videos
   "Performs the initial folder scan, adding videos to the library."
   [folder]
-  (let [files (.listFiles (:file folder) (file/movie-filter))]
+  (let [files (.listFiles (:file folder) (movie-filter))]
     (doseq [file (filter stable? files)]
       (log/info "adding file" (str file))
       (library/add-video folder file))
-    (doseq [video (sort-by video/modified (library/current-videos))]
+    (doseq [video (sort-by modified (current-videos))]
       (add-subtitles folder video)
       (add-images folder video)
-      (process/process-file folder video))))
+      (process-file folder video))))
 
 (defn scan-folder
   "Loads all of the videos and subtitles in the folder."
   [folder]
   (log/info "scanning" (str (:file folder)) "as" (:name folder))
-  (library/remove-all) ; TODO this shouldn't be necessary
+  (remove-all) ; TODO this shouldn't be necessary
   (add-videos folder))
 
 (defn add-video
@@ -77,7 +77,7 @@
   images if the video was added (is new) to the library."
   [folder file]
   (when (library/add-video folder file)
-    (let [video (library/video-for-file folder file)]
+    (let [video (video-for-file folder file)]
       (add-subtitles folder video)
       (add-images folder video))))
 
@@ -85,12 +85,12 @@
   "Adds a newly discovered file to the library."
   [folder file]
   (log/info "adding file" (str file))
-  (when-let [video (library/video-for-file folder file)]
+  (when-let [video (video-for-file folder file)]
     (library/remove-file folder file))
   (cond
-    (file/video? file) (add-video folder file)
-    (file/subtitles? file) (library/add-subtitle folder file)
-    (file/image? file) (library/add-image folder file)))
+    (video? file) (add-video folder file)
+    (subtitle? file) (add-subtitle folder file)
+    (image? file) (add-image folder file)))
 
 (defn check-pending-files
   "Checks the pending files and adds the stable ones to the library."
@@ -102,7 +102,7 @@
              (dosync (alter pending-files disj file))
              (when (.exists file)
                (add-file folder file)
-               (process/process-file folder file)))
+               (process-file folder file)))
            (catch Exception e (log/error e "adding pending file" (str file)))))))
 
 (defn add-pending-file
@@ -121,7 +121,7 @@
 (defn file-event-callback
   "Processes the file system events."
   [folder event filename]
-  (when ((some-fn file/video? file/subtitles? file/image?) filename)
+  (when ((some-fn video? subtitle? image?) filename)
     (let [file (io/file filename)]
       (try (case event
              :create (if (stable? file)

@@ -9,7 +9,6 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.model
-  (:require [clojure.tools.logging :as log])
   (:import (java.lang.reflect Modifier)))
 
 (defrecord Folder [name file url])

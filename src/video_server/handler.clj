@@ -10,14 +10,14 @@
 
 (ns video-server.handler
   (:require [clojure.data.json :as json]
-            [compojure.core :refer :all]
-            [compojure.handler :as handler]
-            [compojure.route :as route]
+            [compojure.core :refer [GET defroutes]]
+            [compojure.handler :refer [site]]
+            [compojure.route :refer [files not-found]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.util.response :refer [response]]
-            [video-server.html :as html]
-            [video-server.library :as library]
-            [video-server.video :as video]))
+            [video-server.html :refer [videos-template]]
+            [video-server.library :refer [current-videos]]
+            [video-server.video :refer [modified]]))
 
 (defn json-response
   "Generates a JSON response from the data."
@@ -29,20 +29,20 @@
 (defn index
   "Returns the index or home page."
   []
-  (let [videos (reverse (sort-by video/modified (library/current-videos)))]
-    (response (html/main-template videos))))
+  (let [videos (reverse (sort-by modified (current-videos)))]
+    (response (videos-template videos))))
 
 (defn videos-api
   "Responds with a list of available vidoes."
   []
-  (json-response (library/current-videos)))
+  (json-response (current-videos)))
 
 (defroutes app-routes
   (GET "/" [] (index))
   (GET "/api/v1/videos" [] (videos-api))
-  (route/files "/" {:root "resources/public"})
-  (route/not-found "Not Found"))
+  (files "/" {:root "resources/public"})
+  (not-found "Not Found"))
 
 (def app
-  (wrap-gzip (handler/site app-routes)))
+  (wrap-gzip (site app-routes)))
 

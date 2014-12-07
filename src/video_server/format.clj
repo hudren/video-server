@@ -10,8 +10,8 @@
 
 (ns video-server.format
   (:require [clojure.string :as str])
-  (:import (java.util.concurrent TimeUnit)
-           (java.util Locale)))
+  (:import (java.util Locale)
+           (java.util.concurrent TimeUnit)))
 
 (defn locale
   "Constructs a Locale object."

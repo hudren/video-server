@@ -11,7 +11,7 @@
 (ns video-server.video
   (:require [clojure.string :as str]
             [video-server.file :as file]
-            [video-server.format :as format]
+            [video-server.format :refer [audio-desc video-desc video-dimension]]
             [video-server.model :refer :all]
             [video-server.util :refer :all])
   (:import (java.net URLEncoder)
@@ -87,9 +87,9 @@
                 :bitrate (parse-long (-> info :format :bit_rate))
                 :width width
                 :height height
-                :dimension (format/video-dimension width height)
-                :video (format/video-desc (:codec_name video))
-                :audio (str/join ", " (map #(format/audio-desc (:codec_name %)) audio))
+                :dimension (video-dimension width height)
+                :video (video-desc (:codec_name video))
+                :audio (str/join ", " (map #(audio-desc (:codec_name %)) audio))
                 :modified (.lastModified file)
                 :url url
                 :mimetype (mimetype file info)}]

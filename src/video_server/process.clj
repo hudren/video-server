@@ -11,9 +11,9 @@
 (ns video-server.process
   (:require [clojure.tools.logging :as log]
             [clojure.core.async :refer [chan go <! >!]]
-            [video-server.file :as file]
-            [video-server.encoder :as encoder]
-            [video-server.library :as library])
+            [video-server.file :refer [subtitle? video?]]
+            [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video]]
+            [video-server.library :refer [video-for-file]])
   (:import (java.io File)))
 
 (def process-chan (chan 100))
@@ -40,7 +40,7 @@
   [video]
   (not (and (can-download? video) (can-cast? video))))
 
-(defn should-encode-subtitles?
+(defn should-encode-subtitle?
   "Returns whether the subtitles need to be transcoded for casting."
   [video]
   (and (not-any? #(= (:mimetype %) "text/vtt") (:subtitles video))
@@ -51,17 +51,17 @@
   [folder video fmt size]
   (log/debug "processing video" (:title video))
   (when (should-encode-video? video)
-    (encoder/encode-video folder video fmt size))
-  (when (should-encode-subtitles? video)
-    (encoder/encode-subtitles folder video)))
+    (encode-video folder video fmt size))
+  (when (should-encode-subtitle? video)
+    (encode-subtitles folder video)))
 
 (defn process-subtitle
   "Conditionally encodes the subtitle file."
   [folder file]
   (log/debug "processing subtitle" (str file))
-  (let [video (library/video-for-file folder file)]
-    (when (should-encode-subtitles? video)
-      (encoder/encode-subtitle file))))
+  (let [video (video-for-file folder file)]
+    (when (should-encode-subtitle? video)
+      (encode-subtitle file))))
 
 (defn start-processing
   "Processes enqueued files."
@@ -73,8 +73,8 @@
           (try (when encode?
                  (if (instance? File file-or-video)
                    (cond
-                     (file/video? file-or-video) (process-video folder (library/video-for-file folder file-or-video) fmt size)
-                     (file/subtitles? file-or-video) (process-subtitle folder file-or-video))
+                     (video? file-or-video) (process-video folder (video-for-file folder file-or-video) fmt size)
+                     (subtitle? file-or-video) (process-subtitle folder file-or-video))
                    (process-video folder file-or-video fmt size)))
                (catch Exception e (log/error e "error processing video" (str file-or-video))))))))
 

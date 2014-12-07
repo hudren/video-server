@@ -1,13 +1,13 @@
 (ns video-server.html
   (:require [clojure.string :as str]
-            [net.cgrand.enlive-html :as html]
-            [video-server.format :as format])
+            [net.cgrand.enlive-html :refer :all]
+            [video-server.format :refer [format-bitrate format-duration format-size video-dimension]])
   (:import (java.util Locale)))
 
 (defn quality
   "Returns a human-readable video quality description."
   [{:keys [width height]}]
-  (format/video-dimension width height))
+  (video-dimension width height))
 
 (defn can-play?
   "Returns whether the container is web playable."
@@ -31,8 +31,8 @@
             (:language container))
           (:video container)
           (:audio container)
-          (format/format-size (:size container))
-          (format/format-bitrate (:bitrate container))]
+          (format-size (:size container))
+          (format-bitrate (:bitrate container))]
          (remove str/blank?)
          (str/join " - "))))
 
@@ -48,19 +48,19 @@
   [container]
   (if (can-play-from-link? container) "Play" "Download"))
 
-(html/defsnippet video-template "templates/video.html" [:div]
+(defsnippet video-template "templates/video.html" [:div]
   [video]
-  [:h2] (html/content (:title video))
-  [:div :> :p] (html/content (format/format-duration (:duration video)))
-  [:ul :li] (html/clone-for [container (:containers video)]
-                            [:p :span] (html/content (container-desc container))
-                            [:a] (html/set-attr :href (:url container))
-                            [:a] (html/set-attr :type (:mimetype container))
-                            [:a] (download-attr container)
-                            [:a] (html/content (download-link container))))
+  [:h2] (content (:title video))
+  [:div :> :p] (content (format-duration (:duration video)))
+  [:ul :li] (clone-for [container (:containers video)]
+                       [:p :span] (content (container-desc container))
+                       [:a] (set-attr :href (:url container))
+                       [:a] (set-attr :type (:mimetype container))
+                       [:a] (download-attr container)
+                       [:a] (content (download-link container))))
 
-(html/deftemplate main-template "templates/videos.html"
+(deftemplate videos-template "templates/videos.html"
   [videos]
-  [:div] (html/clone-for [video videos]
-                         [:div] (html/content (video-template video))))
+  [:div] (clone-for [video videos]
+                    [:div] (content (video-template video))))
 
