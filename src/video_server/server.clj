@@ -82,9 +82,8 @@
     (.setHandler (context handler folder))))
 
 (defn ^Server start-server
-  "Scans the movie folder and starts the Jetty server with discovery
-  enabled."
-  [url folder port handler]
+  "Starts the web server for the video folder and ring handler."
+  [url port handler folder]
   (log/info "starting the web server at" url)
   (doto (create-server port handler folder)
     (.start)))
