@@ -90,23 +90,28 @@
   (when msg (println msg))
   (System/exit code))
 
-(defn -main
-  "Starts the video server."
-  [& args]
-  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)
-        dir (or (first arguments) (default-folder))
+(defn start
+  "Starts all of the components, returning the Jetty web server."
+  [dir options]
+  (let [fmt (keyword (:format options))
+        size (-> (:size options) str keyword)
         url (host-url (:port options))
-        folder (->Folder "videos" (io/file dir) (str url "/" "videos"))
-        fmt (keyword (:format options))
-        size (-> (:size options) str keyword)]
-    (cond
-      (:help options) (exit 0 (usage summary))
-      (> (count arguments) 1) (exit 1 "Only one video folder is allowed.")
-      errors (exit 1 (str/join \newline errors)))
-    (set-log-level (:log-level options))
+        folder (->Folder "videos" (io/file dir) (str url "/" "videos"))]
     (start-processing (:encode options) fmt size)
     (start-watcher folder)
-    (let [server (start-server url folder (:port options) app)]
+    (let [server (start-server url (:port options) app folder)]
       (start-discovery url discovery-port)
-      (.join server))))
+      server)))
+
+(defn -main
+  "Parses the command line options and starts the video server."
+  [& args]
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+    (cond
+      (:help options) (exit 0 (usage summary))
+      (> (count arguments) 1) (exit 1 "Only one folder is allowed.")
+      errors (exit 1 (str/join \newline errors)))
+    (set-log-level (:log-level options))
+    (let [dir (or (first arguments) (default-folder))]
+      (.join (start dir options)))))
 

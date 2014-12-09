@@ -33,6 +33,6 @@
   (binding [encoder/*fake-encode* true]
     (process/start-processing encode output-format output-size))
   (watcher/start-watcher folder)
-  (server/start-server url folder port handler/app)
+  (server/start-server url port handler/app folder)
   (discovery/start-discovery url main/discovery-port))
 
