@@ -94,15 +94,24 @@
     (when-not (str/blank? args)
       ["-vf" args])))
 
+(defn audio-channels
+  "Returns the required number of audio channels for the codec."
+  [codec]
+  (if (= codec "aac") 2 5))
+
 (defn audio-stream
   "Returns the audio stream for the given codec, or nil."
   [audio-streams codec]
   (first (filter #(= codec (:codec_name %)) audio-streams)))
 
 (defn audio-to-encode
-  "Returns the best audio stream to use for the encoding source."
-  [audio]
-  (first audio)) ; TODO: check bitrate and language
+  "Returns the best audio stream to use for the target codec."
+  [audio-streams codec]
+  (let [chans (audio-channels codec)
+        audio (reverse (sort-by #(parse-long (:bit_rate %)) audio-streams))]
+    (or (audio-stream audio codec)
+        (first (filter #(= chans (:channels %)) audio))
+        (first audio)))) ; TODO: check language
 
 (defn audio-codec-options
   [index codec]
@@ -119,11 +128,11 @@
   "Returns the ffmpeg options for encoding / copying the aac audio
   stream."
   [audio-streams index codec]
-  (let [existing (audio-stream audio-streams codec)
-        audio (or existing (audio-to-encode audio-streams))]
+  (let [audio (audio-to-encode audio-streams codec)
+        exists (= (:codec_name audio) codec)]
     (conj ["-map" (str "0:" (:index audio))
-           (str "-c:a:" index) (if existing "copy" codec)]
-          (audio-codec-options index codec)
+           (str "-c:a:" index) (if exists "copy" codec)]
+          (when-not exists (audio-codec-options index codec))
           (audio-title-options index codec (-> audio :tags :language) (if (= codec "aac") 2 (:channels audio))))))
 
 (defn audio-options
@@ -131,8 +140,9 @@
   streams."
   [{:keys [audio-streams]}]
   (into (audio-encoder-options audio-streams 0 "aac")
-        (when (> (:channels (audio-to-encode audio-streams)) 2)
-          (audio-encoder-options audio-streams 1 "ac3"))))
+        (when-let [audio (audio-to-encode audio-streams "ac3")]
+          (when (> (:channels audio) 2)
+            (audio-encoder-options audio-streams 1 "ac3")))))
 
 (defn subtitle-options
   "Returns the ffmpeg options for copying the subtitle streams."
