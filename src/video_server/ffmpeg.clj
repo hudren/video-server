@@ -150,5 +150,6 @@
    (audio-options spec)
    (subtitle-options spec)
    "-f" (ffmpeg-format (:format spec))
+   "-movflags" "+faststart"
    (:output spec)])
 
