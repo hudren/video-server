@@ -34,10 +34,11 @@
     #(deliver p "stop")))
 
 (defn stable?
-  "Returns true if the file has not been modified for at least thirty
-  seconds."
+  "Returns true if the file has has content and has not been modified
+  for at least thirty seconds."
   [file]
-  (< (.lastModified file) (- (System/currentTimeMillis) stable-time)))
+  (and (pos? (.length file))
+       (< (.lastModified file) (- (System/currentTimeMillis) stable-time))))
 
 (defn add-subtitles
   "Performs the initial scan for subtitles."
