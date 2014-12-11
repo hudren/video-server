@@ -15,6 +15,7 @@
             [compojure.route :refer [resources not-found]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.util.response :refer [response]]
+            [video-server.android :refer [android-version]]
             [video-server.html :refer [index-template]]
             [video-server.library :refer [current-videos]]
             [video-server.video :refer [modified]]))
@@ -37,9 +38,15 @@
   []
   (json-response (current-videos)))
 
+(defn android-api
+  "Responds with the android client version info."
+  []
+  (json-response @android-version))
+
 (defroutes app-routes
   (GET "/" [] (index))
   (GET "/api/v1/videos" [] (videos-api))
+  (GET "/api/v1/android" [] (android-api))
   (resources "/" {:root "public"})
   (not-found "Not Found"))
 

@@ -13,14 +13,18 @@ Features include:
 * Automatic encoding of videos for downloading and casting
 
 This software is intended to be used over your local (high bandwidth) network
-only.
+only as on-the-fly encoding and adaptive bitrate streaming are not supported.
 
 ## Prerequisites
 
 The following software is required to build and run this software:
 
 * Java 7
-* Leiningen
+* Leiningen 2
+* Bower
+
+The following runtime dependency is also required:
+
 * ffmpeg
 
 ## Usage
