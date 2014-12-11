@@ -12,7 +12,7 @@
   (:require [clojure.data.json :as json]
             [compojure.core :refer [GET defroutes]]
             [compojure.handler :refer [site]]
-            [compojure.route :refer [files not-found]]
+            [compojure.route :refer [resources not-found]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.util.response :refer [response]]
             [video-server.html :refer [videos-template]]
@@ -40,7 +40,7 @@
 (defroutes app-routes
   (GET "/" [] (index))
   (GET "/api/v1/videos" [] (videos-api))
-  (files "/" {:root "resources/public"})
+  (resources "/" {:root "public"})
   (not-found "Not Found"))
 
 (def app
