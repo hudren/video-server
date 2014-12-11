@@ -15,7 +15,7 @@
             [compojure.route :refer [resources not-found]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.util.response :refer [response]]
-            [video-server.html :refer [videos-template]]
+            [video-server.html :refer [index-template]]
             [video-server.library :refer [current-videos]]
             [video-server.video :refer [modified]]))
 
@@ -30,7 +30,7 @@
   "Returns the index or home page."
   []
   (let [videos (reverse (sort-by modified (current-videos)))]
-    (response (videos-template videos))))
+    (response (index-template videos))))
 
 (defn videos-api
   "Responds with a list of available vidoes."

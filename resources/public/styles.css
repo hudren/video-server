@@ -13,13 +13,25 @@ core-toolbar {
   background: #D32F2F;
   color: white;
 }
-div#videos {
+core-toolbar a:link, core-toolbar a:visited {
+  color: white;
+  text-decoration: none;
+}
+paper-button {
+  color: white;
+  background: #00B0FF;
+}
+paper-button a:link, paper-button a:visited {
+  color: white;
+  text-decoration: none;
+}
+div.content {
   max-width: 90%;
   margin: 0 auto;
 }
-core-toolbar a:link {
-  color: white;
-  text-decoration: none;
+div.actions {
+  margin-top: 2em;
+  text-align: center;
 }
 hr {
   color: lightgray;

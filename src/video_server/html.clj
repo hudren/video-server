@@ -59,8 +59,8 @@
                        [:a] (download-attr container)
                        [:a] (content (download-link container))))
 
-(deftemplate videos-template "templates/videos.html"
+(deftemplate index-template "public/index.html"
   [videos]
-  [:div#videos] (clone-for [video videos]
-                           [:div] (content (video-template video))))
+  [:div.content] (clone-for [video videos]
+                            [:div] (content (video-template video))))
 
