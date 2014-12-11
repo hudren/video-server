@@ -1,9 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta charset="utf-8">
     <title>Videos@Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
+    <script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
+    <link rel="import" href="bower_components/font-roboto/roboto.html">
+    <link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
+    <link rel="import" href="bower_components/core-toolbar/core-toolbar.html">
+    <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
-    <div id="videos"></div>
+  <body unresolved>
+    <core-header-panel>
+      <core-toolbar>
+        <div flex>Videos@Home</div>
+        <div><a href="video-client-release.apk" download>APK</a></div>
+      </core-toolbar>
+      <div id="videos"></div>
+    </core-header-panel>
   </body>
 </html>

@@ -61,6 +61,6 @@
 
 (deftemplate videos-template "templates/videos.html"
   [videos]
-  [:div] (clone-for [video videos]
-                    [:div] (content (video-template video))))
+  [:div#videos] (clone-for [video videos]
+                           [:div] (content (video-template video))))
 
