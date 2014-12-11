@@ -16,7 +16,15 @@ JAR=$DIR/target/videos@home.jar
 # Build the jar
 if [ ! -f $JAR ]; then
   pushd $DIR
-  lein do clean, uberjar
+
+  # Grab the latest android app
+  if [ -f "../video-client/build/outputs/apk/video-client-release.apk" ] ; then
+    rsync -a ../video-client/build/outputs/apk/video-client-release.apk resources/public
+  fi
+
+  # Build the server app
+  lein build
+
   popd
 fi
 
