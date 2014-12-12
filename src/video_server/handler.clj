@@ -12,7 +12,7 @@
   (:require [clojure.data.json :as json]
             [compojure.core :refer [GET defroutes]]
             [compojure.handler :refer [site]]
-            [compojure.route :refer [resources not-found]]
+            [compojure.route :refer [not-found resources]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.util.response :refer [response]]
             [video-server.android :refer [android-version]]
@@ -34,7 +34,7 @@
     (response (index-template videos))))
 
 (defn videos-api
-  "Responds with a list of available vidoes."
+  "Responds with a list of available videos."
   []
   (json-response (current-videos)))
 
