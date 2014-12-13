@@ -26,8 +26,19 @@
 
 (def discovery-port 8394)
 
-(defn default-folder []
-  (str (System/getProperty "user.home") "/Movies"))
+(defn exists?
+  "Returns the canonical path if the directory exists."
+  [home dir]
+  (let [path (io/file home dir)]
+    (when (.isDirectory path) (.getCanonicalPath path))))
+
+(defn default-folder
+  "Returns the default folder from which to serve videos by searching
+  for commonly named directories in the user home directory."
+  []
+  (let [home (System/getProperty "user.home")]
+    (or (some (partial exists? home) ["Videos" "Movies" "My Videos"])
+        (.getCanonicalPath (io/file home "Videos")))))
 
 (defn host-url
   "Returns a url for this web server based on the IP address and web port."
