@@ -25,6 +25,7 @@
       (json/read-str (:out exec) :key-fn keyword))))
 
 (defn detect-interlace
+  "Performs interlace detection, returning true if present."
   [input]
   (let [output (:err (exec "ffmpeg" "-y" "-ss" 300 "-i" input "-f" "matroska"
                            "-t" 120 "-an" "-sn" "-vf" "idet" "/dev/null"))]
@@ -42,6 +43,7 @@
       (when-not (.endsWith crop ":0:0") crop))))
 
 (defn deinterlace
+  "Returns an updated spec with option to deinterlace the video."
   [spec]
   (merge spec
          (when (detect-interlace (:input spec))
@@ -114,6 +116,7 @@
         (first audio)))) ; TODO: check language
 
 (defn audio-codec-options
+  "Returns the encoding options for the specified codec."
   [index codec]
   (case codec
     "aac" ["-q:a" 100 (str "-ac:a:" index) 2 "-strict" "-2"]
@@ -121,6 +124,7 @@
     nil))
 
 (defn audio-title-options
+  "Returns the encoding options for adding a title to an audio track."
   [index codec lang chans]
   [(str "-metadata:s:a:" index) (str "title=" (audio-title codec lang chans))])
 
@@ -151,6 +155,12 @@
     (for [stream subtitle-streams]
       ["-map" (str "0:" (:index stream)) "-c:s" "copy"])))
 
+(defn format-options
+  "Returns the ffmpeg options for the type of output file."
+  [{:keys [format]}]
+  (when (#{:m4v :mp4} format)
+    ["-movflags" "faststart"]))
+
 (defn encode-cmd
   "Returns the ffmpeg command for encoding a video."
   [spec]
@@ -160,6 +170,7 @@
    (audio-options spec)
    (subtitle-options spec)
    "-f" (ffmpeg-format (:format spec))
-   "-movflags" "+faststart"
+   (format-options spec)
+   "-threads" 0
    (:output spec)])
 
