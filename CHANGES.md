@@ -1,5 +1,9 @@
 # Videos@Home Changelog
 
+## Version 0.2.2
+
+* Fixed processing around subtitles
+
 ## Version 0.2.1
 
 * Added search to find best default folder
