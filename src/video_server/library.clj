@@ -42,12 +42,16 @@
     (string? data) (video-key (title-info data))
     (instance? File data) (video-key (file-base data))))
 
+(defn video-for-key
+  "Returns the video for the specified video key."
+  [folder key]
+  (get-in @library [folder key]))
+
 (defn video-for-file
-  "Returns the video for the given File, or nil if the file is not in
-  the library."
+  "Returns the video for the given File."
   [folder file]
   (or (get-in @library [folder (files file)])
-      (get-in @library [folder (video-key file)])))
+      (video-for-key folder (video-key file))))
 
 (defn add-video
   "Returns true if a new video was added, false if it was added to an

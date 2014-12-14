@@ -13,7 +13,7 @@
             [clojure.core.async :refer [chan go <! >!]]
             [video-server.file :refer [subtitle? video?]]
             [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video]]
-            [video-server.library :refer [video-for-file]])
+            [video-server.library :refer [video-key video-for-file video-for-key]])
   (:import (java.io File)))
 
 (def process-chan (chan 100))
@@ -21,8 +21,8 @@
 (defn process-file
   "Enqueues a file or video for processing."
   [folder file-or-video]
-  (log/trace "queueing" (if (instance? File file-or-video) (str file-or-video) (:title file-or-video)))
-  (go (>! process-chan [folder file-or-video])))
+  (log/debug "queueing" (str file-or-video))
+  (go (>! process-chan [folder (video-key file-or-video)])))
 
 (defn can-download?
   "Returns whether the file is small enough for downloading."
@@ -40,7 +40,7 @@
   [video]
   (not (and (can-download? video) (can-cast? video))))
 
-(defn should-encode-subtitle?
+(defn should-encode-subtitles?
   "Returns whether the subtitles need to be transcoded for casting."
   [video]
   (and (not-any? #(= (:mimetype %) "text/vtt") (:subtitles video))
@@ -52,29 +52,16 @@
   (log/debug "processing video" (:title video))
   (when (should-encode-video? video)
     (encode-video folder video fmt size))
-  (when (should-encode-subtitle? video)
+  (when (should-encode-subtitles? video)
     (encode-subtitles folder video)))
-
-(defn process-subtitle
-  "Conditionally encodes the subtitle file."
-  [folder file]
-  (log/debug "processing subtitle" (str file))
-  (let [video (video-for-file folder file)]
-    (when (should-encode-subtitle? video)
-      (encode-subtitle file))))
 
 (defn start-processing
   "Processes enqueued files."
   [encode? fmt size]
   (log/debug "starting file processing")
   (go (while true
-        (let [[folder file-or-video] (<! process-chan)]
-          (log/trace "processing" (str file-or-video))
-          (try (when encode?
-                 (if (instance? File file-or-video)
-                   (cond
-                     (video? file-or-video) (process-video folder (video-for-file folder file-or-video) fmt size)
-                     (subtitle? file-or-video) (process-subtitle folder file-or-video))
-                   (process-video folder file-or-video fmt size)))
-               (catch Exception e (log/error e "error processing video" (str file-or-video))))))))
+        (let [[folder key] (<! process-chan)]
+          (when-let [video (video-for-key folder key)]
+            (try (when encode? (process-video folder video fmt size))
+                 (catch Exception e (log/error e "error processing video" (:title video)))))))))
 
