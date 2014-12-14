@@ -126,14 +126,15 @@
   [folder event filename]
   (when ((some-fn video? subtitle? image?) filename)
     (let [file (io/file filename)]
-      (try (case event
-             :create (if (stable? file)
-                       (add-file folder file)
-                       (add-pending-file file))
-             :modify (add-pending-file file)
-             :delete (remove-file folder file)
-             nil)
-           (catch Exception e (log/error e "error in file-event-callback"))))))
+      (when (.isFile file)
+        (try (case event
+               :create (if (stable? file)
+                         (add-file folder file)
+                         (add-pending-file file))
+               :modify (add-pending-file file)
+               :delete (remove-file folder file)
+               nil)
+             (catch Exception e (log/error e "error in file-event-callback")))))))
 
 (defn start-watcher
   "Watches for file system changes in the video folder."
