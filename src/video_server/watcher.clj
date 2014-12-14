@@ -35,16 +35,17 @@
 
 (defn stable?
   "Returns true if the file has has content and has not been modified
-  for at least thirty seconds."
+  for a reasonable duration."
   [file]
-  (and (pos? (.length file))
+  (and (.isFile file)
+       (pos? (.length file))
        (< (.lastModified file) (- (System/currentTimeMillis) stable-time))))
 
 (defn add-subtitles
   "Performs the initial scan for subtitles."
   [folder video]
   (doseq [file (.listFiles (:file folder) (subtitle-filter (:title video)))]
-    (log/info "adding subtitles" (str file))
+    (log/info "adding subtitle" (str file))
     (add-subtitle folder file video)))
 
 (defn add-images
@@ -83,7 +84,8 @@
       (add-images folder video))))
 
 (defn add-file
-  "Adds a newly discovered file to the library."
+  "Adds a newly discovered file to the library and queues it for
+  processing."
   [folder file]
   (log/info "adding file" (str file))
   (when-let [video (video-for-file folder file)]
@@ -91,7 +93,8 @@
   (cond
     (video? file) (add-video folder file)
     (subtitle? file) (add-subtitle folder file)
-    (image? file) (add-image folder file)))
+    (image? file) (add-image folder file))
+  (process-file folder file))
 
 (defn check-pending-files
   "Checks the pending files and adds the stable ones to the library."
@@ -100,10 +103,9 @@
     #_(log/trace "checking pending files")
     (doseq [file @pending-files]
       (try (when (stable? file)
-             (dosync (alter pending-files disj file))
-             (when (.exists file)
-               (add-file folder file)
-               (process-file folder file)))
+             (add-file folder file))
+           (when (or (stable? file) (not (.exists file)))
+             (dosync (alter pending-files disj file)))
            (catch Exception e (log/error e "adding pending file" (str file)))))))
 
 (defn add-pending-file
