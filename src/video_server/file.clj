@@ -62,6 +62,11 @@
       (str (subs filename 0 pos) ext)
       filename)))
 
+(defn file-type
+  "Returns the file extension as a keyword."
+  [file]
+  (keyword (subs (file-ext file) 1)))
+
 (defn clean-title
   "Returns the video title based on the filename."
   [base]

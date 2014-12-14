@@ -13,7 +13,7 @@
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.ffmpeg :refer [encode-cmd filter-video video-info]]
-            [video-server.file :refer [replace-ext video-filename]]
+            [video-server.file :refer [file-type replace-ext video-filename]]
             [video-server.format :refer [video-dimension]]
             [video-server.util :refer :all]
             [video-server.video :refer [audio-streams subtitle-streams video-stream]]))
@@ -110,8 +110,8 @@
 (defn encode-subtitle
   "Encodes a single subtitle file into WebVTT format."
   [file]
-  (let [filename (.getCanonicalPath file)]
-    (when-not (.endsWith filename ".vtt")
+  (when-not (= (file-type file) :vtt)
+    (let [filename (.getCanonicalPath file)]
       (log/info "encoding subtitle" filename)
       (let [cmd ["ffmpeg" "-i" filename (replace-ext filename ".vtt")]]
         (log/debug "executing" (str/join " " cmd))
@@ -121,5 +121,5 @@
   "Encodes the subtitle files for a particular video."
   [folder video]
   (doseq [subtitle (:subtitles video)]
-    (encode-subtitle (io/file folder (:filename subtitle)))))
+    (encode-subtitle (io/file (:file folder) (:filename subtitle)))))
 
