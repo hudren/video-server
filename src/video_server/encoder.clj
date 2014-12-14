@@ -93,7 +93,7 @@
 (defn encode-video
   "Transcodes the video suitable for downloading and casting."
   [folder video fmt size]
-  (log/info "encoding video" (:title video))
+  (log/info "encoding video" (str video))
   (when-let [spec (encode-spec folder video fmt size)]
     (let [spec (filter-video spec)
           spec (output-options spec)

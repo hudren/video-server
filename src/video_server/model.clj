@@ -11,17 +11,33 @@
 (ns video-server.model
   (:import (java.lang.reflect Modifier)))
 
-(defrecord Folder [name file url])
+;; A folder containing videos to be served
+(defrecord Folder [name file url]
+  Object
+  (toString [_] name))
 
-(defrecord VideoKey [title season episode])
+;; Unique key indentifying a video
+(defrecord VideoKey [title season episode]
+  Object
+  (toString [_] (str title (when (or season episode)
+                             (str " - Season " season " Episode " episode)))))
 
+;; External file containing video, audio and other tracks
 (defrecord Container [filename language size bitrate width height dimension
-                      video audio modified url mimetype])
+                      video audio modified url mimetype]
+  Object
+  (toString [_] filename))
 
-(defrecord Subtitle [title language filename url mimetype])
+;; External file containing subtitles
+(defrecord Subtitle [title language filename url mimetype]
+  Object
+  (toString [_] title))
 
+;; Video containing one or more containers
 (defrecord Video [title duration season episode episode-title
-                  containers subtitles poster])
+                  containers subtitles poster]
+  Object
+  (toString [_] title))
 
 (defn get-record-fields
   "Returns the record fields as a vector of keywords."

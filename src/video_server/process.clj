@@ -49,7 +49,7 @@
 (defn process-video
   "Conditionally encodes the video and/or subtitles."
   [folder video fmt size]
-  (log/debug "processing video" (:title video))
+  (log/debug "processing video" (str video))
   (when (should-encode-video? video)
     (encode-video folder video fmt size))
   (when (should-encode-subtitles? video)
@@ -63,5 +63,5 @@
         (let [[folder key] (<! process-chan)]
           (when-let [video (video-for-key folder key)]
             (try (when encode? (process-video folder video fmt size))
-                 (catch Exception e (log/error e "error processing video" (:title video)))))))))
+                 (catch Exception e (log/error e "error processing video" (str video)))))))))
 
