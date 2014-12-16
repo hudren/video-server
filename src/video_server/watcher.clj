@@ -111,7 +111,7 @@
 (defn add-pending-file
   "Adds a new or changing file to the list of pending files."
   [file]
-  (when-not (contains? @pending-files file)
+  (when (and (.isFile file) (not (contains? @pending-files file)))
     (log/info "watching file" (str file))
     (dosync (alter pending-files conj file))))
 
@@ -126,15 +126,14 @@
   [folder event filename]
   (when ((some-fn video? subtitle? image?) filename)
     (let [file (io/file filename)]
-      (when (.isFile file)
-        (try (case event
-               :create (if (stable? file)
-                         (add-file folder file)
-                         (add-pending-file file))
-               :modify (add-pending-file file)
-               :delete (remove-file folder file)
-               nil)
-             (catch Exception e (log/error e "error in file-event-callback")))))))
+      (try (case event
+             :create (if (stable? file)
+                       (add-file folder file)
+                       (add-pending-file file))
+             :modify (add-pending-file file)
+             :delete (remove-file folder file)
+             nil)
+           (catch Exception e (log/error e "error in file-event-callback"))))))
 
 (defn start-watcher
   "Watches for file system changes in the video folder."
