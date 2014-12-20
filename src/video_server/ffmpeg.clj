@@ -96,24 +96,12 @@
     (when-not (str/blank? args)
       ["-vf" args])))
 
-(defn audio-channels
-  "Returns the required number of audio channels for the codec."
-  [codec]
-  (if (= codec "aac") 2 5))
-
-(defn audio-stream
-  "Returns the audio stream for the given codec, or nil."
-  [audio-streams codec]
-  (first (filter #(= codec (:codec_name %)) audio-streams)))
-
 (defn audio-to-encode
   "Returns the best audio stream to use for the target codec."
   [audio-streams codec]
-  (let [chans (audio-channels codec)
-        audio (reverse (sort-by #(parse-long (:bit_rate %)) audio-streams))]
-    (or (audio-stream audio codec)
-        (first (filter #(= chans (:channels %)) audio))
-        (first audio)))) ; TODO: check language
+  (let [audio (reverse (sort-by #(parse-long (:bit_rate %)) audio-streams))]
+    (or (first (filter #(= (-> % :disposition :default) 1) audio))
+        (first audio))))
 
 (defn audio-codec-options
   "Returns the encoding options for the specified codec."
