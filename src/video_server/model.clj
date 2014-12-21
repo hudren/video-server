@@ -35,7 +35,7 @@
 
 ;; Video containing one or more containers
 (defrecord Video [title duration season episode episode-title
-                  containers subtitles poster]
+                  containers subtitles poster info]
   Object
   (toString [_] title))
 

@@ -13,7 +13,8 @@
             [clojure.core.async :refer [chan go <! >!]]
             [video-server.file :refer [subtitle? video?]]
             [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video]]
-            [video-server.library :refer [video-key video-for-file video-for-key]])
+            [video-server.library :refer [add-info video-key video-for-file video-for-key]]
+            [video-server.metadata :refer [retrieve-metadata]])
   (:import (java.io File)))
 
 (def process-chan (chan 100))
@@ -57,11 +58,14 @@
 
 (defn start-processing
   "Processes enqueued files."
-  [encode? fmt size]
+  [encode? metadata? fmt size]
   (log/debug "starting file processing")
   (go (while true
         (let [[folder key] (<! process-chan)]
           (when-let [video (video-for-key folder key)]
-            (try (when encode? (process-video folder video fmt size))
+            (try (when (and metadata? (not (:info video)))
+                   (when-let [info (retrieve-metadata folder video)]
+                     (add-info folder video info)))
+                 (when encode? (process-video folder video fmt size))
                  (catch Exception e (log/error e "error processing video" (str video)))))))))
 

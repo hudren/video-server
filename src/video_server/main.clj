@@ -73,6 +73,9 @@
    ["-e" "--encode BOOLEAN" "Automatically transcode videos and subtitles"
     :default "true"
     :parse-fn #(Boolean/parseBoolean %)]
+   ["-m" "--metadata BOOLEAN" "Automatically retreive metadata from the Internet"
+    :default "true"
+    :parse-fn #(Boolean/parseBoolean %)]
    ["-f" "--format EXT" "Output format: mkv, mp4, m4v"
     :default "mkv"
     :parse-fn str/lower-case
@@ -108,7 +111,7 @@
         size (-> (:size options) str keyword)
         url (host-url (:port options))
         folder (->Folder "videos" (io/file dir) (str url "/" "videos"))]
-    (start-processing (:encode options) fmt size)
+    (start-processing (:encode options) (:metadata options) fmt size)
     (start-watcher folder)
     (let [server (start-server url (:port options) app folder)]
       (start-discovery url discovery-port)

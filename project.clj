@@ -1,4 +1,4 @@
-(defproject com.hudren.homevideo/video-server "0.2.4"
+(defproject com.hudren.homevideo/video-server "0.3-SNAPSHOT"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -11,6 +11,7 @@
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [trptcolin/versioneer "0.1.1"]
                  [net.dongliu/apk-parser "1.7.1"]
+                 [clj-http "1.0.1"]
                  [org.eclipse.jetty/jetty-server "9.2.3.v20140905"]
                  [org.eclipse.jetty/jetty-servlet "9.2.3.v20140905"]
                  [org.eclipse.jetty/jetty-servlets "9.2.3.v20140905"]

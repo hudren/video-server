@@ -108,6 +108,14 @@
       (alter library assoc-in [folder key :subtitles] subtitles)
       (alter files dissoc file))))
 
+(defn add-info
+  "Returns true if the metadata was added to an existing video."
+  [folder video info]
+  (log/debug "adding metadata for" (:title video))
+  (dosync
+    (alter library assoc-in [folder (video-key video) :info] info)
+    true))
+
 (defn add-image
   "Returns true if the image was added to an existing video."
   ([folder file]

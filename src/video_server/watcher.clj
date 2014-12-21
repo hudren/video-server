@@ -13,7 +13,8 @@
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
             [video-server.file :refer [image-filter image? movie-filter subtitle-filter subtitle? video?]]
-            [video-server.library :as library :refer [add-image add-subtitle current-videos remove-all video-for-file]]
+            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos remove-all video-for-file]]
+            [video-server.metadata :refer [read-metadata]]
             [video-server.process :refer [process-file]]
             [video-server.video :refer [modified]]))
 
@@ -41,6 +42,12 @@
        (pos? (.length file))
        (< (.lastModified file) (- (System/currentTimeMillis) stable-time))))
 
+(defn add-metadata
+  "Reads existing metadata for the given video."
+  [folder video]
+  (when-let [info (read-metadata folder video)]
+    (add-info folder video info)))
+
 (defn add-subtitles
   "Performs the initial scan for subtitles."
   [folder video]
@@ -63,6 +70,7 @@
       (log/info "adding file" (str file))
       (library/add-video folder file))
     (doseq [video (sort-by modified (current-videos))]
+      (add-metadata folder video)
       (add-subtitles folder video)
       (add-images folder video)
       (process-file folder video))))
@@ -80,6 +88,7 @@
   [folder file]
   (when (library/add-video folder file)
     (let [video (video-for-file folder file)]
+      (add-metadata folder video)
       (add-subtitles folder video)
       (add-images folder video))))
 
