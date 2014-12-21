@@ -78,7 +78,7 @@
                 :height height
                 :dimension (video-dimension width height)
                 :video (video-desc (:codec_name video))
-                :audio (str/join ", " (map #(audio-desc (:codec_name %)) audio))
+                :audio (str/join ", " (distinct (map #(audio-desc (:codec_name %)) audio)))
                 :modified (.lastModified file)
                 :url url
                 :mimetype (mimetype file)}]
