@@ -44,7 +44,7 @@
 (defn- metadata-file
   "Returns the File for the video metadata."
   [folder video]
-  (io/file (:file folder) (str (:title video) ".info")))
+  (io/file (:file folder) (str (:title video) ".json")))
 
 (defn read-metadata
   "Reads the stored metadata for the video."
