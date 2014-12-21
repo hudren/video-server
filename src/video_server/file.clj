@@ -67,6 +67,13 @@
   [file]
   (keyword (subs (file-ext file) 1)))
 
+(defn file-subtype
+  "Returns the file subtype as a keyword."
+  [file]
+  (let [parts (str/split (.getName file) #"\.")]
+    (when (> (count parts) 2)
+      (keyword (second (reverse parts))))))
+
 (defn clean-title
   "Returns the video title based on the filename."
   [base]

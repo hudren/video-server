@@ -13,7 +13,7 @@
             [clojure.tools.logging :as log]
             [video-server.encoder :as encoder]
             [video-server.ffmpeg :refer [video-info]]
-            [video-server.file :refer [file-base image? mimetype subtitle? title-info video?]]
+            [video-server.file :refer [file-base file-subtype image? mimetype subtitle? title-info video?]]
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
             [video-server.video :refer [encoded-url video-container video-record]])
@@ -116,6 +116,11 @@
     (alter library assoc-in [folder (video-key video) :info] info)
     true))
 
+(defn- image-type
+  "Returns the image type, :thumb or :poster."
+  [file]
+  (or (#{:thumb} (file-subtype file)) :poster))
+
 (defn add-image
   "Returns true if the image was added to an existing video."
   ([folder file]
@@ -125,7 +130,7 @@
    (log/debug "adding image" (str file))
    (let [url (encoded-url (:url folder) file)]
      (dosync
-       (alter library assoc-in [folder (video-key video) :poster] url)
+       (alter library assoc-in [folder (video-key video) (image-type file)] url)
        (alter files assoc file (video-key video))
        true))))
 
@@ -133,11 +138,12 @@
   "Removes an image file from a video."
   [folder file video]
   (let [key (video-key video)
-        url (encoded-url (:url folder) file)]
+        url (encoded-url (:url folder) file)
+        image (image-type file)]
     (log/debug "removing image" (str file))
     (dosync
-      (when (= url (get-in @library [folder key :poster]))
-        (alter library assoc-in [folder key :poster] nil))
+      (when (= url (get-in @library [folder key image]))
+        (alter library assoc-in [folder key image] nil))
       (alter files dissoc file))))
 
 (defn remove-file

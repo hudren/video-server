@@ -12,7 +12,7 @@
   (:require [clojure.tools.logging :as log]
             [clojure.core.async :refer [chan go <! >!]]
             [video-server.file :refer [subtitle? video?]]
-            [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video]]
+            [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video extract-thumbnail]]
             [video-server.library :refer [add-info video-key video-for-file video-for-key]]
             [video-server.metadata :refer [retrieve-metadata]])
   (:import (java.io File)))
@@ -63,9 +63,12 @@
   (go (while true
         (let [[folder key] (<! process-chan)]
           (when-let [video (video-for-key folder key)]
-            (try (when (and metadata? (not (:info video)))
-                   (when-let [info (retrieve-metadata folder video)]
-                     (add-info folder video info)))
+            (try (when metadata?
+                   (when-not (:info video)
+                     (when-let [info (retrieve-metadata folder video)]
+                       (add-info folder video info)))
+                   (when-not (:thumb video)
+                     (extract-thumbnail folder video)))
                  (when encode? (process-video folder video fmt size))
                  (catch Exception e (log/error e "error processing video" (str video)))))))))
 

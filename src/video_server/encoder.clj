@@ -123,3 +123,26 @@
   (doseq [subtitle (:subtitles video)]
     (encode-subtitle (io/file (:file folder) (:filename subtitle)))))
 
+(defn mkv-info
+  "Returns the mkv info by calling mkvmerge."
+  [file]
+  (let [exec (exec ["mkvmerge" "-i" (.getCanonicalPath file)])]
+    (when (zero? (:exit exec))
+      (:out exec))))
+
+(defn mkv-extract
+  "Extracts the embedded attachment into a separate file."
+  [file id output]
+  (exec ["mkvextract" "attachments" (.getCanonicalPath file) (str id ":" (.getCanonicalPath output))]))
+
+(defn extract-thumbnail
+  "Extracts the thumbnail image from the matroska video."
+  [folder video]
+  (when-let [container (container-to-encode (:containers video))]
+    (let [file (io/file (:file folder) (:filename container))]
+      (when (= (file-type file) :mkv)
+        (when-let [info (mkv-info file)]
+          (when-let [id (second (re-find #"Attachment ID (\d+):.*file name 'cover\.jpg'" info))]
+            (let [thumb (io/file (:file folder) (str (:title video) ".thumb.jpg"))]
+              (mkv-extract file id thumb))))))))
+
