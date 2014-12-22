@@ -18,13 +18,14 @@
 (defn apk-version
   "Returns the version information for the specified apk file."
   [file]
-  (let [apk (-> file (ApkParser.) .getApkMeta)]
-    {:label (.getLabel apk)
-     :package-name (.getPackageName apk)
-     :version-code (.getVersionCode apk)
-     :version-name (.getVersionName apk)
-     :min-sdk-version (.getMinSdkVersion apk)
-     :filename (apk-filename)}))
+  (with-open [parser (ApkParser. file)]
+    (let [apk (.getApkMeta parser)]
+      {:label (.getLabel apk)
+       :package-name (.getPackageName apk)
+       :version-code (.getVersionCode apk)
+       :version-name (.getVersionName apk)
+       :min-sdk-version (.getMinSdkVersion apk)
+       :filename (apk-filename)})))
 
 (defn read-apk-version
   "Attemps to read the apk version from the resource found on the
