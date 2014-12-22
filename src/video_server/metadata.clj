@@ -72,7 +72,7 @@
         (.write w contents)))))
 
 (defn title-parts
-  "Exracts the year from the title to aid in metadata lookup."
+  "Extracts the year from the title to aid in metadata lookup."
   [video]
   (let [title (:title video)]
     (if-let [year (second (re-find #" \((\d{4})\)$" title))]
