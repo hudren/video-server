@@ -18,8 +18,8 @@
             [video-server.process :refer [process-file]]
             [video-server.video :refer [modified]]))
 
-(def ^:const stable-time 30000)
-(def ^:const check-time 15000)
+(def ^:const stable-time 60000)
+(def ^:const check-time 10000)
 
 ;; Set of changing files
 (defonce pending-files (ref #{}))
@@ -40,7 +40,8 @@
   [file]
   (and (.isFile file)
        (pos? (.length file))
-       (< (.lastModified file) (- (System/currentTimeMillis) stable-time))))
+       (or (image? file)
+           (< (.lastModified file) (- (System/currentTimeMillis) stable-time)))))
 
 (defn add-metadata
   "Reads existing metadata for the given video."
@@ -67,7 +68,7 @@
   [folder]
   (let [files (.listFiles (:file folder) (movie-filter))]
     (doseq [file (filter stable? files)]
-      (log/info "adding file" (str file))
+      (log/info "adding video" (str file))
       (library/add-video folder file))
     (doseq [video (sort-by modified (current-videos))]
       (add-metadata folder video)
