@@ -14,16 +14,23 @@
             [video-server.file :refer [subtitle? video?]]
             [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video extract-thumbnail]]
             [video-server.library :refer [add-info video-key video-for-file video-for-key]]
-            [video-server.metadata :refer [retrieve-metadata]])
-  (:import (java.io File)))
+            [video-server.metadata :refer [retrieve-metadata]]))
 
 (def process-chan (chan 100))
+
+(defn should-process-file?
+  "Determines whether the file or video should be queued for
+  processing."
+  [file-or-video]
+  (or (record? file-or-video)
+      (some-fn #{video? subtitle?} file-or-video)))
 
 (defn process-file
   "Enqueues a file or video for processing."
   [folder file-or-video]
-  (log/debug "queueing" (str file-or-video))
-  (go (>! process-chan [folder (video-key file-or-video)])))
+  (when (should-process-file? file-or-video)
+    (log/debug "queueing" (str file-or-video))
+    (go (>! process-chan [folder (video-key file-or-video)]))))
 
 (defn can-download?
   "Returns whether the file is small enough for downloading."
