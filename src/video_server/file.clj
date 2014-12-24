@@ -132,7 +132,7 @@
   "Returns whether the file or filename ends with one of the given
   file extensions."
   [file exts]
-  (let [filename (if (string? file) file (.getName file))]
+  (let [filename (if (instance? File file) (.getName file) file)]
     (ends-with? filename exts)))
 
 (defn video?
