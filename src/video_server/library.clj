@@ -34,6 +34,11 @@
     (ref-set library {})
     (ref-set files {})))
 
+(defn has-file?
+  "Returns whether the file belongs to the library."
+  [folder file]
+  (contains? @files file))
+
 (defn video-key
   "Returns the key for the given Video, info, or title string."
   [data]

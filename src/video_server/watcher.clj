@@ -13,7 +13,7 @@
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
             [video-server.file :refer [image-filter image? movie-filter subtitle-filter subtitle? video?]]
-            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos remove-all video-for-file]]
+            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos has-file? remove-all video-for-file]]
             [video-server.metadata :refer [read-metadata]]
             [video-server.process :refer [process-file]]
             [video-server.video :refer [modified]]))
@@ -118,18 +118,20 @@
              (dosync (alter pending-files disj file)))
            (catch Exception e (log/error e "adding pending file" (str file)))))))
 
-(defn add-pending-file
-  "Adds a new or changing file to the list of pending files."
-  [file]
-  (when (and (.isFile file) (not (contains? @pending-files file)))
-    (log/info "watching file" (str file))
-    (dosync (alter pending-files conj file))))
-
 (defn remove-file
   "Removes the file from the video library."
   [folder file]
-  (log/info "removing file" (str file))
-  (library/remove-file folder file))
+  (when (has-file? folder file)
+    (log/info "removing file" (str file))
+    (library/remove-file folder file)))
+
+(defn add-pending-file
+  "Adds a new or changing file to the list of pending files."
+  [folder file]
+  (when (and (.isFile file) (not (contains? @pending-files file)))
+    (log/info "watching file" (str file))
+    (remove-file folder file)
+    (dosync (alter pending-files conj file))))
 
 (defn file-event-callback
   "Processes the file system events."
@@ -139,8 +141,8 @@
       (try (case event
              :create (if (stable? file)
                        (add-file folder file)
-                       (add-pending-file file))
-             :modify (add-pending-file file)
+                       (add-pending-file folder file))
+             :modify (add-pending-file folder file)
              :delete (remove-file folder file)
              nil)
            (catch Exception e (log/error e "error in file-event-callback"))))))
