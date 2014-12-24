@@ -36,6 +36,8 @@
   :aot [video-server.main]
   :uberjar-name "videos@home.jar"
 
+  :repl-options {:init-ns user}
+
   :profiles {:dev {:source-paths ["dev"]}}
 
   :aliases {"build" ["do" "clean," "bower" "install," "uberjar"]
