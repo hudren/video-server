@@ -48,10 +48,12 @@
   [container]
   (if (can-play-from-link? container) "Play" "Download"))
 
-(defsnippet video-template "templates/video.html" [:div]
+(defsnippet video-template "templates/video.html" [:div.video]
   [video]
-  [:h2] (content (:title video))
-  [:div :> :p] (content (format-duration (:duration video)))
+  [:div.poster :img] (set-attr :src (:poster video))
+  [:span.title] (content (:title video))
+  [:span.rated] (content (or (-> video :info :rated) "NR"))
+  [:span.duration] (content (-> video :info :runtime))
   [:ul :li] (clone-for [container (:containers video)]
                        [:p :span] (content (container-desc container))
                        [:a] (set-attr :href (:url container))

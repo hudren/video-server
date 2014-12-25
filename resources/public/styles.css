@@ -33,6 +33,32 @@ div.actions {
   margin-top: 2em;
   text-align: center;
 }
-hr {
-  color: lightgray;
+div.video {
+  min-height: 7em;
+  border-bottom: 1px solid lightgray;
+}
+div.video hr {
+  clear: left;
+  margin-bottom: 0;
+}
+div.poster {
+  width: 64px;
+  max-height: 64px;
+  clear: both;
+  float: left;
+}
+div.poster img {
+  max-height: 100%;
+  max-width: 100%;
+}
+div.desc {
+  margin-left: 80px;
+}
+.title {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+.rated, .duration {
+  font-size: 0.9em;
+  margin-left: 1em;
 }
