@@ -28,7 +28,8 @@
 (defn- multi
   "Returns the comma separated values as a sequence."
   [s]
-  (map str/trim (str/split s #",")))
+  (when-not (str/blank? s)
+    (map str/trim (str/split s #","))))
 
 (defn info
   "Extracts fields for storage from the metadata"
@@ -39,7 +40,7 @@
                    :genres (multi (:genre omdb))
                    :actors (multi (:actors omdb))
                    :languages (multi (:language omdb))})]
-    (into {} (remove #(= (val %) "N/A") md))))
+    (into {} (remove (comp nil? second) md))))
 
 (defn- metadata-file
   "Returns the File for the video metadata."
@@ -86,7 +87,7 @@
     (when-let [omdb (omdb-metadata title year)]
       (let [info (info omdb)]
         (save-metadata folder video info)
-        (when-not (:poster video)
+        (when (and (not (:poster video)) (:poster omdb))
           (save-poster folder video (:poster omdb)))
         info))))
 

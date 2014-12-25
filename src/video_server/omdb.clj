@@ -19,7 +19,9 @@
   [id]
   (let [resp (client/get (str "http://www.omdbapi.com/?plot=full&r=json&i=" id))]
     (when (= (:status resp) 200)
-      (json/read-str (:body resp) :key-fn (comp keyword str/lower-case)))))
+      (json/read-str (:body resp)
+                     :key-fn (comp keyword str/lower-case)
+                     :value-fn #(if-not (= %2 "N/A") %2)))))
 
 (defn retrieve-title
   "Fetches the metadata for the given title and year."
@@ -27,7 +29,9 @@
   (let [resp (client/get (str "http://www.omdbapi.com/?plot=full&r=json&t=" (URLEncoder/encode title)
                               (when year (str "&y=" year))))]
     (when (= (:status resp) 200)
-      (json/read-str (:body resp) :key-fn (comp keyword str/lower-case)))))
+      (json/read-str (:body resp)
+                     :key-fn (comp keyword str/lower-case)
+                     :value-fn #(if-not (= %2 "N/A") %2)))))
 
 (defn omdb-metadata
   "Queries for metadata related to the given title and year."

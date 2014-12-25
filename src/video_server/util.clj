@@ -26,12 +26,14 @@
 (defn parse-ints
   "Returns the integers found within the string."
   [string]
-  (map #(Integer/parseInt %) (re-seq #"\d+" string)))
+  (when-not (str/blank? string)
+    (map #(Integer/parseInt %) (re-seq #"\d+" string))))
 
 (defn find-ints
   "Returns the integers targeted by the regex pattern."
   [pattern string]
-  (->> (re-find pattern string) (drop 1) (map #(Integer/parseInt %))))
+  (when-not (str/blank? string)
+    (->> (re-find pattern string) (drop 1) (map #(Integer/parseInt %)))))
 
 (defn exec
   "Flattens and sanitizes the arguments before executing the shell
