@@ -39,7 +39,7 @@ div.video {
   border-bottom: 1px solid rgba(0,0,0,0.12);
 }
 div.poster {
-  max-width: 4em;
+  width: 4em;
   height: 6em;
   clear: both;
   float: left;
@@ -47,21 +47,29 @@ div.poster {
 div.poster img {
   max-height: 100%;
   max-width: 100%;
+  margin: 0 auto;
 }
 div.desc {
-  margin-left: 6em;
+  margin-left: 5em;
+}
+div.desc ul {
+  list-style: none;
+  padding-left: 0;
+}
+div.desc li {
+  color: rgba(0,0,0,0.54);
 }
 .title {
-  font-size: 1.5em;
+  font-size: 1.4em;
   font-weight: bold;
 }
 .rated {
   color: rgba(0,0,0,0.54);
   font-size: 0.9em;
-  margin-left: 1em;
+  margin-left: 1.5em;
 }
 .duration {
   color: rgba(0,0,0,0.54);
   font-size: 0.9em;
-  margin-left: 0.3em;
+  margin-left: 0.7em;
 }
