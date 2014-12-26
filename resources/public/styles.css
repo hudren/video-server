@@ -1,8 +1,9 @@
 html,body {
   height: 100%;
   margin: 0;
-  background-color: #F8F8F8;
-  font-family: 'RobotoDraft', sans-serif;
+  color: rgba(0,0,0,0.87);
+  background-color: #FAFAFA;
+  font-family: RobotoDraft, 'Helvetica Neue', Helvetica, sans-serif;
 }
 core-header-panel {
   height: 100%;
@@ -35,15 +36,11 @@ div.actions {
 }
 div.video {
   min-height: 7em;
-  border-bottom: 1px solid lightgray;
-}
-div.video hr {
-  clear: left;
-  margin-bottom: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.12);
 }
 div.poster {
-  width: 64px;
-  max-height: 64px;
+  max-width: 4em;
+  height: 6em;
   clear: both;
   float: left;
 }
@@ -52,13 +49,19 @@ div.poster img {
   max-width: 100%;
 }
 div.desc {
-  margin-left: 80px;
+  margin-left: 6em;
 }
 .title {
   font-size: 1.5em;
   font-weight: bold;
 }
-.rated, .duration {
+.rated {
+  color: rgba(0,0,0,0.54);
   font-size: 0.9em;
   margin-left: 1em;
+}
+.duration {
+  color: rgba(0,0,0,0.54);
+  font-size: 0.9em;
+  margin-left: 0.3em;
 }
