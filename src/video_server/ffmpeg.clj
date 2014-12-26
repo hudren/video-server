@@ -22,7 +22,7 @@
   (let [exec (exec "ffprobe" "-v" "quiet" "-print_format" "json"
                    "-show_format" "-show_streams" (.getCanonicalPath file))]
     (when (zero? (:exit exec))
-      (json/read-str (:out exec) :key-fn keyword))))
+      (json/read-str (:out exec) :key-fn (comp keyword str/lower-case)))))
 
 (defn detect-interlace
   "Performs interlace detection, returning true if present."
