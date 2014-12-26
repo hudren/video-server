@@ -98,7 +98,7 @@
   processing."
   [folder file]
   (log/info "adding file" (str file))
-  (when-let [video (video-for-file folder file)]
+  (when (has-file? folder file)
     (library/remove-file folder file))
   (cond
     (video? file) (add-video folder file)

@@ -23,7 +23,7 @@
   processing."
   [file-or-video]
   (or (record? file-or-video)
-      (some-fn #{video? subtitle?} file-or-video)))
+      ((some-fn video? subtitle?) file-or-video)))
 
 (defn process-file
   "Enqueues a file or video for processing."
@@ -69,6 +69,7 @@
   (log/debug "starting file processing")
   (go (while true
         (let [[folder key] (<! process-chan)]
+          (log/trace "processing" folder key)
           (when-let [video (video-for-key folder key)]
             (try (when metadata?
                    (when-not (:info video)
