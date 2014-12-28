@@ -20,8 +20,9 @@
             [video-server.watcher :as watcher]))
 
 (def port 8090)
+(def hostname "Local Server")
 (def encode true)
-(def metadata true)
+(def fetch true)
 (def output-format :mkv)
 (def output-size :720)
 
@@ -38,8 +39,8 @@
 (defn start []
   (main/set-log-level (main/log-level "debug"))
   (binding [encoder/*fake-encode* true]
-    (process/start-processing encode metadata output-format output-size))
+    (process/start-processing encode fetch output-format output-size))
   (watcher/start-watcher folder)
   (server/start-server url port handler/app folder)
-  (discovery/start-discovery url main/discovery-port))
+  (discovery/start-discovery url main/discovery-port hostname))
 

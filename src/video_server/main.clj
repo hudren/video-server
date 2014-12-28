@@ -70,10 +70,12 @@
     :default 8090
     :parse-fn #(Integer/parseInt %)
     :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
-   ["-e" "--encode BOOLEAN" "Automatically transcode videos and subtitles"
+   ["-n" "--name NAME" "Server name"
+    :default (.getHostName (InetAddress/getLocalHost))]
+   [nil "--encode BOOL" "Automatically transcode videos and subtitles"
     :default "true"
     :parse-fn #(Boolean/parseBoolean %)]
-   ["-m" "--metadata BOOLEAN" "Automatically retreive metadata from the Internet"
+   [nil "--fetch BOOL" "Automatically retreive metadata from the Internet"
     :default "true"
     :parse-fn #(Boolean/parseBoolean %)]
    ["-f" "--format EXT" "Output format: mkv, mp4, m4v"
@@ -84,7 +86,7 @@
     :default 720
     :parse-fn #(Integer/parseInt %)
     :validate [#{480 720 1080} "The size must be 480, 720 or 1080"]]
-   ["-l" "--log-level LEVEL" "Override the default logging level"
+   [nil "--log-level LEVEL" "Override the default logging level"
     :parse-fn log-level
     :validate [identity "The log level must be one of ALL, TRACE, DEBUG, INFO, WARN, ERROR or OFF"]]
    ["-h" "--help"]])
@@ -111,10 +113,10 @@
         size (-> (:size options) str keyword)
         url (host-url (:port options))
         folder (->Folder "videos" (io/file dir) (str url "/" "videos"))]
-    (start-processing (:encode options) (:metadata options) fmt size)
+    (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folder)
     (let [server (start-server url (:port options) app folder)]
-      (start-discovery url discovery-port)
+      (start-discovery url discovery-port (:name options))
       server)))
 
 (defn -main

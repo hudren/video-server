@@ -49,10 +49,9 @@
 
 (defn start-discovery
   "Starts the discovery thread, listening for clients."
-  [url port]
-  (let [hostname (.getHostName (InetAddress/getLocalHost))]
-    (log/info "starting discovery service for" hostname "on" port)
-    (doto (Thread. (partial listen-for-clients url port hostname) "discovery")
-      (.setDaemon true)
-      (.start))))
+  [url port hostname]
+  (log/info "starting discovery service for" hostname "on" port)
+  (doto (Thread. (partial listen-for-clients url port hostname) "discovery")
+    (.setDaemon true)
+    (.start)))
 
