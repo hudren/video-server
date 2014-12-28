@@ -50,10 +50,16 @@
 
 (defsnippet video-template "templates/video.html" [:div.video]
   [video]
-  [:div.poster :img] (set-attr :src (:poster video))
-  [:span.title] (content (:title video))
-  [:span.rated] (content (or (-> video :info :rated) "NR"))
+  [:div.poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
+  [:span.title] (content (or (-> video :info :title) (:title video)))
+  [:span.year] (content (str (-> video :info :year)))
+  [:span.rated] (when-let [rated (-> video :info :rated)]
+                  (content rated))
   [:span.duration] (content (-> video :info :runtime))
+  [:p.genres] (when-let [genres (-> video :info :genres)]
+                (content (str "Genres: " (str/join ", " genres))))
+  [:p.stars] (when-let [actors (or (-> video :info :stars) (-> video :info :actors))]
+               (content (str "Starring: " (str/join ", " actors))))
   [:ul :li] (clone-for [container (:containers video)]
                        [:p :span] (content (container-desc container))
                        [:a] (set-attr :href (:url container))

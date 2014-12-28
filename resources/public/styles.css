@@ -39,10 +39,11 @@ div.video {
   border-bottom: 1px solid rgba(0,0,0,0.12);
 }
 div.poster {
-  width: 4em;
-  height: 6em;
+  width: 5.5em;
+  height: 8em;
   clear: both;
   float: left;
+  padding-bottom: 0.5em;
 }
 div.poster img {
   max-height: 100%;
@@ -50,7 +51,7 @@ div.poster img {
   margin: 0 auto;
 }
 div.desc {
-  margin-left: 5em;
+  margin-left: 7em;
 }
 div.desc ul {
   list-style: none;
@@ -63,10 +64,15 @@ div.desc li {
   font-size: 1.4em;
   font-weight: bold;
 }
-.rated {
+.year {
   color: rgba(0,0,0,0.54);
   font-size: 0.9em;
   margin-left: 1.5em;
+}
+.rated {
+  color: rgba(0,0,0,0.54);
+  font-size: 0.9em;
+  margin-left: 0.7em;
 }
 .duration {
   color: rgba(0,0,0,0.54);

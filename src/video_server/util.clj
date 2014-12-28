@@ -9,7 +9,10 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.util
-  (:require [clojure.java.shell :as shell]
+  (:require [clj-http.client :as client]
+            [clojure.core.cache :as cache]
+            [clojure.data.json :as json]
+            [clojure.java.shell :as shell]
             [clojure.string :as str]
             [clojure.tools.logging :as log]))
 
@@ -42,4 +45,19 @@
   (let [args (->> cmd flatten (remove nil?) (map str))]
     (log/trace "executing" (str/join " " args))
     (apply shell/sh args)))
+
+(defn get-json
+  "Retrieves and caches the JSON body."
+  ([cache url] (get-json cache url nil))
+  ([cache url auth]
+   (if (cache/has? @cache url)
+     (swap! cache #(cache/hit % url))
+     (do
+       (log/trace "fetching" url)
+       (let [resp (client/get (if auth (auth url) url) {:accept :json})]
+         (when (= (:status resp) 200)
+           (log/trace "fetched" url)
+           (let [json (json/read-str (:body resp) :key-fn (comp keyword str/lower-case))]
+             (swap! cache #(cache/miss % url json)))))))
+   (get @cache url)))
 

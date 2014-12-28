@@ -39,11 +39,25 @@
   [folder file]
   (contains? @files file))
 
+(defn norm-title
+  "Returns a normalized title that can be used in a filename."
+  [title]
+  (let [simple (-> title
+                   (str/replace " - " " ")
+                   (str/replace "_" " ")
+                   (str/replace "(Unrated)" ""))]
+    (apply str (re-seq #"[A-Za-z0-9,'&\-\(\) ]" simple))))
+
+(defn norm-key
+  "Returns the map with normalized values."
+  [data]
+  (assoc data :title (str/lower-case (norm-title (:title data)))))
+
 (defn video-key
   "Returns the key for the given Video, info, or title string."
   [data]
   (cond
-    (map? data) (make-record VideoKey data)
+    (map? data) (make-record VideoKey (norm-key data))
     (string? data) (video-key (title-info data))
     (instance? File data) (video-key (file-base data))))
 

@@ -10,13 +10,14 @@
 
 (ns video-server.process
   (:require [clojure.tools.logging :as log]
-            [clojure.core.async :refer [chan go <! >!]]
+            [clojure.core.async :refer [chan go thread <! <!! >!]]
             [video-server.file :refer [subtitle? video?]]
-            [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video extract-thumbnail]]
+            [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video extract-thumbnail video-encode-spec]]
             [video-server.library :refer [add-info video-key video-for-file video-for-key]]
             [video-server.metadata :refer [retrieve-metadata]]))
 
-(def process-chan (chan 100))
+(def ^:private process-chan (chan 100))
+(def ^:private encoder-chan (chan 100))
 
 (defn should-process-file?
   "Determines whether the file or video should be queued for
@@ -31,6 +32,11 @@
   (when (should-process-file? file-or-video)
     (log/debug "queueing" (str file-or-video))
     (go (>! process-chan [folder (video-key file-or-video)]))))
+
+(defn process-encode
+  "Enqueues a spec for transcoding a video."
+  [spec]
+  (go (>! encoder-chan spec)))
 
 (defn can-download?
   "Returns whether the file is small enough for downloading."
@@ -59,24 +65,34 @@
   [folder video fmt size]
   (log/debug "processing video" (str video))
   (when (should-encode-video? video)
-    (encode-video folder video fmt size))
+    (when-let [spec (video-encode-spec folder video fmt size)]
+      (process-encode spec)))
   (when (should-encode-subtitles? video)
     (encode-subtitles folder video)))
 
+(defn start-encoding
+  "Processes enqueued encoding jobs."
+  []
+  (go (while true
+        (let [spec (<! encoder-chan)]
+          (log/trace "encoding" spec)
+          (encode-video spec)))))
+
 (defn start-processing
   "Processes enqueued files."
-  [encode? metadata? fmt size]
+  [num-threads encode? fetch? fmt size]
   (log/debug "starting file processing")
-  (go (while true
-        (let [[folder key] (<! process-chan)]
-          (log/trace "processing" folder key)
-          (when-let [video (video-for-key folder key)]
-            (try (when metadata?
-                   (when-not (:info video)
-                     (when-let [info (retrieve-metadata folder video)]
-                       (add-info folder video info)))
-                   (when-not (:thumb video)
-                     (extract-thumbnail folder video)))
-                 (when encode? (process-video folder video fmt size))
-                 (catch Exception e (log/error e "error processing video" (str video)))))))))
+  (dotimes [_ num-threads]
+    (thread (while true
+              (let [[folder key] (<!! process-chan)]
+                (log/trace "processing" folder key)
+                (when-let [video (video-for-key folder key)]
+                  (try (when fetch?
+                         (when-not (:info video)
+                           (when-let [info (retrieve-metadata folder video)]
+                             (add-info folder video info)))
+                         (when-not (:thumb video)
+                           (extract-thumbnail folder video)))
+                       (when encode? (process-video folder video fmt size))
+                       (catch Exception e (log/error e "error processing video" (str video))))))))))
 

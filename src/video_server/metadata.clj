@@ -15,7 +15,9 @@
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.file :refer [file-ext]]
-            [video-server.omdb :refer [omdb-metadata]]
+            [video-server.freebase :refer [freebase-info freebase-metadata get-imdb-id]]
+            [video-server.library :refer [norm-title]]
+            [video-server.omdb :refer [omdb-info omdb-metadata retrieve-id]]
             [video-server.util :refer :all]))
 
 (defn retrieve-image
@@ -25,27 +27,10 @@
     (when (= (:status resp) 200)
       (:body resp))))
 
-(defn- multi
-  "Returns the comma separated values as a sequence."
-  [s]
-  (when-not (str/blank? s)
-    (map str/trim (str/split s #","))))
-
-(defn info
-  "Extracts fields for storage from the metadata"
-  [omdb]
-  (let [md (merge (select-keys omdb [:title :runtime :director :rated :plot :type])
-                  {:imdb (:imdbid omdb)
-                   :year (first (parse-ints (:year omdb)))
-                   :genres (multi (:genre omdb))
-                   :actors (multi (:actors omdb))
-                   :languages (multi (:language omdb))})]
-    (into {} (remove (comp nil? second) md))))
-
 (defn- metadata-file
   "Returns the File for the video metadata."
   [folder video]
-  (io/file (:file folder) (str (:title video) ".json")))
+  (io/file (:file folder) (str (norm-title (:title video)) ".json")))
 
 (defn read-metadata
   "Reads the stored metadata for the video."
@@ -66,7 +51,7 @@
 (defn save-poster
   "Downloads the poster for the specified video."
   [folder video url]
-  (let [file (io/file (:file folder) (str (:title video) (file-ext url)))]
+  (let [file (io/file (:file folder) (str (norm-title (:title video)) (file-ext url)))]
     (log/info "downloading poster for" (:title video))
     (when-let [contents (retrieve-image url)]
       (with-open [w (io/output-stream file)]
@@ -80,14 +65,35 @@
       [(str/trim (subs title 0 (- (count title) 6))) (parse-long year)]
       [title])))
 
+(defn best-title
+  "Returns the latter title that improves on the previous."
+  [title & titles]
+  (loop [title title titles (remove nil? titles)]
+    (if (seq titles)
+      (let [norm (str/lower-case (apply str (re-seq #"[A-Za-z]" title)))
+            norm2 (str/lower-case (apply str (re-seq #"[A-Za-z]" (first titles))))]
+        (recur (if-not (= norm norm2) title (first titles)) (rest titles)))
+      title)))
+
+(defn fetch-metadata
+  "Returns the pair of metadata and poster URL."
+  [video]
+  (let [[title year] (title-parts video)
+        duration (when-let [duration (:duration video)] (/ duration 60))
+        series? (some? (:episode video))
+        fb (freebase-metadata title series? year duration)
+        db (when-let [id (get-imdb-id fb)] (retrieve-id id))
+        db (or db (omdb-metadata title series? year duration))]
+    (merge (freebase-info fb) (omdb-info db)
+           {:title (best-title title (:name fb) (:title db))})))
+
 (defn retrieve-metadata
   "Retrieves metadata from the Internet and persists it in the folder."
   [folder video]
-  (let [[title year] (title-parts video)]
-    (when-let [omdb (omdb-metadata title year)]
-      (let [info (info omdb)]
-        (save-metadata folder video info)
-        (when (and (not (:poster video)) (:poster omdb))
-          (save-poster folder video (:poster omdb)))
-        info))))
+  (let [info (fetch-metadata video)
+        poster (:poster info)]
+    (save-metadata folder video info)
+    (when (and (not (:poster video)) poster)
+      (save-poster folder video poster))
+    info))
 

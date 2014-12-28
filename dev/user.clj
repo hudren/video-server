@@ -6,6 +6,7 @@
             [video-server.ffmpeg :as ffmpeg]
             [video-server.file :as file :refer :all]
             [video-server.format :refer :all]
+            [video-server.freebase :as freebase :refer :all]
             [video-server.handler :as handler]
             [video-server.html :as html]
             [video-server.library :as library :refer :all]
@@ -23,6 +24,7 @@
 (def hostname "Local Server")
 (def encode true)
 (def fetch true)
+(def num-threads 5)
 (def output-format :mkv)
 (def output-size :720)
 
@@ -36,10 +38,17 @@
 (defn video-for-title [title]
   (first (filter #(.contains (:title %) title) (library/current-videos))))
 
+(defn fetch-film [title]
+  (fetch-metadata (map->Video {:title title})))
+
+(defn fetch-tv [title]
+  (fetch-metadata (map->Video {:title title :season 1 :episode 1})))
+
 (defn start []
   (main/set-log-level (main/log-level "debug"))
   (binding [encoder/*fake-encode* true]
-    (process/start-processing encode fetch output-format output-size))
+    (process/start-encoding))
+  (process/start-processing num-threads encode fetch output-format output-size)
   (watcher/start-watcher folder)
   (server/start-server url port handler/app folder)
   (discovery/start-discovery url main/discovery-port hostname))

@@ -90,22 +90,25 @@
   [spec]
   (assoc spec :output (.getCanonicalPath (output-file spec))))
 
+(defn video-encode-spec
+  "Returns a spec for encoding a video."
+  [folder video fmt size]
+  (when-let [spec (encode-spec folder video fmt size)]
+    (-> spec filter-video output-options)))
+
 (defn encode-video
   "Transcodes the video suitable for downloading and casting."
-  [folder video fmt size]
-  (log/info "encoding video" (str video))
-  (when-let [spec (encode-spec folder video fmt size)]
-    (let [spec (filter-video spec)
-          spec (output-options spec)
-          output (:output spec)
-          cmd (encode-cmd spec)]
-      (log/info "encoding into" output)
-      (let [exec (encode cmd)]
-        (if (zero? (:exit exec))
-          (log/info "encoding was successful")
-          (do
-            (log/error "encoding failed:" \newline cmd \newline exec)
-            (io/delete-file output true)))))))
+  [spec]
+  (log/info "encoding video" (str (:video spec)))
+  (let [output (:output spec)
+        cmd (encode-cmd spec)]
+    (log/info "encoding into" output)
+    (let [exec (encode cmd)]
+      (if (zero? (:exit exec))
+        (log/info "encoding was successful")
+        (do
+          (log/error "encoding failed:" \newline cmd \newline exec)
+          (io/delete-file output true))))))
 
 (defn encode-subtitle
   "Encodes a single subtitle file into WebVTT format."
