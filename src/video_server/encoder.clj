@@ -126,17 +126,23 @@
   (doseq [subtitle (:subtitles video)]
     (encode-subtitle (io/file (:file folder) (:filename subtitle)))))
 
+(def mkvtools (delay (and (-> ["which" "mkvmerge"] exec :exit zero?)
+                          (-> ["which" "mkvextract"] exec :exit zero?))))
+
 (defn mkv-info
   "Returns the mkv info by calling mkvmerge."
   [file]
-  (let [exec (exec ["mkvmerge" "-i" (.getCanonicalPath file)])]
-    (when (zero? (:exit exec))
-      (:out exec))))
+  (when @mkvtools
+    (try (let [exec (exec ["mkvmerge" "-i" (.getCanonicalPath file)])]
+           (when (zero? (:exit exec))
+             (:out exec)))
+         (catch Exception e (log/error e "error extracting info")))))
 
 (defn mkv-extract
   "Extracts the embedded attachment into a separate file."
   [file id output]
-  (exec ["mkvextract" "attachments" (.getCanonicalPath file) (str id ":" (.getCanonicalPath output))]))
+  (try (exec ["mkvextract" "attachments" (.getCanonicalPath file) (str id ":" (.getCanonicalPath output))])
+       (catch Exception e (log/error e "error extracting attactment"))))
 
 (defn extract-thumbnail
   "Extracts the thumbnail image from the matroska video."
