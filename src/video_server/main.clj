@@ -89,13 +89,17 @@
    [nil "--log-level LEVEL" "Override the default logging level"
     :parse-fn log-level
     :validate [identity "The log level must be one of ALL, TRACE, DEBUG, INFO, WARN, ERROR or OFF"]]
+   ["-v" "--version"]
    ["-h" "--help"]])
+
+(defn version []
+  (str "Videos@Home " (version/get-version "com.hudren.homevideo" "video-server")))
 
 (defn usage
   "Returns a console formatted usage message."
   [summary]
   (str/join \newline
-            [(str "Videos@Home " (version/get-version "com.hudren.homevideo" "video-server"))
+            [(version)
              "Usage: video-server [options] [folder]" ""
              (str "The default folder is " (default-folder)) ""
              "Options:" summary]))
@@ -125,6 +129,7 @@
   [& args]
   (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
     (cond
+      (:version options) (exit 0 (version))
       (:help options) (exit 0 (usage summary))
       (> (count arguments) 1) (exit 1 "Only one folder is allowed.")
       errors (exit 1 (str/join \newline errors)))
