@@ -1,5 +1,6 @@
 (ns user
   (:require [clojure.java.io :as io]
+            [net.cgrand.reload :refer [auto-reload]]
             [video-server.android :as android]
             [video-server.discovery :as discovery]
             [video-server.encoder :as encoder :refer :all]
@@ -50,6 +51,8 @@
     (process/start-encoding))
   (process/start-processing num-threads encode fetch output-format output-size)
   (watcher/start-watcher folder)
-  (server/start-server url port handler/app folder)
+  (server/start-server url port (handler/app url) folder)
   (discovery/start-discovery url main/discovery-port hostname))
+
+(auto-reload (find-ns 'video-server.html))
 

@@ -120,7 +120,7 @@
     (start-encoding)
     (start-processing 5 (:encode options) (:fetch options) fmt size)
     (start-watcher folder)
-    (let [server (start-server url (:port options) app folder)]
+    (let [server (start-server url (:port options) (app url) folder)]
       (start-discovery url discovery-port (:name options))
       server)))
 

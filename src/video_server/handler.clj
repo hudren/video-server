@@ -16,9 +16,11 @@
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.util.response :refer [response]]
             [video-server.android :refer [android-version]]
-            [video-server.html :refer [index-template]]
+            [video-server.html :refer [downloads-template index-template]]
             [video-server.library :refer [current-videos]]
             [video-server.video :refer [modified]]))
+
+(def ^:private base-url (atom "http://localhost"))
 
 (defn json-response
   "Generates a JSON response from the data."
@@ -33,6 +35,11 @@
   (let [videos (reverse (sort-by modified (current-videos)))]
     (response (index-template videos))))
 
+(defn downloads
+  "Returns the downloads page."
+  []
+  (response (downloads-template @base-url "video-client-release.apk")))
+
 (defn videos-api
   "Responds with a list of available videos."
   []
@@ -45,11 +52,14 @@
 
 (defroutes app-routes
   (GET "/" [] (index))
+  (GET "/downloads" [] (downloads))
   (GET "/api/v1/videos" [] (videos-api))
   (GET "/api/v1/android" [] (android-api))
   (resources "/" {:root "public"})
   (not-found "Not Found"))
 
-(def app
+(defn app
+  [url]
+  (reset! base-url url)
   (wrap-gzip (site app-routes)))
 

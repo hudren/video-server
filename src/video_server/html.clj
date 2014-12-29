@@ -52,23 +52,25 @@
   [video]
   [:div.poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
   [:span.title] (content (or (-> video :info :title) (:title video)))
-  [:span.year] (content (str (-> video :info :year)))
-  [:span.rated] (when-let [rated (-> video :info :rated)]
-                  (content rated))
-  [:span.duration] (content (-> video :info :runtime))
+  [:span.year] (when-let [year (-> video :info :year)] (content (str year)))
+  [:span.rated] (when-let [rated (-> video :info :rated)] (content rated))
+  [:span.duration] (when-let [runtime (-> video :info :runtime)] (content runtime))
   [:p.genres] (when-let [genres (-> video :info :genres)]
                 (content (str "Genres: " (str/join ", " genres))))
   [:p.stars] (when-let [actors (or (-> video :info :stars) (-> video :info :actors))]
                (content (str "Starring: " (str/join ", " actors))))
   [:ul :li] (clone-for [container (:containers video)]
                        [:p :span] (content (container-desc container))
-                       [:a] (set-attr :href (:url container))
-                       [:a] (set-attr :type (:mimetype container))
-                       [:a] (download-attr container)
-                       [:a] (content (download-link container))))
+                       [:a] (do-> (set-attr :href (:url container))
+                                  (set-attr :type (:mimetype container))
+                                  (download-attr container)
+                                  (content (download-link container)))))
 
-(deftemplate index-template "public/index.html"
+(deftemplate index-template "templates/index.html"
   [videos]
-  [:div.content] (clone-for [video videos]
-                            [:div] (content (video-template video))))
+  [:#content] (content (map #(video-template %) videos)))
+
+(deftemplate downloads-template "templates/downloads.html"
+  [host apk]
+  [:span#url] (content (str host "/" apk)))
 
