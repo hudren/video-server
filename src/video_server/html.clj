@@ -31,6 +31,23 @@
          (remove str/blank?)
          (str/join " - "))))
 
+(defn video-link
+  "Returns a button for the specified link."
+  [link title & [icon]]
+  [:paper-button {:raised nil}
+   [:core-icon {:icon (or icon "launch")}]
+   [:a {:href link :target "_blank"} title]])
+
+(defn video-links
+  "Returns a sequence of links for the video."
+  [video]
+  (when-let [info (:info video)]
+    (into [] [(when (:website info) (video-link (:website info) "Website" "home"))
+              (when (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
+              (when (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
+              (when (:imdb info) (video-link (str "http://www.imdb.com/title/" (:imdb info)) "IMDB"))
+              (when (:netflix info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix info)) "Netflix"))])))
+
 (defsnippet video-item "templates/video-item.html" [:div.video]
   [video]
   [:div.poster :a] (set-attr :href (str "video?id=" (:id video)))
@@ -74,6 +91,7 @@
   [:core-toolbar :div] (content (or (-> video :info :title) (:title video)))
   [:div#poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
   [:div#info] (substitute (info video))
+  [:div#actions] (content (apply html (video-links video)))
   [:video] (when play (do-> #_(set-attr :width (:width play))
                             #_(set-attr :height (:height play))
                             (set-attr :preload nil)

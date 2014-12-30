@@ -18,12 +18,12 @@ core-toolbar a:link, core-toolbar a:visited {
   color: white;
   text-decoration: none;
 }
-paper-button {
+div.actions paper-button {
   color: white;
   background: #00B0FF;
 }
 paper-button a:link, paper-button a:visited {
-  color: white;
+  color: inherit;
   text-decoration: none;
 }
 div#content {

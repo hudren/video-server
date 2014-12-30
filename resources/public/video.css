@@ -1,5 +1,4 @@
 div.block {
-  display: block;
   clear: both;
   width: 100%;
   margin: 2em auto;
@@ -9,18 +8,21 @@ div#poster {
   float: left;
   width: 320px;
   text-align: center;
-  margin-right: 4em;
 }
 
 div#poster img {
-  /* box-shadow: 0px 3px 10px 5px #CCCCCC; */
-  margin-right: auto;
-  margin-left: auto;
-  margin-bottom: 4em;
+  box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.258824);
+  margin-bottom: 2em;
   max-width: 100%;
 }
 
 div#info {
+  vertical-align: top;
+  margin-left: 368px;
+}
+
+div#actions {
+  text-align: center;
 }
 
 p.plot {
