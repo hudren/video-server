@@ -34,7 +34,7 @@
   (toString [_] title))
 
 ;; Video containing one or more containers
-(defrecord Video [title duration season episode episode-title
+(defrecord Video [id title duration season episode episode-title
                   containers subtitles poster thumb info]
   Object
   (toString [_] title))

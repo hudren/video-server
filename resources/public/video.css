@@ -1,0 +1,46 @@
+div.block {
+  display: block;
+  clear: both;
+  width: 100%;
+  margin: 2em auto;
+}
+
+div#poster {
+  float: left;
+  width: 320px;
+  text-align: center;
+  margin-right: 4em;
+}
+
+div#poster img {
+  /* box-shadow: 0px 3px 10px 5px #CCCCCC; */
+  margin-right: auto;
+  margin-left: auto;
+  margin-bottom: 4em;
+  max-width: 100%;
+}
+
+div#info {
+}
+
+p.plot {
+  font-size: 1.2em;
+  line-height: 150%; 
+}
+
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+li {
+  color: rgba(0,0,0,0.54);
+}
+
+div#player {
+  text-align: center;
+}
+
+video {
+  max-width: 100%;
+  background-color: black;
+}

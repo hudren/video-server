@@ -4,29 +4,24 @@
             [video-server.format :refer [format-bitrate format-duration format-size video-dimension]])
   (:import (java.util Locale)))
 
-(defn quality
-  "Returns a human-readable video quality description."
-  [{:keys [width height]}]
-  (video-dimension width height))
-
-(defn can-play?
-  "Returns whether the container is web playable."
-  [container]
-  (and (.contains (:video container) "H.264")
-       (.contains (:audio container) "AAC")))
-
-(defn can-play-from-link?
-  "Returns whether Chrome will play the movie by clicking on the
-  link."
-  [container]
-  (and (can-play? container)
-       (.contains (:mimetype container) "matroska")))
+(defn video-desc
+  "Returns a description of the video technical details."
+  [video]
+  (->> [(str/join ", " (distinct (map :dimension (:containers video))))
+        (when-let [season (:season video)] (str "Season " season))
+        (when-let [episode (:episode video)] (str "Episode " episode))
+        (:episode-title video)
+        (let [lang (str/join ", " (distinct (map :language (:containers video) )))]
+          (when-not (= (str lang) (.getDisplayLanguage (Locale/getDefault)))
+            lang))]
+       (remove str/blank?)
+       (str/join " - ")))
 
 (defn container-desc
   "Returns a description of the contents of the container."
   [container]
   (let [lang (:language container)]
-    (->> [(quality container)
+    (->> [(:dimension container)
           (when-not (= lang (.getDisplayLanguage (Locale/getDefault)))
             (:language container))
           (:video container)
@@ -36,22 +31,12 @@
          (remove str/blank?)
          (str/join " - "))))
 
-(defn download-attr
-  "Returns a function that sets the anchor download attribute if the
-  video cannot be played by clicking the file link."
-  [container]
-  #(if (can-play-from-link? container) %
-     (assoc % :attrs (assoc (:attrs % {}) :download nil))))
-
-(defn download-link
-  "Returns the link text for playing or downloading the video file."
-  [container]
-  (if (can-play-from-link? container) "Play" "Download"))
-
-(defsnippet video-template "templates/video.html" [:div.video]
+(defsnippet video-item "templates/video-item.html" [:div.video]
   [video]
+  [:div.poster :a] (set-attr :href (str "video?id=" (:id video)))
   [:div.poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
-  [:span.title] (content (or (-> video :info :title) (:title video)))
+  [:span.title :a] (do-> (set-attr :href (str "video?id=" (:id video)))
+                         (content (or (-> video :info :title) (:title video))))
   [:span.year] (when-let [year (-> video :info :year)] (content (str year)))
   [:span.rated] (when-let [rated (-> video :info :rated)] (content rated))
   [:span.duration] (when-let [runtime (-> video :info :runtime)] (content runtime))
@@ -59,16 +44,40 @@
                 (content (str "Genres: " (str/join ", " genres))))
   [:p.stars] (when-let [actors (or (-> video :info :stars) (-> video :info :actors))]
                (content (str "Starring: " (str/join ", " actors))))
+  [:p.summary] (when-let [summary (video-desc video)] (content summary)))
+
+(defsnippet info "templates/video-info.html" [:div#info]
+  [video]
+  [:span.year] (when-let [year (-> video :info :year)] (content (str year)))
+  [:span.rated] (when-let [rated (-> video :info :rated)] (content rated))
+  [:span.duration] (when-let [runtime (-> video :info :runtime)] (content runtime))
+  [:p.plot] (content (-> video :info :plot))
+  [:p.subjects] (when-let [subjects (-> video :info :subjects)]
+                  (content (str "Subjects: " (str/join ", " subjects))))
+  [:p.genres] (when-let [genres (or (-> video :info :netflix-genres) (-> video :info :genres))]
+                (content (str "Genres: " (str/join ", " genres))))
+  [:p.cast] (when-let [actors (or (-> video :info :actors) (-> video :info :stars))]
+              (content (str "Starring: " (str/join ", " actors))))
+  [:p.languages] (when-let [languages (-> video :info :languages)]
+                   (when-not (= languages (list "English"))
+                     (content (str "Languages: " (str/join ", " languages)))))
   [:ul :li] (clone-for [container (:containers video)]
-                       [:p :span] (content (container-desc container))
-                       [:a] (do-> (set-attr :href (:url container))
-                                  (set-attr :type (:mimetype container))
-                                  (download-attr container)
-                                  (content (download-link container)))))
+                       [:li] (content (container-desc container))))
 
 (deftemplate index-template "templates/index.html"
   [videos]
-  [:#content] (content (map #(video-template %) videos)))
+  [:#content] (content (map #(video-item %) videos)))
+
+(deftemplate video-template "templates/video.html"
+  [video play]
+  [:head :title] (content (or (-> video :info :title) (:title video)))
+  [:core-toolbar :div] (content (or (-> video :info :title) (:title video)))
+  [:div#poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
+  [:div#info] (substitute (info video))
+  [:video] (when play (do-> #_(set-attr :width (:width play))
+                            #_(set-attr :height (:height play))
+                            (set-attr :preload nil)
+                            (append (html [:source {:src (:url play) :type "video/mp4"} nil])))))
 
 (deftemplate downloads-template "templates/downloads.html"
   [host apk]

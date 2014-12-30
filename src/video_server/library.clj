@@ -27,6 +27,9 @@
 ; Map of file to video key
 (defonce ^:private files (ref {}))
 
+; Map of UUID to [folder key]
+(defonce ^:private ids (ref {}))
+
 (defn remove-all
   "Removes all videos from the library."
   []
@@ -72,6 +75,12 @@
   (or (get-in @library [folder (files file)])
       (video-for-key folder (video-key file))))
 
+(defn video-for-id
+  "Returns the video associated with the given UUID."
+  [id]
+  (let [[folder key] (@ids id)]
+    (video-for-key folder key)))
+
 (defn add-video
   "Returns true if a new video was added, false if it was added to an
   existing video."
@@ -86,6 +95,7 @@
               (alter library update-in [folder key :containers] conj (first (:containers video)))
               (alter library update-in [folder] assoc key video))
             (alter files assoc file key)
+            (alter ids assoc (:id video) [folder key])
             (not exists)))))))
 
 (defn remove-video
@@ -100,7 +110,8 @@
         (do (alter library update-in [folder] dissoc key)
             (alter files (partial apply dissoc) (map clojure.core/key (filter #(= key (val %)) @files))))
         (do (alter library update-in [folder key] assoc :containers containers)
-            (alter files dissoc file))))))
+            (alter files dissoc file)
+            (alter ids dissoc (:id video)))))))
 
 (defn add-subtitle
   "Returns true if the subtitle was added to an existing video."

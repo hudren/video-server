@@ -16,11 +16,18 @@
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.util.response :refer [response]]
             [video-server.android :refer [android-version]]
-            [video-server.html :refer [downloads-template index-template]]
-            [video-server.library :refer [current-videos]]
+            [video-server.html :refer [downloads-template index-template video-template]]
+            [video-server.library :refer [current-videos video-for-id]]
             [video-server.video :refer [modified]]))
 
 (def ^:private base-url (atom "http://localhost"))
+
+(defn html-response
+  "Generates a HTML response from the data."
+  [data & [status]]
+  {:status (or status 200)
+   :headers {"Content-Type" "text/html;charset=utf-8"}
+   :body data})
 
 (defn json-response
   "Generates a JSON response from the data."
@@ -33,12 +40,22 @@
   "Returns the index or home page."
   []
   (let [videos (reverse (sort-by modified (current-videos)))]
-    (response (index-template videos))))
+    (html-response (index-template videos))))
+
+(defn container-to-play
+  [video]
+  (first (filter #(and (.contains (:video %) "H.264") (.contains (:audio %) "AAC")) (:containers video))))
+
+(defn video
+  "Returns a video page."
+  [id]
+  (when-let [video (video-for-id id)]
+    (html-response (video-template video (container-to-play video)))))
 
 (defn downloads
   "Returns the downloads page."
   []
-  (response (downloads-template @base-url "video-client-release.apk")))
+  (html-response (downloads-template @base-url "video-client-release.apk")))
 
 (defn videos-api
   "Responds with a list of available videos."
@@ -52,6 +69,7 @@
 
 (defroutes app-routes
   (GET "/" [] (index))
+  (GET "/video" [id] (video id))
   (GET "/downloads" [] (downloads))
   (GET "/api/v1/videos" [] (videos-api))
   (GET "/api/v1/android" [] (android-api))

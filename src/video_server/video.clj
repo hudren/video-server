@@ -15,7 +15,7 @@
             [video-server.model :refer :all]
             [video-server.util :refer :all])
   (:import (java.net URLEncoder)
-           (java.util Locale)
+           (java.util Locale UUID)
            (video_server.model Container Video)))
 
 (defn encoded-url
@@ -94,6 +94,8 @@
   "Returns a new video record with the specified container."
   [container info]
   (let [duration (parse-double (-> info :format :duration))]
-    (make-record Video (merge {:duration duration :containers (list container)}
+    (make-record Video (merge {:id (str (UUID/randomUUID))
+                               :duration duration
+                               :containers (list container)}
                               (video-title container info)))))
 
