@@ -48,6 +48,20 @@
               (when (:imdb info) (video-link (str "http://www.imdb.com/title/" (:imdb info)) "IMDB"))
               (when (:netflix info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix info)) "Netflix"))])))
 
+(defn combine
+  "Combines multiple lists, returning a comma separated String."
+  [& lists]
+  (if (string? (first lists))
+    (let [values (combine (rest lists))]
+      (when values (str (first lists) ": " values)))
+    (let [values (distinct (remove nil? (flatten lists)))]
+      (when (seq values)
+        (str/join ", " values)))))
+
+(defn when-content
+  [expr]
+  #(when expr ((content expr) %)))
+
 (defsnippet video-item "templates/video-item.html" [:div.video]
   [video]
   [:div.poster :a] (set-attr :href (str "video?id=" (:id video)))
@@ -57,11 +71,9 @@
   [:span.year] (when-let [year (-> video :info :year)] (content (str year)))
   [:span.rated] (when-let [rated (-> video :info :rated)] (content rated))
   [:span.duration] (when-let [runtime (-> video :info :runtime)] (content runtime))
-  [:p.genres] (when-let [genres (-> video :info :genres)]
-                (content (str "Genres: " (str/join ", " genres))))
-  [:p.stars] (when-let [actors (or (-> video :info :stars) (-> video :info :actors))]
-               (content (str "Starring: " (str/join ", " actors))))
-  [:p.summary] (when-let [summary (video-desc video)] (content summary)))
+  [:p.genres] (when-content (combine "Genres" (-> video :info :genres)))
+  [:p.stars] (when-content (combine "Starring" (-> video :info :stars)))
+  [:p.summary] (when-content (video-desc video)))
 
 (defsnippet info "templates/video-info.html" [:div#info]
   [video]
@@ -69,15 +81,12 @@
   [:span.rated] (when-let [rated (-> video :info :rated)] (content rated))
   [:span.duration] (when-let [runtime (-> video :info :runtime)] (content runtime))
   [:p.plot] (content (-> video :info :plot))
-  [:p.subjects] (when-let [subjects (-> video :info :subjects)]
-                  (content (str "Subjects: " (str/join ", " subjects))))
-  [:p.genres] (when-let [genres (or (-> video :info :netflix-genres) (-> video :info :genres))]
-                (content (str "Genres: " (str/join ", " genres))))
-  [:p.cast] (when-let [actors (or (-> video :info :actors) (-> video :info :stars))]
-              (content (str "Starring: " (str/join ", " actors))))
+  [:p.subjects] (when-content (combine "Subjects" (-> video :info :subjects)))
+  [:p.genres] (when-content (combine "Genres" (-> video :info :genres) (-> video :info :netflix-genres)))
+  [:p.cast] (when-content (combine "Cast" (-> video :info :stars) (-> video :info :actors)))
   [:p.languages] (when-let [languages (-> video :info :languages)]
                    (when-not (= languages (list "English"))
-                     (content (str "Languages: " (str/join ", " languages)))))
+                     (content (combine "Languages" languages))))
   [:ul :li] (clone-for [container (:containers video)]
                        [:li] (content (container-desc container))))
 
@@ -89,6 +98,7 @@
   [video play]
   [:head :title] (content (or (-> video :info :title) (:title video)))
   [:core-toolbar :div] (content (or (-> video :info :title) (:title video)))
+  [:div#desc] (when (or (:year (:info video)) (:plot (:info video))) identity)
   [:div#poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
   [:div#info] (substitute (info video))
   [:div#actions] (content (apply html (video-links video)))

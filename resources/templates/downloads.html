@@ -6,11 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
 
     <script src="components/webcomponentsjs/webcomponents.min.js"></script>
+    <link rel="import" href="components/polymer/polymer.html">
     <link rel="import" href="components/font-roboto/roboto.html">
     <link rel="import" href="components/core-header-panel/core-header-panel.html">
     <link rel="import" href="components/core-toolbar/core-toolbar.html">
     <link rel="import" href="components/core-icons/core-icons.html">
     <link rel="import" href="components/paper-button/paper-button.html">
+    <link rel="import" href="components/paper-ripple/paper-ripple.html">
 
     <link rel="stylesheet" href="styles.css">
   </head>
@@ -30,7 +32,7 @@
         </ul>
         <p>Message or text: Download the Videos@Home app from <span id="url"></span>.</p>
         <div class="actions">
-          <paper-button raised>
+          <paper-button class="default" raised>
             <core-icon icon="file-download"></core-icon>
             <a href="video-client-release.apk" type="application/vnd.android.package-archive">Download App</a>
           </paper-button>

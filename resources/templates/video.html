@@ -6,11 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
 
     <script src="components/webcomponentsjs/webcomponents.min.js"></script>
+    <link rel="import" href="components/polymer/polymer.html">
     <link rel="import" href="components/font-roboto/roboto.html">
     <link rel="import" href="components/core-header-panel/core-header-panel.html">
     <link rel="import" href="components/core-toolbar/core-toolbar.html">
     <link rel="import" href="components/core-icons/core-icons.html">
     <link rel="import" href="components/paper-button/paper-button.html">
+    <link rel="import" href="components/paper-button/paper-ripple.html">
 
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="video.css">
@@ -21,7 +23,7 @@
         <div>Video</div>
       </core-toolbar>
       <div id="content">
-        <div class="block">
+        <div id="desc" class="block">
           <div id="poster">
             <img src="placeholder.png" alt="poster" />
           </div>

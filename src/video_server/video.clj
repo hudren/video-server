@@ -87,15 +87,27 @@
 (defn video-title
   "Returns the video title based on the metadata or filename."
   [container info]
-  (or (-> info :format :title)
-      (title-info (-> container :filename file-base))))
+  (title-info (or (-> info :format :title)
+                  (-> container :filename file-base))))
+
+(defn sorting-title
+  "Returns a title suitable for sorting."
+  [title]
+  (str/trim
+    (condp #(.startsWith %2 %1) title
+      "The " (.substring title 4)
+      "An " (.substring title 3)
+      "A " (.substring title 2)
+      title title)))
 
 (defn video-record
   "Returns a new video record with the specified container."
   [container info]
-  (let [duration (parse-double (-> info :format :duration))]
+  (let [duration (parse-double (-> info :format :duration))
+        title (video-title container info)]
     (make-record Video (merge {:id (str (UUID/randomUUID))
+                               :sorting (sorting-title (:title title))
                                :duration duration
                                :containers (list container)}
-                              (video-title container info)))))
+                              title))))
 

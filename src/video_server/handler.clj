@@ -39,7 +39,7 @@
 (defn index
   "Returns the index or home page."
   []
-  (let [videos (reverse (sort-by modified (current-videos)))]
+  (let [videos (sort-by :sorting (current-videos))]
     (html-response (index-template videos))))
 
 (defn container-to-play

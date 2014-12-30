@@ -18,9 +18,15 @@ core-toolbar a:link, core-toolbar a:visited {
   color: white;
   text-decoration: none;
 }
-div.actions paper-button {
-  color: white;
+paper-button:hover {
+  background: white;
+}
+paper-button.default {
+  color: #FAFAFA;
   background: #00B0FF;
+}
+paper-button.default:hover {
+  background: #40C4FF;
 }
 paper-button a:link, paper-button a:visited {
   color: inherit;
