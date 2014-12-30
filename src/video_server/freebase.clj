@@ -103,11 +103,14 @@
   (when-let [desc (value md :/type/object/name :en)]
     (:value desc)))
 
+(defn- clean [s]
+  (seq (distinct s)))
+
 (defn get-notable-for [md]
-  (seq (map :text (values md :/common/topic/notable_for :en))))
+  (clean (map :text (values md :/common/topic/notable_for :en))))
 
 (defn get-notable-types [md]
-  (seq (map :text (values md :/common/topic/notable_types :en))))
+  (clean (map :text (values md :/common/topic/notable_types :en))))
 
 (defn get-imdb [md]
   (let [urls (map :value (values md :/common/topic/topic_equivalent_webpage))]
@@ -137,7 +140,7 @@
 (defn get-genres [md]
   (when-let [genres (or (values md :/film/film/genre :en)
                         (values md :/tv/tv_program/genre :en))]
-    (seq (map :text genres))))
+    (clean (map :text genres))))
 
 (defn get-rating [md]
   (when-let [ratings (values md :/film/film/rating)]
@@ -146,15 +149,15 @@
 (defn get-subjects [md]
   (when-let [subjects (or (values md :/film/film/subjects :en)
                           (values md :/tv/tv_program/subjects :en))]
-    (seq (map :text subjects))))
+    (clean (map :text subjects))))
 
 (defn get-taglines [md]
   (when-let [lines (values md :/film/film/tagline :en)]
-    (seq (map :text lines))))
+    (clean (map :text lines))))
 
 (defn get-creators [md]
   (when-let [creators (values md :/tv/tv_program/program_creator)]
-    (seq (map :text creators))))
+    (clean (map :text creators))))
 
 (defn- get-tv-producers [md]
   (when-let [producers (values md :/tv/tv_program/tv_producer)]
@@ -163,41 +166,41 @@
 
 (defn get-executive-producers [md]
   (if-let [producers (values md :/film/film/executive_produced_by)]
-    (seq (map :text producers))
+    (clean (map :text producers))
     (when-let [producers (get-tv-producers md)]
-      (seq (map first (filter #(= (second %) "Executive Producer") producers))))))
+      (clean (map first (filter #(= (second %) "Executive Producer") producers))))))
 
 (defn get-producers [md]
   (if-let [producers (values md :/film/film/produced_by)]
-    (seq (map :text producers))
+    (clean (map :text producers))
     (when-let [producers (get-tv-producers md)]
-      (seq (map first (filter #(or (nil? (second %)) (= (second %) "Producer")) producers))))))
+      (clean (map first (filter #(or (nil? (second %)) (= (second %) "Producer")) producers))))))
 
 (defn get-directors [md]
   (when-let [directors (values md :/film/film/directed_by)]
-    (seq (map :text directors))))
+    (clean (map :text directors))))
 
 (defn get-actors [md]
   (when-let [actors (values md :/film/film/starring)]
-    (seq (map (comp :text first :values :/film/performance/actor :property) actors))))
+    (clean (map (comp :text first :values :/film/performance/actor :property) actors))))
 
 (defn get-cast [md]
   (when-let [stars (values md :/tv/tv_program/regular_cast)]
-    (seq (map (comp :text first :values :/tv/regular_tv_appearance/actor :property) stars))))
+    (clean (map (comp :text first :values :/tv/regular_tv_appearance/actor :property) stars))))
 
 (defn get-networks [md]
   (when-let [networks (values md :/tv/tv_program/original_network)]
-    (seq (map (comp :text first :values :/tv/tv_network_duration/network :property) networks))))
+    (clean (map (comp :text first :values :/tv/tv_network_duration/network :property) networks))))
 
 (defn get-country [md]
   (:text (or (value md :/film/film/country :en)
              (value md :/tv/tv_program/country_of_origin :en))))
 
 (defn get-film-locations [md]
-  (seq (map :text (values md :/film/film/featured_film_locations :en))))
+  (clean (map :text (values md :/film/film/featured_film_locations :en))))
 
 (defn get-trailers [md]
-  (seq (map :value (values md :/film/film/trailers))))
+  (clean (map :value (values md :/film/film/trailers))))
 
 (defn get-wikipedia [md]
   (let [urls (map :value (values md :/common/topic/topic_equivalent_webpage))
@@ -210,7 +213,7 @@
     (:value id)))
 
 (defn get-netflix-genres [md]
-  (seq (map :text (values md :/media_common/netflix_title/netflix_genres :en))))
+  (clean (map :text (values md :/media_common/netflix_title/netflix_genres :en))))
 
 (defn freebase-info
   "Extracts normalized information from the metadata."
