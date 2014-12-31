@@ -61,10 +61,13 @@
   ([md k lang]
    (first (values md k lang))))
 
-(defn get-year [md]
+(defn get-released [md]
   (when-let [released (or (values md :/film/film/initial_release_date)
                           (values md :/tv/tv_program/air_date_of_first_episode))]
-     (apply min (map (comp first parse-ints :value) released))))
+     (first (sort (map :value released)))))
+
+(defn get-year [md]
+  (first (parse-ints (get-released md))))
 
 (defn get-runtimes [md]
   (seq (map (comp :value first :values :/film/film_cut/runtime :property)
@@ -220,6 +223,7 @@
   [md]
   (let [info {:name (get-title md)
               :year (get-year md)
+              :released (get-released md)
               :series (get-series md)
               :subjects (get-subjects md)
               :genres (get-genres md)
