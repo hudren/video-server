@@ -13,7 +13,7 @@
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
             [video-server.file :refer [image-filter image? movie-filter subtitle-filter subtitle? video?]]
-            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos has-file? remove-all video-for-file]]
+            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos has-file? norm-title remove-all video-for-file]]
             [video-server.metadata :refer [read-metadata]]
             [video-server.process :refer [process-file]]
             [video-server.video :refer [modified]]))
@@ -49,17 +49,23 @@
   (when-let [info (read-metadata folder video)]
     (add-info folder video info)))
 
+(defn- list-files
+  "Lists files related to the video by title and filter."
+  [folder video filter]
+  (concat (.listFiles (:file folder) (filter (:title video)))
+          (.listFiles (:file folder) (filter (norm-title (:title video))))))
+
 (defn add-subtitles
   "Performs the initial scan for subtitles."
   [folder video]
-  (doseq [file (.listFiles (:file folder) (subtitle-filter (:title video)))]
+  (doseq [file (list-files folder video subtitle-filter)]
     (log/info "adding subtitle" (str file))
     (add-subtitle folder file video)))
 
 (defn add-images
   "Performs the initial scan for image files."
   [folder video]
-  (doseq [file (.listFiles (:file folder) (image-filter (:title video)))]
+  (doseq [file (list-files folder video image-filter)]
     (log/info "adding image" (str file))
     (add-image folder file video)))
 
