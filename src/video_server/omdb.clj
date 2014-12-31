@@ -55,5 +55,7 @@
 (defn omdb-metadata
   "Queries for metadata related to the given title and year."
   [title & [series year duration]]
-  (retrieve-title title year))
+  (let [resp (retrieve-title title year)]
+    (when (= (:response resp) "True")
+      resp)))
 
