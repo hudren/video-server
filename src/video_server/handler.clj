@@ -18,7 +18,7 @@
             [video-server.android :refer [android-version]]
             [video-server.html :refer [downloads-template index-template video-template]]
             [video-server.library :refer [current-videos video-for-id]]
-            [video-server.video :refer [modified]]))
+            [video-server.video :refer [quality]]))
 
 (def ^:private base-url (atom "http://localhost"))
 
@@ -43,8 +43,10 @@
     (html-response (index-template videos))))
 
 (defn container-to-play
+  "Returns the best container to play within a web browser."
   [video]
-  (first (filter #(and (.contains (:video %) "H.264") (.contains (:audio %) "AAC")) (:containers video))))
+  (first (filter #(and (.contains (:video %) "H.264") (.contains (:audio %) "AAC"))
+                 (sort quality (:containers video)))))
 
 (defn video
   "Returns a video page."

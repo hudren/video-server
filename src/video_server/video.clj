@@ -27,6 +27,12 @@
 
 (def locales (into {} (map #(vector (.getISO3Language %) %) (map #(Locale. %) (Locale/getISOLanguages)))))
 
+(defn quality
+  "Comparator for sorting containers with highest quality first."
+  [c1 c2]
+  (let [c (compare (:width c2) (:width c1))]
+    (if-not (zero? c) c (compare (:size c2) (:size c1)))))
+
 (defn modified
   "Returns the modified time of the oldest container."
   [video]
