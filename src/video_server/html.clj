@@ -1,7 +1,7 @@
 (ns video-server.html
   (:require [clojure.string :as str]
             [net.cgrand.enlive-html :refer :all]
-            [video-server.format :refer [format-bitrate format-duration format-size video-dimension]])
+            [video-server.format :refer [format-bitrate format-duration format-size lang-two-letter video-dimension]])
   (:import (java.util Locale)))
 
 (defn video-desc
@@ -48,12 +48,24 @@
               (when (:imdb info) (video-link (str "http://www.imdb.com/title/" (:imdb info)) "IMDB"))
               (when (:netflix info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix info)) "Netflix"))])))
 
+(defn video-tag
+  "Returns the video tag for the specified video and container."
+  [video container]
+  (html [:video {:controls nil :preload "metadata"}
+         [:source {:src (:url container) :type "video/mp4"}]
+         (for [subtitle (filter #(= (:mimetype %) "text/vtt") (:subtitles video))]
+           [:track (merge {:kind "subtitles"
+                           :label (:title subtitle)
+                           :src (:url subtitle)
+                           :srclang (lang-two-letter (:language subtitle))}
+                          (when (or (:default subtitle) (:forced subtitle)) {:default nil}))])]))
+
 (defn combine
   "Combines multiple lists, returning a comma separated String."
   [& lists]
   (if (string? (first lists))
     (let [values (combine (rest lists))]
-      (when values (str (first lists) ": " values)))
+      (when values (html [:span {:class "label"} (str (first lists) ":")] (str " " values))))
     (let [values (distinct (remove nil? (flatten lists)))]
       (when (seq values)
         (str/join ", " values)))))
@@ -102,10 +114,7 @@
   [:div#poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
   [:div#info] (substitute (info video))
   [:div#actions] (content (apply html (video-links video)))
-  [:video] (when play (do-> #_(set-attr :width (:width play))
-                            #_(set-attr :height (:height play))
-                            (set-attr :preload nil)
-                            (append (html [:source {:src (:url play) :type "video/mp4"} nil])))))
+  [:video] (when play (substitute (video-tag video play))))
 
 (deftemplate downloads-template "templates/downloads.html"
   [host apk]

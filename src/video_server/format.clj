@@ -24,6 +24,11 @@
   [lang]
   (when lang (.getDisplayLanguage (apply locale (take 3 (str/split lang #"_"))))))
 
+(defn lang-two-letter
+  "Returns the human-readable language from the code."
+  [lang]
+  (when lang (subs (.toLanguageTag (apply locale (take 3 (str/split lang #"_")))) 0 2)))
+
 (defn format-size
   "Returns the size in bytes as a human-readable string."
   [size]
