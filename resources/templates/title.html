@@ -13,9 +13,10 @@
     <link rel="import" href="components/core-icons/core-icons.html">
     <link rel="import" href="components/paper-button/paper-button.html">
     <link rel="import" href="components/paper-button/paper-ripple.html">
+    <link rel="import" href="components/paper-tabs/paper-tabs.html">
 
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="video.css">
+    <link rel="stylesheet" href="title.css">
   </head>
   <body unresolved>
     <core-header-panel>
@@ -30,16 +31,22 @@
           <div id="info">
           </div>
         </div>
-        <div id="actions" class="block">
+        <div id="links" class="block">
           <paper-button raised>
             <core-icon icon="file-download"></core-icon>
             <a href="video-client-release.apk" type="application/vnd.android.package-archive">Download App</a>
           </paper-button>
         </div>
-        <div id="player" class="block">
-          <video controls="" preload="none">
-            Your browser does not support the video tag.
-          </video>
+        <div id="seasons" class="block">
+        </div>
+        <div id="season" class="block">
+          <div id="episodes">
+          </div>
+          <div id="player">
+            <video controls="" preload="none">
+              Your browser does not support the video tag.
+            </video>
+          </div>
         </div>
       </div>
     </core-header-panel>

@@ -18,6 +18,7 @@
                  [org.eclipse.jetty/jetty-servlets "9.2.3.v20140905"]
                  [clojure-watch "0.1.10"]
                  [ring/ring-core "1.3.2"]
+                 [ring/ring-devel "1.3.2"]
                  [ring/ring-servlet "1.3.2"]
                  [bk/ring-gzip "0.1.1"]
                  [compojure "1.3.1"]
@@ -29,7 +30,8 @@
                        [font-roboto "Polymer/font-roboto#~0.5.1"]
                        [core-header-panel "Polymer/core-header-panel#~0.5.1"]
                        [core-toolbar "Polymer/core-toolbar#~0.5.1"]
-                       [paper-button "Polymer/paper-button#~0.5.1"]]
+                       [paper-button "Polymer/paper-button#~0.5.1"]
+                       [paper-tabs "Polymer/paper-tabs#~0.5.1"]]
 
   :bower {:directory "resources/public/components"}
 

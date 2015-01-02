@@ -29,41 +29,40 @@
 
 (defn- metadata-file
   "Returns the File for the video metadata."
-  [folder video]
-  (io/file (:file folder) (str (norm-title (:title video)) ".json")))
+  [folder title]
+  (io/file (:file folder) (str (norm-title (:title title)) ".json")))
 
 (defn read-metadata
   "Reads the stored metadata for the video."
-  [folder video]
-  (let [file (metadata-file folder video)]
+  [folder title]
+  (let [file (metadata-file folder title)]
     (when (.isFile file)
       (try (json/read-str (slurp file) :key-fn keyword)
-           (catch Exception e (log/error e "reading .info file" (str file)))))))
+           (catch Exception e (log/error e "reading .json file" (str file)))))))
 
 (defn save-metadata
   "Stores the metadata for later retrieval."
-  [folder video info]
-  (let [file (metadata-file folder video)]
+  [folder title info]
+  (let [file (metadata-file folder title)]
     (log/debug "saving metadata" (str file))
     (with-open [w (io/writer file)]
       (.write w (with-out-str (json/pprint info :key-fn name))))))
 
 (defn save-poster
   "Downloads the poster for the specified video."
-  [folder video url]
-  (let [file (io/file (:file folder) (str (norm-title (:title video)) (file-ext url)))]
-    (log/info "downloading poster for" (:title video))
+  [folder title url]
+  (let [file (io/file (:file folder) (str (norm-title (:title title)) (file-ext url)))]
+    (log/info "downloading poster for" (:title title))
     (when-let [contents (retrieve-image url)]
       (with-open [w (io/output-stream file)]
         (.write w contents)))))
 
 (defn title-parts
   "Extracts the year from the title to aid in metadata lookup."
-  [video]
-  (let [title (:title video)]
-    (if-let [year (second (re-find #" \((\d{4})\)$" title))]
-      [(str/trim (subs title 0 (- (count title) 6))) (parse-long year)]
-      [title])))
+  [title]
+  (if-let [year (second (re-find #" \((\d{4})\)$" title))]
+    [(str/trim (subs title 0 (- (count title) 6))) (parse-long year)]
+    [title]))
 
 (defn best-title
   "Returns the latter title that improves on the previous."
@@ -77,10 +76,10 @@
 
 (defn fetch-metadata
   "Returns the pair of metadata and poster URL."
-  [video]
-  (let [[title year] (title-parts video)
-        duration (when-let [duration (:duration video)] (/ duration 60))
-        series? (some? (:episode video))
+  [item]
+  (let [[title year] (title-parts (:title item))
+        duration (when-let [duration (:duration item)] (/ duration 60))
+        series? (some? (:episode item))
         fb (freebase-metadata title series? year duration)
         db (when-let [id (get-imdb-id fb)] (retrieve-id id))
         db (or db (omdb-metadata title series? year duration))]

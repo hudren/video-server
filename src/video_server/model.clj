@@ -9,6 +9,7 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.model
+  (:require [clojure.string :as str])
   (:import (java.lang.reflect Modifier)))
 
 ;; A folder containing videos to be served
@@ -34,8 +35,15 @@
   (toString [_] title))
 
 ;; Video containing one or more containers
-(defrecord Video [id title sorting duration season episode episode-title
-                  containers subtitles poster thumb info]
+(defrecord Video [title season episode episode-title duration containers subtitles]
+  Object
+  (toString [_]
+    (str title
+         (if season (str " Season " season " Episode " episode)
+           (if episode (str " Part " episode))))))
+
+;; Title containing one or more related videos
+(defrecord Title [id title sorting poster thumb info videos]
   Object
   (toString [_] title))
 
@@ -47,6 +55,7 @@
        (remove #(-> % .getModifiers Modifier/isStatic))
        (map #(.getName %))
        (remove #(.startsWith % "__"))
+       (map #(str/replace % "_" "-"))
        (mapv keyword)))
 
 (defmacro make-record

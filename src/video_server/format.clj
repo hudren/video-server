@@ -102,3 +102,23 @@
       (str name " (" audio ")")
       audio)))
 
+(defn sequential-seqs
+  "Reducer fn to group sequential ranges from a number series."
+  ([] [])
+  ([a] a)
+  ([a b] (let [n (last (last a))]
+           (if (and n (= (inc n) b))
+             (update-in a [(dec (count a))] conj b)
+             (conj a [b])))))
+
+(defn find-ranges
+  "Finds ranges given a collection of numbers."
+  [ids]
+  (let [seqs (reduce sequential-seqs [] (sort ids))]
+    (map #(vector (first %) (last %)) seqs)))
+
+(defn format-ranges
+  "Formats ranges to be human readable."
+  [ranges]
+  (str/join "," (map (fn [[f l]] (if (or (nil? l) (= f l)) f (str f "-" l))) ranges)))
+

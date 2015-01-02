@@ -14,11 +14,11 @@
             [compojure.handler :refer [site]]
             [compojure.route :refer [not-found resources]]
             [ring.middleware.gzip :refer [wrap-gzip]]
-            [ring.util.response :refer [response]]
+            [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version]]
-            [video-server.html :refer [downloads-template index-template video-template]]
-            [video-server.library :refer [current-videos video-for-id]]
-            [video-server.video :refer [quality]]))
+            [video-server.html :refer [downloads-template title-page titles-template]]
+            [video-server.library :refer [current-titles current-videos title-for-id]]
+            [video-server.util :refer :all]))
 
 (def ^:private base-url (atom "http://localhost"))
 
@@ -36,23 +36,17 @@
    :headers {"Content-Type" "application/json"}
    :body (json/write-str data)})
 
-(defn index
-  "Returns the index or home page."
+(defn titles
+  "Returns the index or home page listing the titles."
   []
-  (let [videos (sort-by :sorting (current-videos))]
-    (html-response (index-template videos))))
+  (let [titles (sort-by :sorting (current-titles))]
+    (html-response (titles-template titles))))
 
-(defn container-to-play
-  "Returns the best container to play within a web browser."
-  [video]
-  (first (filter #(and (.contains (:video %) "H.264") (.contains (:audio %) "AAC"))
-                 (sort quality (:containers video)))))
-
-(defn video
-  "Returns a video page."
-  [id]
-  (when-let [video (video-for-id id)]
-    (html-response (video-template video (container-to-play video)))))
+(defn title
+  "Returns a title page."
+  [id season episode]
+  (when-let [title (title-for-id id)]
+    (html-response (title-page title season episode))))
 
 (defn downloads
   "Returns the downloads page."
@@ -64,16 +58,22 @@
   []
   (json-response (current-videos)))
 
+(defn titles-api
+  "Responds with a list of available titles."
+  []
+  (json-response (current-titles)))
+
 (defn android-api
   "Responds with the android client version info."
   []
   (json-response @android-version))
 
 (defroutes app-routes
-  (GET "/" [] (index))
-  (GET "/video" [id] (video id))
+  (GET "/" [] (titles))
+  (GET "/title" [id s e] (title id (parse-long s) (parse-long e)))
   (GET "/downloads" [] (downloads))
   (GET "/api/v1/videos" [] (videos-api))
+  (GET "/api/v1/titles" [] (titles-api))
   (GET "/api/v1/android" [] (android-api))
   (resources "/" {:root "public"})
   (not-found "Not Found"))
@@ -81,5 +81,5 @@
 (defn app
   [url]
   (reset! base-url url)
-  (wrap-gzip (site app-routes)))
+  (wrap-gzip (wrap-stacktrace (site app-routes))))
 

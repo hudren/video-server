@@ -1,8 +1,22 @@
+;;;; Copyright (c) Jeff Hudren. All rights reserved.
+;;;;
+;;;; Use and distribution of this software are covered by the
+;;;; Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php).
+;;;;
+;;;; By using this software in any fashion, you are agreeing to be bound by
+;;;; the terms of this license.
+;;;;
+;;;; You must not remove this notice, or any other, from this software.
+
 (ns video-server.html
   (:require [clojure.string :as str]
             [net.cgrand.enlive-html :refer :all]
-            [video-server.format :refer [format-bitrate format-duration format-size lang-two-letter video-dimension]])
-  (:import (java.util Locale)))
+            [video-server.format :refer [format-bitrate format-size lang-two-letter]]
+            [video-server.library :refer [video-for-key]]
+            [video-server.title :refer [best-container best-video episode-title has-episodes? has-parts? has-seasons? season-desc
+                                        season-titles]])
+  (:import (java.net URLEncoder)
+           (java.util Locale)))
 
 (defn video-desc
   "Returns a description of the video technical details."
@@ -40,13 +54,12 @@
 
 (defn video-links
   "Returns a sequence of links for the video."
-  [video]
-  (when-let [info (:info video)]
-    (into [] [(when (:website info) (video-link (:website info) "Website" "home"))
-              (when (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
-              (when (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
-              (when (:imdb info) (video-link (str "http://www.imdb.com/title/" (:imdb info)) "IMDB"))
-              (when (:netflix info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix info)) "Netflix"))])))
+  [info]
+  (into [] [(when (:website info) (video-link (:website info) "Website" "home"))
+            (when (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
+            (when (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
+            (when (:imdb info) (video-link (str "http://www.imdb.com/title/" (:imdb info)) "IMDB"))
+            (when (:netflix info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix info)) "Netflix"))]))
 
 (defn video-tag
   "Returns the video tag for the specified video and container."
@@ -60,6 +73,44 @@
                            :srclang (lang-two-letter (:language subtitle))}
                           (when (or (:default subtitle) (:forced subtitle)) {:default nil}))])]))
 
+(defn title-url
+  "Returns the URL for the given title."
+  [title]
+  (str "title?id=" (URLEncoder/encode (:id title))))
+
+(defn- selected-index
+  "Returns the tab index of the selected season."
+  [seasons selected]
+  (first (first (filter #(= (-> % second first) selected) (map-indexed vector seasons)))))
+
+(defn season-tabs
+  "Returns the tabs for the given seasons."
+  [url seasons selected]
+  (html [:paper-tabs {:link nil :selected (selected-index seasons selected)}
+         (for [season seasons]
+           [:paper-tab
+            [:a {:href (str url "&s=" (first season)) :horizontal nil :center-center nil :layout nil}
+             (second season)]])]))
+
+(defn episode-titles
+  "Returns the episode number and title pairs for the given season."
+  [title season]
+  (when-let [episodes (seq (filter #(= (:season (second %)) season) (:videos title)))]
+    (let [videos (map video-for-key episodes)]
+      (sort-by first (map #(vector (:episode %)
+                                   (or (when-let [et (episode-title title %)]
+                                         (str (:episode %) ". " et))
+                                       (str (if season "Episode " "Part ") (:episode %))))
+                          videos)))))
+
+(defn episode-list
+  "Returns the episode list highlighting the selected one."
+  [title season selected]
+  (html [:ul
+         (for [episode (episode-titles title season)]
+           [:li (when (= (first episode) selected) {:class "selected"})
+            [:a {:href (str (title-url title) "&s=" season "&e=" (first episode))} (second episode)]])]))
+
 (defn combine
   "Combines multiple lists, returning a comma separated String."
   [& lists]
@@ -71,50 +122,75 @@
         (str/join ", " values)))))
 
 (defn when-content
+  "Replaces the content or removes the element."
   [expr]
   #(when expr ((content expr) %)))
 
-(defsnippet video-item "templates/video-item.html" [:div.video]
-  [video]
-  [:div.poster :a] (set-attr :href (str "video?id=" (:id video)))
-  [:div.poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
-  [:span.title :a] (do-> (set-attr :href (str "video?id=" (:id video)))
-                         (content (or (-> video :info :title) (:title video))))
-  [:span.year] (when-let [year (-> video :info :year)] (content (str year)))
-  [:span.rated] (when-let [rated (-> video :info :rated)] (content rated))
-  [:span.duration] (when-let [runtime (-> video :info :runtime)] (content runtime))
-  [:p.genres] (when-content (combine "Genres" (-> video :info :genres)))
-  [:p.stars] (when-content (combine "Starring" (-> video :info :stars)))
-  [:p.summary] (when-content (video-desc video)))
+(defn if-add-class
+  "Conditionally adds a class."
+  [pred class]
+  #(if pred ((add-class (name class)) %) %))
 
-(defsnippet info "templates/video-info.html" [:div#info]
-  [video]
-  [:span.year] (when-let [year (-> video :info :year)] (content (str year)))
-  [:span.rated] (when-let [rated (-> video :info :rated)] (content rated))
-  [:span.duration] (when-let [runtime (-> video :info :runtime)] (content runtime))
-  [:p.plot] (content (-> video :info :plot))
-  [:p.subjects] (when-content (combine "Subjects" (-> video :info :subjects)))
-  [:p.genres] (when-content (combine "Genres" (-> video :info :genres) (-> video :info :netflix-genres)))
-  [:p.cast] (when-content (combine "Cast" (-> video :info :stars) (-> video :info :actors)))
-  [:p.languages] (when-let [languages (-> video :info :languages)]
+;;; Title listing
+
+(defsnippet title-item "templates/title-item.html" [:div.video]
+  [title info]
+  [:div.poster :a] (set-attr :href (title-url title))
+  [:div.poster :img] (set-attr :src (or (:poster title) "placeholder.png"))
+  [:span.title :a] (do-> (set-attr :href (title-url title))
+                         (content (or (:title info) (:title title))))
+  [:span.year] (when-let [year (:year info)] (content (str year)))
+  [:span.rated] (when-let [rated (:rated info)] (content rated))
+  [:span.duration] (if (has-seasons? title)
+                     (content (season-desc title))
+                     (when-let [runtime (:runtime info)] (content runtime)))
+  [:p.genres] (when-content (combine "Genres" (:genres info)))
+  [:p.stars] (when-content (combine "Starring" (:stars info))))
+
+(deftemplate titles-template "templates/titles.html"
+  [titles]
+  [:#content] (content (map #(title-item % (:info %)) titles)))
+
+;;; Title page
+
+(defsnippet title-info "templates/info.html" [:div#info]
+  [info]
+  [:span.year] (when-let [year (:year info)] (content (str year)))
+  [:span.rated] (when-let [rated (:rated info)] (content rated))
+  [:span.duration] (when-let [runtime (when-not (= (:type info) "series") (:runtime info))] (content runtime))
+  [:p.plot] (content (:plot info))
+  [:p.subjects] (when-content (combine "Subjects" (:subjects info)))
+  [:p.genres] (when-content (combine "Genres" (:genres info) (:netflix-genres info)))
+  [:p.cast] (when-content (combine "Cast" (:stars info) (:actors info)))
+  [:p.languages] (when-let [languages (:languages info)]
                    (when-not (= languages (list "English"))
-                     (content (combine "Languages" languages))))
-  [:ul :li] (clone-for [container (:containers video)]
-                       [:li] (content (container-desc container))))
+                     (content (combine "Languages" languages)))))
 
-(deftemplate index-template "templates/index.html"
-  [videos]
-  [:#content] (content (map #(video-item %) videos)))
+(deftemplate title-template "templates/title.html"
+  [title info video container season episode]
+  [:head :title] (content (or (:title info) (:title title)))
+  [:core-toolbar :div] (content (or (:title info) (:title title)))
+  [:div#desc] (when (or (:year info) (:plot info)) identity)
+  [:div#poster :img] (set-attr :src (or (:poster title) "placeholder.png"))
+  [:div#info] (substitute (title-info info))
+  [:div#links] (content (apply html (video-links info)))
+  [:div#seasons] (when (has-seasons? title)
+                   (content (season-tabs (title-url title) (season-titles title) season)))
+  [:div#season] (if-add-class (or (has-episodes? title season) (has-parts? title)) :has-episodes)
+  [:div#episodes] (when (has-episodes? title season)
+                    (content (episode-list title season episode)))
+  [:video] (when container (substitute (video-tag video container))))
 
-(deftemplate video-template "templates/video.html"
-  [video play]
-  [:head :title] (content (or (-> video :info :title) (:title video)))
-  [:core-toolbar :div] (content (or (-> video :info :title) (:title video)))
-  [:div#desc] (when (or (:year (:info video)) (:plot (:info video))) identity)
-  [:div#poster :img] (set-attr :src (or (:poster video) "placeholder.png"))
-  [:div#info] (substitute (info video))
-  [:div#actions] (content (apply html (video-links video)))
-  [:video] (when play (substitute (video-tag video play))))
+(defn title-page
+  "Returns the page diplaying the title w/episodes and parts."
+  [title season episode]
+  (let [season (or season (ffirst (season-titles title)))
+        episode (or episode (ffirst (episode-titles title season)))
+        video (video-for-key (best-video (:videos title) season episode))
+        container (best-container video)]
+    (title-template title (:info title) video container season episode)))
+
+;;; Downloads page
 
 (deftemplate downloads-template "templates/downloads.html"
   [host apk]

@@ -12,8 +12,8 @@
   (:require [clojure.tools.logging :as log]
             [clojure.core.async :refer [chan go thread <! <!! >!]]
             [video-server.file :refer [subtitle? video?]]
-            [video-server.encoder :refer [encode-subtitle encode-subtitles encode-video extract-thumbnail video-encode-spec]]
-            [video-server.library :refer [add-info video-key video-for-file video-for-key]]
+            [video-server.encoder :refer [encode-subtitles encode-video extract-thumbnail video-encode-spec]]
+            [video-server.library :refer [add-info title-for-key video-key video-for-key]]
             [video-server.metadata :refer [retrieve-metadata]]))
 
 (def ^:private process-chan (chan 100))
@@ -60,6 +60,17 @@
   (and (not-any? #(= (:mimetype %) "text/vtt") (:subtitles video))
        (some #(not= (:mimetype %) "text/vtt") (:subtitles video))))
 
+(defn fetch-info
+  "Fetches metadata for the title and extracts thumbnails from the
+  video."
+  [folder key video]
+  (let [title (title-for-key key)]
+    (when-not (:info title)
+      (when-let [info (retrieve-metadata folder video)]
+        (add-info title info))))
+  (when-not (:thumb video)
+    (extract-thumbnail folder video)))
+
 (defn process-video
   "Conditionally encodes the video and/or subtitles."
   [folder video fmt size]
@@ -87,12 +98,7 @@
               (let [[folder key] (<!! process-chan)]
                 (log/trace "processing" folder key)
                 (when-let [video (video-for-key folder key)]
-                  (try (when fetch?
-                         (when-not (:info video)
-                           (when-let [info (retrieve-metadata folder video)]
-                             (add-info folder video info)))
-                         (when-not (:thumb video)
-                           (extract-thumbnail folder video)))
+                  (try (when fetch? (fetch-info folder key video))
                        (when encode? (process-video folder video fmt size))
                        (catch Exception e (log/error e "error processing video" (str video))))))))))
 

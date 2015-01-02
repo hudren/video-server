@@ -16,6 +16,7 @@
 (def movie-exts #{".mkv" ".mp4" ".m4v"})
 (def subtitle-exts #{".vtt" ".srt"})
 (def image-exts #{".jpg" ".jpeg" ".png" ".webp"})
+(def metadata-exts #{".json"})
 
 (defn mimetype
   "Returns a mimetype based on the file metadata or extension."
@@ -88,12 +89,16 @@
   title extracted from a string in the format of <title> - S01E01 -
   <episode>."
   [name]
-  (let [[series program episode] (map str/trim (str/split name #" - ")) ]
+  (let [[series program episode] (map str/trim (str/split (clean-title name) #" - ")) ]
     (merge {:title (clean-title series)}
            (when program
-             (when-let [nums (re-find #"S(\d+)E(\d+)" program)]
+             (when-let [nums (re-find #"s(\d+)e(\d+)" (str/lower-case program))]
                {:season (Integer/parseInt (nth nums 1))
                 :episode (Integer/parseInt (nth nums 2))
+                :episode-title (clean-title episode)}))
+           (when program
+             (when-let [nums (re-find #"p(?:ar)?t\s*(\d+)" (str/lower-case program))]
+               {:episode (Integer/parseInt (nth nums 1))
                 :episode-title (clean-title episode)})))))
 
 (defn video-filename
@@ -101,7 +106,9 @@
   qualifier can be used to make the filename unique."
   [video & [ext width height qual]]
   (str (->> [(:title video)
-             (when (:season video) (format "S%02dE%02d" (:season video) (:episode video)))
+             (if (:season video)
+               (format "S%02dE%02d" (:season video) (:episode video))
+               (when (:episode video) (format "PT%02d" (:episode video))))
              (:episode-title video)
              (when (#{1280 1920} width) (video-dimension width height))]
             (remove nil?)
@@ -150,6 +157,11 @@
   [file]
   (file-with-ext? file image-exts))
 
+(defn metadata?
+  "Returns whether the file is a metadata file."
+  [file]
+  (file-with-ext? file metadata-exts))
+
 (defn movie-filter
   "A filter for listing movie files."
   []
@@ -166,9 +178,4 @@
   filter will only match files related to that title."
   ([] (ext-filter image-exts))
   ([title] (title-filter title image-exts)))
-
-(defn files-for-title
-  "Returns the files related to the given title."
-  [title-spec]
-  ()) ; TODO: implement this
 

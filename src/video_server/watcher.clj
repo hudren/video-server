@@ -12,10 +12,12 @@
   (:require [clojure-watch.core :refer [start-watch]]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [video-server.file :refer [image-filter image? movie-filter subtitle-filter subtitle? video?]]
-            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos has-file? norm-title remove-all video-for-file]]
+            [video-server.file :refer [image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
+            [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos has-file?
+                                                      norm-title remove-all title-for-file video-for-file]]
             [video-server.metadata :refer [read-metadata]]
             [video-server.process :refer [process-file]]
+            [video-server.util :refer :all]
             [video-server.video :refer [modified]]))
 
 (def ^:const stable-time 60000)
@@ -24,16 +26,6 @@
 ;; Set of changing files
 (defonce pending-files (ref #{}))
 
-(defn periodically
-  "Peridoically calls a function. Returns a stopping function."
-  [f ms]
-  (let [p (promise)]
-    (future
-      (while
-        (= (deref p ms "running") "running")
-        (f)))
-    #(deliver p "stop")))
-
 (defn stable?
   "Returns true if the file has has content and has not been modified
   for a reasonable duration."
@@ -41,19 +33,20 @@
   (and (.isFile file)
        (pos? (.length file))
        (or (image? file)
+           (metadata? file)
            (< (.lastModified file) (- (System/currentTimeMillis) stable-time)))))
 
 (defn add-metadata
   "Reads existing metadata for the given video."
-  [folder video]
-  (when-let [info (read-metadata folder video)]
-    (add-info folder video info)))
+  [folder title]
+  (when-let [info (read-metadata folder title)]
+    (add-info title info)))
 
 (defn- list-files
   "Lists files related to the video by title and filter."
   [folder video filter]
-  (concat (.listFiles (:file folder) (filter (:title video)))
-          (.listFiles (:file folder) (filter (norm-title (:title video))))))
+  (distinct (concat (.listFiles (:file folder) (filter (:title video)))
+                    (.listFiles (:file folder) (filter (norm-title (:title video)))))))
 
 (defn add-subtitles
   "Performs the initial scan for subtitles."
@@ -64,10 +57,10 @@
 
 (defn add-images
   "Performs the initial scan for image files."
-  [folder video]
-  (doseq [file (list-files folder video image-filter)]
+  [folder title]
+  (doseq [file (list-files folder title image-filter)]
     (log/info "adding image" (str file))
-    (add-image folder file video)))
+    (add-image folder file title)))
 
 (defn add-videos
   "Performs the initial folder scan, adding videos to the library."
@@ -76,17 +69,18 @@
     (doseq [file (filter stable? files)]
       (log/info "adding video" (str file))
       (library/add-video folder file))
+    (doseq [title (current-titles)]
+      (add-metadata folder title)
+      (add-images folder title))
     (doseq [video (sort-by modified (current-videos))]
-      (add-metadata folder video)
       (add-subtitles folder video)
-      (add-images folder video)
       (process-file folder video))))
 
 (defn scan-folder
   "Loads all of the videos and subtitles in the folder."
   [folder]
   (log/info "scanning" (str (:file folder)) "as" (:name folder))
-  (remove-all) ; TODO this shouldn't be necessary
+  (remove-all)
   (add-videos folder))
 
 (defn add-video
@@ -109,7 +103,8 @@
   (cond
     (video? file) (add-video folder file)
     (subtitle? file) (add-subtitle folder file)
-    (image? file) (add-image folder file))
+    (image? file) (add-image folder file)
+    (metadata? file) (add-metadata folder (title-for-file file)))
   (process-file folder file))
 
 (defn check-pending-files
@@ -142,7 +137,7 @@
 (defn file-event-callback
   "Processes the file system events."
   [folder event filename]
-  (when ((some-fn video? subtitle? image?) filename)
+  (when ((some-fn video? subtitle? image? metadata?) filename)
     (let [file (io/file filename)]
       (try (case event
              :create (if (stable? file)

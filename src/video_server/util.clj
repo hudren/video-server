@@ -19,12 +19,12 @@
 (defn parse-long
   "Parses a long value from a string or number."
   [v]
-  (when v (if (string? v) (Long/parseLong v) (long v))))
+  (when v (if (string? v) (when-not (str/blank? v) (Long/parseLong v)) (long v))))
 
 (defn parse-double
   "Parses a double value from a string or number."
   [v]
-  (when v (if (string? v) (Double/parseDouble v) (double v))))
+  (when v (if (string? v) (when-not (str/blank? v) (Double/parseDouble v)) (double v))))
 
 (defn parse-ints
   "Returns the integers found within the string."
@@ -45,6 +45,16 @@
   (let [args (->> cmd flatten (remove nil?) (map str))]
     (log/trace "executing" (str/join " " args))
     (apply shell/sh args)))
+
+(defn periodically
+  "Peridoically calls a function. Returns a stopping function."
+  [f ms]
+  (let [p (promise)]
+    (future
+      (while
+        (= (deref p ms "running") "running")
+        (f)))
+    #(deliver p "stop")))
 
 (defn get-json
   "Retrieves and caches the JSON body."

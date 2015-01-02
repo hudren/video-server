@@ -17,6 +17,7 @@
             [video-server.omdb :as omdb :refer :all]
             [video-server.process :as process :refer :all]
             [video-server.server :as server]
+            [video-server.title :as title :refer :all]
             [video-server.util :as util :refer :all]
             [video-server.video :as video :refer :all]
             [video-server.watcher :as watcher]))
@@ -38,6 +39,9 @@
 
 (defn video-for-title [title]
   (first (filter #(.contains (:title %) title) (library/current-videos))))
+
+(defn title-for-title [title]
+  (title-for-id (:title (video-key title))))
 
 (defn fetch-film [title]
   (fetch-metadata (map->Video {:title title})))

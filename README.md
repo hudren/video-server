@@ -23,9 +23,10 @@ The following software is required to build and run this software:
 * Leiningen 2
 * Bower
 
-The following runtime dependency is also required:
+The following runtime dependencies are also required:
 
 * ffmpeg
+* mkvtoolnix (optional)
 
 ## Usage
 

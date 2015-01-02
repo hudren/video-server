@@ -29,7 +29,7 @@ span.label {
   font-weight: bold;
 }
 
-div#actions {
+div#links {
   text-align: center;
 }
 
@@ -44,6 +44,29 @@ ul {
 }
 li {
   color: rgba(0,0,0,0.54);
+}
+
+div#seasons {
+  max-width: 1280px;
+}
+
+div#season.has-episodes {
+  max-width: 1280px;
+}
+
+div#season.has-episodes div#episodes {
+  width: 320px;
+  float: left;
+}
+
+div#season.has-episodes div#player {
+  vertical-align: top;
+  margin-left: 368px;
+}
+
+li.selected {
+  color: inherit;
+  font-weight: bold;
 }
 
 div#player {

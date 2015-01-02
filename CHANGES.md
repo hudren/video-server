@@ -1,5 +1,11 @@
 # Videos@Home Changelog
 
+## Version 0.3
+
+* Added metadata collection
+* Enhanced web UI
+* Added support for titles (tv seasons)
+
 ## Version 0.2.4
 
 * Changed to select default audio
