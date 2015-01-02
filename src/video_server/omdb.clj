@@ -44,7 +44,7 @@
   "Extracts fields for storage from the metadata"
   [omdb]
   (let [md (merge (select-keys omdb [:title :runtime :rated :plot :type :poster])
-                  {:imdb (:imdbid omdb)
+                  {:imdb-id (:imdbid omdb)
                    :year (first (parse-ints (:year omdb)))
                    :genres (multi (:genre omdb))
                    :directors (when-let [d (:director omdb)] (list d))
