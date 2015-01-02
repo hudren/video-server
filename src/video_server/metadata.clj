@@ -88,11 +88,11 @@
 
 (defn retrieve-metadata
   "Retrieves metadata from the Internet and persists it in the folder."
-  [folder video]
+  [folder video title]
   (let [info (fetch-metadata video)
         poster (:poster info)]
     (save-metadata folder video info)
-    (when (and (not (:poster video)) poster)
+    (when (and (not (:poster title)) poster)
       (save-poster folder video poster))
     info))
 

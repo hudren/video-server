@@ -39,8 +39,9 @@
 (defn add-metadata
   "Reads existing metadata for the given video."
   [folder title]
-  (when-let [info (read-metadata folder title)]
-    (add-info title info)))
+  (when title
+    (when-let [info (read-metadata folder title)]
+      (add-info title info))))
 
 (defn- list-files
   "Lists files related to the video by title and filter."
@@ -88,10 +89,12 @@
   images if the video was added (is new) to the library."
   [folder file]
   (when (library/add-video folder file)
+    (let [title (title-for-file file)]
+      (add-metadata folder title)
+      (add-images folder title))
     (let [video (video-for-file folder file)]
       (add-metadata folder video)
-      (add-subtitles folder video)
-      (add-images folder video))))
+      (add-subtitles folder video))))
 
 (defn add-file
   "Adds a newly discovered file to the library and queues it for

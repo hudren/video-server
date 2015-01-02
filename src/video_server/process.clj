@@ -64,12 +64,12 @@
   "Fetches metadata for the title and extracts thumbnails from the
   video."
   [folder key video]
-  (let [title (title-for-key key)]
+  (when-let [title (title-for-key key)]
     (when-not (:info title)
-      (when-let [info (retrieve-metadata folder video)]
-        (add-info title info))))
-  (when-not (:thumb video)
-    (extract-thumbnail folder video)))
+      (when-let [info (retrieve-metadata folder video title)]
+        (add-info title info)))
+    (when-not (:thumb title)
+      (extract-thumbnail folder video))))
 
 (defn process-video
   "Conditionally encodes the video and/or subtitles."
