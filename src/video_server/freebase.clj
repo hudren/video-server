@@ -15,7 +15,7 @@
             [video-server.util :refer :all])
   (:import (java.net URLEncoder)))
 
-(defonce ^:private cache (atom (cache/lirs-cache-factory {})))
+(defonce ^:private cache (atom (cache/lru-cache-factory {})))
 
 (def ^:private api-key (delay (str/trim (slurp (io/resource "freebase.key")))))
 

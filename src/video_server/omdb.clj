@@ -14,7 +14,7 @@
             [video-server.util :refer :all])
   (:import (java.net URLEncoder)))
 
-(defonce ^:private cache (atom (cache/lirs-cache-factory {})))
+(defonce ^:private cache (atom (cache/lru-cache-factory {})))
 
 (defn- filter-values
   [m]
