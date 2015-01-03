@@ -9,12 +9,14 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.process
-  (:require [clojure.tools.logging :as log]
+  (:require [clojure.java.io :as io]
+            [clojure.tools.logging :as log]
             [clojure.core.async :refer [chan go thread <! <!! >!]]
-            [video-server.file :refer [subtitle? video?]]
-            [video-server.encoder :refer [encode-subtitles encode-video extract-thumbnail video-encode-spec]]
-            [video-server.library :refer [add-info title-for-key video-key video-for-key]]
-            [video-server.metadata :refer [retrieve-metadata]]))
+            [video-server.file :refer [file-type subtitle? video?]]
+            [video-server.encoder :refer [can-source? container-size container-to-encode encode-size encode-subtitles encode-video extract-thumbnail video-encode-spec]]
+            [video-server.library :refer [add-info add-video title-for-key video-key video-for-key]]
+            [video-server.metadata :refer [retrieve-metadata]]
+            [video-server.util :refer :all]))
 
 (def ^:private process-chan (chan 100))
 (def ^:private encoder-chan (chan 100))
@@ -43,16 +45,31 @@
   [video]
   (some #(< (:size %) 4187593114) (:containers video)))
 
+(defn can-cast-container?
+  "Returns whether the container is compatible for casting."
+  [container]
+  (and (.contains (:video container) "H.264") (.contains (:audio container) "AAC")))
+
 (defn can-cast?
   "Returns whether the video is compatible for casting."
   [video]
-  (some #(and (.contains (:video %) "H.264") (.contains (:audio %) "AAC")) (:containers video)))
+  (some can-cast-container? (:containers video)))
+
+(defn has-fmt-size?
+  "Returns whether the video has a casting-compatible container
+  matching the specified format and size."
+  [video fmt size]
+  (let [containers (filter can-cast-container? (:containers video))]
+    (some #(and (= (file-type (:filename %)) fmt) (= size (container-size %))) containers)))
 
 (defn should-encode-video?
   "Returns whether the video should be encoded for downloading or
   casting."
-  [video]
-  (not (and (can-download? video) (can-cast? video))))
+  ([video]
+   (not (and (can-download? video) (can-cast? video))))
+  ([video fmt size]
+   (and (not (has-fmt-size? video fmt size))
+        (can-source? (container-size (container-to-encode (:containers video))) size))))
 
 (defn should-encode-subtitles?
   "Returns whether the subtitles need to be transcoded for casting."
@@ -71,34 +88,49 @@
     (when-not (:thumb title)
       (extract-thumbnail folder video))))
 
+(defn- encode
+  "Creates an encoding spec and queues it for processing."
+  [folder video fmt size]
+  (when-let [spec (video-encode-spec folder video fmt size)]
+    (process-encode spec)))
+
 (defn process-video
   "Conditionally encodes the video and/or subtitles."
-  [folder video fmt size]
+  [folder video fmt size options]
   (log/debug "processing video" (str video))
-  (when (should-encode-video? video)
-    (when-let [spec (video-encode-spec folder video fmt size)]
-      (process-encode spec)))
   (when (should-encode-subtitles? video)
-    (encode-subtitles folder video)))
+    (encode-subtitles folder video))
+  (if (should-encode-video? video)
+    (encode folder video fmt (encode-size video size))
+    (loop [options options]
+      (when (seq options)
+        (let [[fmt size] (first options)]
+          (log/trace "checking" fmt size "for" (:title video))
+          (if (should-encode-video? video fmt (encode-size video size))
+            (encode folder video fmt size)
+            (recur (rest options))))))))
 
 (defn start-encoding
-  "Processes enqueued encoding jobs."
+  "Processes requests in the encoder channel."
   []
   (go (while true
         (let [spec (<! encoder-chan)]
           (log/trace "encoding" spec)
-          (encode-video spec)))))
+          (encode-video spec)
+          (add-video (:folder spec) (io/file (:output spec)))
+          (process-file (:folder spec) (:video spec))))))
 
 (defn start-processing
   "Processes enqueued files."
-  [num-threads encode? fetch? fmt size]
+  [encode? fetch? fmt size]
   (log/debug "starting file processing")
-  (dotimes [_ num-threads]
-    (thread (while true
-              (let [[folder key] (<!! process-chan)]
-                (log/trace "processing" folder key)
-                (when-let [video (video-for-key folder key)]
-                  (try (when fetch? (fetch-info folder key video))
-                       (when encode? (process-video folder video fmt size))
-                       (catch Exception e (log/error e "error processing video" (str video))))))))))
+  (go (while true
+        (let [[folder key] (<! process-chan)]
+          (log/trace "processing" folder key)
+          (when-let [video (video-for-key folder key)]
+            (try (when fetch?
+                   (fetch-info folder key video))
+                 (when encode?
+                   (process-video folder video fmt size (:encode (:options folder))))
+                 (catch Exception e (log/error e "error processing video" (str video)))))))))
 

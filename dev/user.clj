@@ -23,16 +23,16 @@
             [video-server.watcher :as watcher]))
 
 (def port 8090)
-(def hostname "Local Server")
+(def hostname "Dev Server")
 (def encode true)
 (def fetch true)
-(def num-threads 5)
 (def output-format :mkv)
 (def output-size :720)
 
-(def dir (main/default-folder))
+(def directory (main/default-folder))
+(def options (main/read-options directory))
 (def url (main/host-url port))
-(def folder (->Folder "videos" (io/file dir) (str url "/" "videos")))
+(def folder (->Folder "videos" (io/file directory) (str url "/" "videos") nil))
 
 (defn rescan []
   (watcher/scan-folder folder))
@@ -53,7 +53,7 @@
   (main/set-log-level (main/log-level "debug"))
   (binding [encoder/*fake-encode* true]
     (process/start-encoding))
-  (process/start-processing num-threads encode fetch output-format output-size)
+  (process/start-processing encode fetch output-format output-size)
   (watcher/start-watcher folder)
   (server/start-server url port (handler/app url) folder)
   (discovery/start-discovery url main/discovery-port hostname))

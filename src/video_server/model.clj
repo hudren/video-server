@@ -13,7 +13,7 @@
   (:import (java.lang.reflect Modifier)))
 
 ;; A folder containing videos to be served
-(defrecord Folder [name file url]
+(defrecord Folder [name file url options]
   Object
   (toString [_] name))
 

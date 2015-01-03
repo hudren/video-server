@@ -9,7 +9,8 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.main
-  (:require [clojure.java.io :as io]
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.cli :refer [parse-opts]]
             [trptcolin.versioneer.core :as version]
@@ -20,6 +21,7 @@
             [video-server.server :refer [start-server]]
             [video-server.watcher :refer [start-watcher]])
   (:import (ch.qos.logback.classic Level Logger)
+           (java.io PushbackReader)
            (java.net InetAddress)
            (org.slf4j LoggerFactory))
   (:gen-class))
@@ -110,15 +112,22 @@
   (when msg (println msg))
   (System/exit code))
 
+(defn read-options
+  [file]
+  (let [file (io/file (io/file file) "options.edn")]
+    (when (.isFile file)
+      (with-open [rdr (PushbackReader. (io/reader file))]
+        (edn/read rdr)))))
+
 (defn start
   "Starts all of the components, returning the Jetty web server."
   [dir options]
   (let [fmt (keyword (:format options))
         size (-> (:size options) str keyword)
         url (host-url (:port options))
-        folder (->Folder "videos" (io/file dir) (str url "/" "videos"))]
+        folder (->Folder "videos" (io/file dir) (str url "/" "videos") (read-options dir))]
     (start-encoding)
-    (start-processing 5 (:encode options) (:fetch options) fmt size)
+    (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folder)
     (let [server (start-server url (:port options) (app url) folder)]
       (start-discovery url discovery-port (:name options))

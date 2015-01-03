@@ -34,34 +34,48 @@
   [containers]
   (last (sort-by :size containers)))
 
-(defn smallest-encoded-size
-  "Returns the size of the smallest (last encoded) container."
-  [video]
-  (when-let [container (second (reverse (sort-by :size (:containers video))))]
-    ({1920 :1080 1280 :720 640 :480} (:width container))))
+(defn container-size
+  "Returns the probable size for the container."
+  [container]
+  (let [width (:width container)]
+    (cond
+      (> width 1280) :1080
+      (> width 720) :720
+      :default :480)))
 
 (defn width-for-size
   "Returns the video width for the given size."
   [size]
-  ({:1080 1920 :720 1280 :480 640} size))
+  ({:1080 1920 :720 1280 :480 720} size))
 
-(defn smaller-size
-  "Returns the next smaller size."
-  [size]
-  ({:1080 :720 :720 :480} size))
+(defn can-source?
+  "Returns true if the first size bigger or equal to the second."
+  [source-size dest-size]
+  (>= (parse-long (name source-size)) (parse-long (name dest-size))))
+
+(defn min-size
+  "Returns the minimum of the two sizes."
+  [s1 s2]
+  (if (< (parse-long (name s1)) (parse-long (name s2))) s1 s2))
+
+(defn encode-size
+  "Returns the minimum of the source and target sizes."
+  [video size]
+  (let [container (container-to-encode (:containers video))]
+    (min-size (container-size container) size)))
 
 (defn encode-spec
   "Returns the specification for an encoding job."
   [folder video fmt size]
   (when-let [container (container-to-encode (:containers video))]
     (let [file (io/file (:file folder) (:filename container))
-          info (video-info file)
-          size (or (smaller-size (smallest-encoded-size video)) size)]
+          info (video-info file)]
       {:format fmt
        :size size
        :width (:width container)
        :height (:height container)
-       :target-width (width-for-size size)
+       :target-width (min (:width container) (width-for-size size))
+       :folder folder
        :file file
        :input (.getCanonicalPath file)
        :info info
