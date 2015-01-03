@@ -212,10 +212,10 @@
   (if-let [title (@titles (:title (video-key video)))]
     (let [info (:info title)]
       (merge video
-             {:title (:title title)
+             {:title (or (:title info) (:title title))
               :sorting (:sorting title)
-              :poster (or (:poster video) (:poster info))
-              :thumb (or (:thumb video) (:thumb info))}
+              :poster (:poster title)
+              :thumb (:thumb title)}
              (when-let [st (season-title title (:season video))]
                {:season-title st})
              (when-let [et (episode-title title video)]
