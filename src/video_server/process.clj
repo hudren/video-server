@@ -13,7 +13,7 @@
             [clojure.tools.logging :as log]
             [clojure.core.async :refer [chan go thread <! <!! >!]]
             [video-server.file :refer [file-type subtitle? video?]]
-            [video-server.encoder :refer [can-source? container-size container-to-encode encode-size encode-subtitles encode-video extract-thumbnail video-encode-spec]]
+            [video-server.encoder :refer [*fake-encode* can-source? container-size container-to-encode encode-size encode-subtitles encode-video extract-thumbnail video-encode-spec]]
             [video-server.library :refer [add-info add-video title-for-key video-key video-for-key]]
             [video-server.metadata :refer [retrieve-metadata]]
             [video-server.util :refer :all]))
@@ -102,13 +102,15 @@
     (encode-subtitles folder video))
   (if (should-encode-video? video)
     (encode folder video fmt (encode-size video size))
-    (loop [options options]
-      (when (seq options)
-        (let [[fmt size] (first options)]
-          (log/trace "checking" fmt size "for" (:title video))
-          (if (should-encode-video? video fmt (encode-size video size))
-            (encode folder video fmt size)
-            (recur (rest options))))))))
+    (when-not *fake-encode*
+      (loop [options options]
+        (when (seq options)
+          (let [{fmt :format size :size} (first options)
+                size (encode-size video size)]
+            (log/trace "checking" fmt size "for" (:title video))
+            (if (should-encode-video? video fmt size)
+              (encode folder video fmt size)
+              (recur (rest options)))))))))
 
 (defn start-encoding
   "Processes requests in the encoder channel."

@@ -56,7 +56,8 @@
 (defn min-size
   "Returns the minimum of the two sizes."
   [s1 s2]
-  (if (< (parse-long (name s1)) (parse-long (name s2))) s1 s2))
+  (let [s2 (or s2 s1)]
+    (if (< (parse-long (name s1)) (parse-long (name s2))) s1 s2)))
 
 (defn encode-size
   "Returns the minimum of the source and target sizes."
