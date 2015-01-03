@@ -48,6 +48,20 @@
       1024 (format "%.0f Kb/s" (double (/ rate 1024)))
       (str rate " b/s"))))
 
+(defn format-filetype
+  "Returns the file type as a human-readable string."
+  [filetype]
+  (when-not (nil? filetype)
+    (str/upper-case (name filetype))))
+
+(defn format-mimetype
+  "Returns the mimetype as a human-readable string."
+  [mimetype]
+  (case mimetype
+    "video/x-matroska" "MKV"
+    "video/mp4" "MP4"
+    mimetype))
+
 (defn format-duration
   "Returns the duration in seconds as a human-readable string."
   [duration]

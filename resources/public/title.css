@@ -25,6 +25,14 @@ div#info {
   margin-left: 368px;
 }
 
+table {
+  color: rgba(0,0,0,0.54);
+}
+
+table td {
+  padding-right: 1em;
+}
+
 span.label {
   font-weight: bold;
 }

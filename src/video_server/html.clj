@@ -11,10 +11,11 @@
 (ns video-server.html
   (:require [clojure.string :as str]
             [net.cgrand.enlive-html :refer :all]
-            [video-server.format :refer [format-bitrate format-size lang-two-letter]]
+            [video-server.format :refer [format-bitrate format-filetype format-size lang-two-letter]]
             [video-server.library :refer [video-for-key]]
             [video-server.title :refer [best-containers best-video episode-title has-episodes? has-parts? has-seasons? season-desc
-                                        season-titles]])
+                                        season-titles]]
+            [video-server.video :refer [rank-containers]])
   (:import (java.net URLEncoder)
            (java.util Locale)))
 
@@ -35,15 +36,16 @@
   "Returns a description of the contents of the container."
   [container]
   (let [lang (:language container)]
-    (->> [(:dimension container)
-          (when-not (= lang (.getDisplayLanguage (Locale/getDefault)))
-            (:language container))
-          (:video container)
-          (:audio container)
-          (format-size (:size container))
-          (format-bitrate (:bitrate container))]
-         (remove str/blank?)
-         (str/join " - "))))
+    (html [:tr (->> [(:dimension container)
+                     (when-not (= lang (.getDisplayLanguage (Locale/getDefault)))
+                       (:language container))
+                     (:video container)
+                     (:audio container)
+                     (format-size (:size container))
+                     (format-bitrate (:bitrate container))
+                     (format-filetype (:filetype container))]
+                    (remove str/blank?)
+                    (map #(vector :td %)))])))
 
 (defn video-link
   "Returns a button for the specified link."
@@ -155,7 +157,7 @@
 ;;; Title page
 
 (defsnippet title-info "templates/info.html" [:div#info]
-  [info]
+  [info containers]
   [:span.year] (when-let [year (:year info)] (content (str year)))
   [:span.rated] (when-let [rated (:rated info)] (content rated))
   [:span.duration] (when-let [runtime (when-not (= (:type info) "series") (:runtime info))] (content runtime))
@@ -165,7 +167,8 @@
   [:p.cast] (when-content (combine "Cast" (:stars info) (:actors info)))
   [:p.languages] (when-let [languages (:languages info)]
                    (when-not (= languages (list "English"))
-                     (content (combine "Languages" languages)))))
+                     (content (combine "Languages" languages))))
+  [:table] (content (for [container containers] (container-desc container))))
 
 (deftemplate title-template "templates/title.html"
   [title info video containers season episode]
@@ -173,7 +176,7 @@
   [:core-toolbar :div] (content (or (:title info) (:title title)))
   [:div#desc] (when (or (:year info) (:plot info)) identity)
   [:div#poster :img] (set-attr :src (or (:poster title) "placeholder.png"))
-  [:div#info] (substitute (title-info info))
+  [:div#info] (substitute (title-info info (rank-containers video)))
   [:div#links] (content (apply html (video-links info)))
   [:div#seasons] (when (has-seasons? title)
                    (content (season-tabs (title-url title) (season-titles title) season)))

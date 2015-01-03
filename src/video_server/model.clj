@@ -24,8 +24,8 @@
                              (str " - Season " season " Episode " episode)))))
 
 ;; External file containing video, audio and other tracks
-(defrecord Container [filename language size bitrate width height dimension
-                      video audio modified url mimetype]
+(defrecord Container [filename filetype language size bitrate width height
+                      dimension video audio modified url mimetype]
   Object
   (toString [_] filename))
 

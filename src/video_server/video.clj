@@ -10,7 +10,7 @@
 
 (ns video-server.video
   (:require [clojure.string :as str]
-            [video-server.file :refer [file-base mimetype title-info]]
+            [video-server.file :refer [file-base file-type mimetype title-info]]
             [video-server.format :refer [audio-desc video-desc video-dimension]]
             [video-server.model :refer :all]
             [video-server.util :refer :all])
@@ -77,6 +77,7 @@
         height (parse-long (:height video))
         url (encoded-url url file)
         fields {:filename (.getName file)
+                :filetype (file-type file)
                 :language (audio-language info)
                 :size (parse-long (-> info :format :size))
                 :bitrate (parse-long (-> info :format :bit_rate))
@@ -89,6 +90,11 @@
                 :url url
                 :mimetype (mimetype file)}]
     (make-record Container fields)))
+
+(defn rank-containers
+  "Returns the ranked containers for the video."
+  [video]
+  (reverse (sort-by :size (:containers video))))
 
 (defn web-playback?
   "Returns whether the container is compatible for web playback."
