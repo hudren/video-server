@@ -16,7 +16,8 @@
             [video-server.encoder :refer [*fake-encode* can-source? container-size container-to-encode encode-size encode-subtitles encode-video extract-thumbnail video-encode-spec]]
             [video-server.library :refer [add-info add-video title-for-key video-key video-for-key]]
             [video-server.metadata :refer [retrieve-metadata]]
-            [video-server.util :refer :all]))
+            [video-server.util :refer :all]
+            [video-server.video :refer [can-cast? can-download? web-playback?]]))
 
 (def ^:private process-chan (chan 100))
 (def ^:private encoder-chan (chan 100))
@@ -40,26 +41,11 @@
   [spec]
   (go (>! encoder-chan spec)))
 
-(defn can-download?
-  "Returns whether the file is small enough for downloading."
-  [video]
-  (some #(< (:size %) 4187593114) (:containers video)))
-
-(defn can-cast-container?
-  "Returns whether the container is compatible for casting."
-  [container]
-  (and (.contains (:video container) "H.264") (.contains (:audio container) "AAC")))
-
-(defn can-cast?
-  "Returns whether the video is compatible for casting."
-  [video]
-  (some can-cast-container? (:containers video)))
-
 (defn has-fmt-size?
   "Returns whether the video has a casting-compatible container
   matching the specified format and size."
   [video fmt size]
-  (let [containers (filter can-cast-container? (:containers video))]
+  (let [containers (filter web-playback? (:containers video))]
     (some #(and (= (file-type (:filename %)) fmt) (= size (container-size %))) containers)))
 
 (defn should-encode-video?

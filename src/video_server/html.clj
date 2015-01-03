@@ -13,7 +13,7 @@
             [net.cgrand.enlive-html :refer :all]
             [video-server.format :refer [format-bitrate format-size lang-two-letter]]
             [video-server.library :refer [video-for-key]]
-            [video-server.title :refer [best-container best-video episode-title has-episodes? has-parts? has-seasons? season-desc
+            [video-server.title :refer [best-containers best-video episode-title has-episodes? has-parts? has-seasons? season-desc
                                         season-titles]])
   (:import (java.net URLEncoder)
            (java.util Locale)))
@@ -63,9 +63,10 @@
 
 (defn video-tag
   "Returns the video tag for the specified video and container."
-  [video container]
+  [video containers]
   (html [:video {:controls nil :preload "metadata"}
-         [:source {:src (:url container) :type "video/mp4"}]
+         (for [container containers]
+           [:source {:src (:url container) :type (if (> (count containers) 1) (:mimetype container) "video/mp4")}])
          (for [subtitle (filter #(= (:mimetype %) "text/vtt") (:subtitles video))]
            [:track (merge {:kind "subtitles"
                            :label (:title subtitle)
@@ -167,7 +168,7 @@
                      (content (combine "Languages" languages)))))
 
 (deftemplate title-template "templates/title.html"
-  [title info video container season episode]
+  [title info video containers season episode]
   [:head :title] (content (or (:title info) (:title title)))
   [:core-toolbar :div] (content (or (:title info) (:title title)))
   [:div#desc] (when (or (:year info) (:plot info)) identity)
@@ -179,7 +180,7 @@
   [:div#season] (if-add-class (or (has-episodes? title season) (has-parts? title)) :has-episodes)
   [:div#episodes] (when (has-episodes? title season)
                     (content (episode-list title season episode)))
-  [:video] (when container (substitute (video-tag video container))))
+  [:video] (when (seq containers) (substitute (video-tag video containers))))
 
 (defn title-page
   "Returns the page diplaying the title w/episodes and parts."
@@ -187,8 +188,8 @@
   (let [season (or season (ffirst (season-titles title)))
         episode (or episode (ffirst (episode-titles title season)))
         video (video-for-key (best-video (:videos title) season episode))
-        container (best-container video)]
-    (title-template title (:info title) video container season episode)))
+        containers (best-containers video)]
+    (title-template title (:info title) video containers season episode)))
 
 ;;; Downloads page
 

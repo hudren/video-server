@@ -11,7 +11,7 @@
 (ns video-server.title
   (:require [video-server.format :refer :all]
             [video-server.util :refer :all]
-            [video-server.video :refer [quality]]))
+            [video-server.video :refer [quality web-playback?]]))
 
 (defn- video-info
   [item]
@@ -86,6 +86,11 @@
 (defn best-container
   "Returns the best container to play within a web browser."
   [video]
-  (first (filter #(and (.contains (:video %) "H.264") (.contains (:audio %) "AAC"))
-                 (sort quality (:containers video)))))
+  (first (filter web-playback? (sort quality (:containers video)))))
+
+(defn best-containers
+  "Returns one or more best containers for web playback."
+  [video]
+  (let [container (best-container video)]
+    (seq (filter #(and (= (:dimension %) (:dimension container)) (web-playback? %)) (:containers video)))))
 

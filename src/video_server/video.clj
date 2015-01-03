@@ -90,6 +90,21 @@
                 :mimetype (mimetype file)}]
     (make-record Container fields)))
 
+(defn web-playback?
+  "Returns whether the container is compatible for web playback."
+  [container]
+  (and (.contains (:video container) "H.264") (.contains (:audio container) "AAC")))
+
+(defn can-cast?
+  "Returns whether the video is compatible for casting."
+  [video]
+  (some web-playback? (:containers video)))
+
+(defn can-download?
+  "Returns whether the file is small enough for downloading."
+  [video]
+  (some #(< (:size %) 4187593114) (:containers video)))
+
 (defn video-title
   "Returns the video title based on the metadata or filename."
   [container info]
