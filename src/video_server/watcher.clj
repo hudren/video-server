@@ -93,7 +93,6 @@
       (add-metadata folder title)
       (add-images folder title))
     (let [video (video-for-file folder file)]
-      (add-metadata folder video)
       (add-subtitles folder video))))
 
 (defn add-file
