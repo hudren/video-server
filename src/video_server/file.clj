@@ -104,13 +104,13 @@
 (defn video-filename
   "Returns the filename for the video at the optional size. The
   qualifier can be used to make the filename unique."
-  [video & [ext width height qual]]
+  [video ext & [size qual]]
   (str (->> [(:title video)
              (if (:season video)
                (format "S%02dE%02d" (:season video) (:episode video))
                (when (:episode video) (format "PT%02d" (:episode video))))
              (:episode-title video)
-             (when (#{1280 1920} width) (video-dimension width height))]
+             ({:1080 "1080p" :720 "720p"} size)]
             (remove nil?)
             (str/join " - "))
        (when qual (str "." qual))

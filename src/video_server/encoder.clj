@@ -87,17 +87,13 @@
 
 (defn output-file
   "Returns the File representing the encoder output."
-  [{:keys [video file format width height] :as spec}]
+  [{:keys [video file format size scale width height] :as spec}]
   (let [ext (str "." (name format))
-        filename (video-filename video ext)
+        filename (video-filename video ext (when scale size))
         output (io/file (.getParent file) filename)]
     (if (.exists output)
-      (let [filename (video-filename video ext width height)
-            output (io/file (.getParent file) filename)]
-        (if (.exists output)
-          (let [filename (video-filename video ext width height (video-dimension width height))]
-            (io/file (.getParent file) filename))
-          output))
+      (let [filename (video-filename video ext (when scale size) (video-dimension width height))]
+        (io/file (.getParent file) filename))
       output)))
 
 (defn output-options
