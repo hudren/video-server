@@ -26,7 +26,7 @@
            (org.slf4j LoggerFactory))
   (:gen-class))
 
-(def discovery-port 8394)
+(def ^:const discovery-port 8394)
 
 (defn exists?
   "Returns the canonical path if the directory exists."
