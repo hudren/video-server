@@ -5,6 +5,7 @@ html,body {
   background-color: #FAFAFA;
   font-family: RobotoDraft, 'Helvetica Neue', Helvetica, sans-serif;
 }
+
 core-header-panel {
   height: 100%;
   overflow: auto;
@@ -18,6 +19,7 @@ core-toolbar a:link, core-toolbar a:visited {
   color: white;
   text-decoration: none;
 }
+
 paper-button:hover {
   background: white;
 }
@@ -47,59 +49,14 @@ div#content {
   max-width: 90%;
   margin: 0 auto;
 }
-div.actions {
-  margin-top: 2em;
-  text-align: center;
-}
-div.video {
-  min-height: 7em;
-  border-bottom: 1px solid rgba(0,0,0,0.12);
-}
-div.poster {
-  width: 5.5em;
-  height: 8em;
-  display: inline-block;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-  text-align: center;
-}
-div.poster img {
-  max-height: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-}
-div.desc {
-  margin-left: 1.5em;
-  display: inline-block;
-  vertical-align: top;
-}
-.title {
-  font-size: 1.4em;
-  font-weight: bold;
-  margin-right: 1em;
-}
+
 a {
   color: inherit;
   text-decoration: none;
 }
-div.video .year {
-  color: rgba(0,0,0,0.54);
-  font-size: 0.9em;
+
+div.actions {
+  margin-top: 2em;
+  text-align: center;
 }
-.year {
-  margin-right: 0.7em;
-}
-div.video .rated {
-  color: rgba(0,0,0,0.54);
-  font-size: 0.9em;
-}
-.rated {
-  margin-right: 0.7em;
-}
-div.video .duration {
-  color: rgba(0,0,0,0.54);
-  font-size: 0.9em;
-}
-div.video .summary {
-  color: rgba(0,0,0,0.54);
-}
+

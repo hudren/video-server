@@ -1,0 +1,48 @@
+div.video {
+  clear: both;
+  min-height: 7em;
+  border-top: 1px solid rgba(0,0,0,0.12);
+}
+
+div.poster {
+  float: left;
+}
+
+div.poster.small {
+  width: 5.5em;
+  height: 8em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  text-align: center;
+}
+div.poster.small img {
+  max-height: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+div.desc
+{
+  vertical-align: top;
+  margin-left: 7em;
+}
+
+span.title {
+  font-size: 1.4em;
+  font-weight: bold;
+  margin-right: 1em;
+}
+
+span.info {
+  white-space: nowrap;
+}
+span.year, span.rated, span.duration {
+  color: rgba(0,0,0,0.54);
+  font-size: 0.9em;
+  margin-right: 0.7em;
+}
+
+.summary {
+  color: rgba(0,0,0,0.54);
+}
+

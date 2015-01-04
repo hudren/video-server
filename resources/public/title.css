@@ -9,8 +9,6 @@ div#desc {
 }
 
 div#poster {
-  float: left;
-  width: 320px;
   text-align: center;
 }
 
@@ -20,13 +18,14 @@ div#poster img {
   max-width: 100%;
 }
 
-div#info {
-  vertical-align: top;
-  margin-left: 368px;
+span.year, span.rated, span.duration {
+  color: rgba(0,0,0,0.54);
+  margin-right: 0.7em;
 }
 
 table {
   color: rgba(0,0,0,0.54);
+  font-size: 0.9em;
 }
 
 table td {
@@ -43,7 +42,7 @@ div#links {
 
 p.plot {
   font-size: 1.2em;
-  line-height: 150%; 
+  line-height: 150%;
 }
 
 ul {
@@ -62,16 +61,6 @@ div#season.has-episodes {
   max-width: 1280px;
 }
 
-div#season.has-episodes div#episodes {
-  width: 320px;
-  float: left;
-}
-
-div#season.has-episodes div#player {
-  vertical-align: top;
-  margin-left: 368px;
-}
-
 li.selected {
   color: inherit;
   font-weight: bold;
@@ -84,4 +73,27 @@ div#player {
 video {
   max-width: 100%;
   background-color: black;
+  // border: thin solid black;
 }
+
+@media (min-width: 940px)
+{
+  div.two-columns
+  {
+    clear: both;
+  }
+  div.left-column
+  {
+    float: left;
+    width: 320px;
+  }
+  div.right-column, div#season.has-episodes div#player
+  {
+    vertical-align: top;
+    margin-left: 368px;
+  }
+  div.desc {
+    margin-left: 1.5em;
+  }
+}
+
