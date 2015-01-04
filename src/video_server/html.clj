@@ -22,23 +22,21 @@
 (defn video-desc
   "Returns a description of the video technical details."
   [video]
-  (->> [(str/join ", " (distinct (map :dimension (:containers video))))
-        (when-let [season (:season video)] (str "Season " season))
-        (when-let [episode (:episode video)] (str "Episode " episode))
-        (:episode-title video)
-        (let [lang (str/join ", " (distinct (map :language (:containers video) )))]
-          (when-not (= (str lang) (.getDisplayLanguage (Locale/getDefault)))
-            lang))]
-       (remove str/blank?)
-       (str/join " - ")))
+  (html (->> [(str/join ", " (distinct (map :dimension (:containers video))))
+              (when-let [season (:season video)] (str "Season " season))
+              (when-let [episode (:episode video)] (str "Episode " episode))
+              (:episode-title video)
+              (let [lang (str/join ", " (distinct (map :language (:containers video))))]
+                (when-not (= lang (.getDisplayLanguage (Locale/getDefault))) lang))]
+             (remove str/blank?)
+             (map #(vector :span %)))))
 
 (defn container-desc
   "Returns a description of the contents of the container."
   [container]
   (let [lang (:language container)]
     (html [:tr (->> [(:dimension container)
-                     (when-not (= lang (.getDisplayLanguage (Locale/getDefault)))
-                       (:language container))
+                     (when-not (= lang (.getDisplayLanguage (Locale/getDefault))) lang)
                      (:video container)
                      (:audio container)
                      (format-size (:size container))
@@ -112,7 +110,8 @@
   (html [:ul
          (for [episode (episode-titles title season)]
            [:li (when (= (first episode) selected) {:class "selected"})
-            [:a {:href (str (title-url title) "&s=" season "&e=" (first episode))} (second episode)]])]))
+            [:a {:href (str (title-url title) (when season (str "&s=" season)) "&e=" (first episode))}
+             (second episode)]])]))
 
 (defn combine
   "Combines multiple lists, returning a comma separated String."
@@ -126,8 +125,8 @@
 
 (defn when-content
   "Replaces the content or removes the element."
-  [expr]
-  #(when expr ((content expr) %)))
+  [expr & value]
+  #(when expr ((content (or value expr)) %)))
 
 (defn if-add-class
   "Conditionally adds a class."
@@ -164,6 +163,7 @@
   [:p.plot] (content (:plot info))
   [:p.subjects] (when-content (combine "Subjects" (:subjects info)))
   [:p.genres] (when-content (combine "Genres" (:genres info) (:netflix-genres info)))
+  [:p.directors] (when-content (combine "Directed by" (:directors info)))
   [:p.cast] (when-content (combine "Cast" (:stars info) (:actors info)))
   [:p.languages] (when-let [languages (:languages info)]
                    (when-not (= languages (list "English"))
