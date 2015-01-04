@@ -130,10 +130,11 @@
 (defn title-filter
   "Returns a filename filter that matches the video title and
   extensions."
-  [title exts] ; TODO: should be based on video key
-  (reify FilenameFilter
-    (accept [this dir name]
-      (and (= title (:title (title-info (file-base name)))) (ends-with? name exts)))))
+  [title exts]
+  (let [title (str/lower-case (clean-title title))]
+    (reify FilenameFilter
+      (accept [this dir name]
+        (and (= title (str/lower-case (:title (title-info (file-base name))))) (ends-with? name exts))))))
 
 (defn- file-with-ext?
   "Returns whether the file or filename ends with one of the given
