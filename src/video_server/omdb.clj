@@ -36,7 +36,7 @@
 (defn retrieve-title
   "Fetches the metadata for the given title and year."
   [title & [year]]
-  (let [resp (get-json cache (str "http://www.omdbapi.com/?plot=full&r=json&t=" (URLEncoder/encode title)
+  (let [resp (get-json cache (str "http://www.omdbapi.com/?plot=full&r=json&t=" (URLEncoder/encode title "UTF-8")
                                   (when year (str "&y=" year))))]
     (filter-values resp)))
 

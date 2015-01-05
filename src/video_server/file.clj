@@ -86,8 +86,8 @@
 
 (defn title-info
   "Returns a map containing the title, season, episode number and
-  title extracted from a string in the format of <title> - S01E01 -
-  <episode>."
+  title extracted from a string in the format of `title - S01E01 -
+  episode` or `title - Part 1`."
   [name]
   (let [[series program episode] (map str/trim (str/split (clean-title name) #" - ")) ]
     (merge {:title (clean-title series)}

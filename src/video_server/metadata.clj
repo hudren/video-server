@@ -69,8 +69,8 @@
   [title & titles]
   (loop [title title titles (remove nil? titles)]
     (if (seq titles)
-      (let [norm (str/lower-case (apply str (re-seq #"[A-Za-z]" title)))
-            norm2 (str/lower-case (apply str (re-seq #"[A-Za-z]" (first titles))))]
+      (let [norm (str/lower-case (str/join (re-seq #"[A-Za-z]" title)))
+            norm2 (str/lower-case (str/join (re-seq #"[A-Za-z]" (first titles))))]
         (recur (if-not (= norm norm2) title (first titles)) (rest titles)))
       title)))
 

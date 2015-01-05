@@ -24,7 +24,8 @@
                  [compojure "1.3.1"]
                  [enlive "1.1.5"]]
 
-  :plugins [[lein-bower "0.5.1"]]
+  :plugins [[lein-bower "0.5.1"]
+            [codox "0.8.10"]]
 
   :bower-dependencies [[polymer "~0.5.1"]
                        [font-roboto "Polymer/font-roboto#~0.5.1"]
@@ -41,7 +42,15 @@
 
   :repl-options {:init-ns user}
 
-  :profiles {:dev {:source-paths ["dev"]}}
+  :profiles {:dev {:source-paths ["dev"]}
+             :uberjar {:aot :all}}
+  
+  :eastwood {:continue-on-exception true}
+  :codox {:exclude user
+          :output-dir "docs"
+          :defaults {:doc/format :markdown}
+          :src-dir-uri "http://github.com/hudren/video-server/blob/master/"
+          :src-linenum-anchor-prefix "L"}
 
   :aliases {"build" ["do" "clean," "bower" "install," "uberjar"]
-            "docs" ["do" "marg" "-m," "shell" "open" "docs/toc.html"]})
+            "docs" ["do" "doc," "shell" "open" "docs/index.html"]})

@@ -76,12 +76,12 @@
 (defn title-url
   "Returns the URL for the given title."
   [title]
-  (str "title?id=" (URLEncoder/encode (:id title))))
+  (str "title?id=" (URLEncoder/encode (:id title) "UTF-8")))
 
 (defn- selected-index
   "Returns the tab index of the selected season."
   [seasons selected]
-  (first (first (filter #(= (-> % second first) selected) (map-indexed vector seasons)))))
+  (ffirst (filter #(= (-> % second first) selected) (map-indexed vector seasons))))
 
 (defn season-tabs
   "Returns the tabs for the given seasons."
@@ -167,7 +167,7 @@
   [:p.languages] (when-let [languages (:languages info)]
                    (when-not (= languages (list "English"))
                      (content (combine "Languages" languages))))
-  [:table] (content (for [container containers] (container-desc container))))
+  [:table.containers :tbody] (content (for [container containers] (container-desc container))))
 
 (deftemplate title-template "templates/title.html"
   [title info video containers season episode]

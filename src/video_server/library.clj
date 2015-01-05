@@ -50,7 +50,7 @@
                    (str/replace " - " " ")
                    (str/replace "_" " ")
                    (str/replace "(Unrated)" ""))]
-    (apply str (re-seq #"[A-Za-z0-9&\-\(\) ]" simple))))
+    (str/join (re-seq #"[A-Za-z0-9&\-\(\) ]" simple))))
 
 (defn norm-key
   "Returns the map with normalized values."

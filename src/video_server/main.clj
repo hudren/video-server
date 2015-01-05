@@ -113,6 +113,7 @@
   (System/exit code))
 
 (defn read-options
+  "Reads folder-specific options."
   [file]
   (let [file (io/file (io/file file) "options.edn")]
     (when (.isFile file)

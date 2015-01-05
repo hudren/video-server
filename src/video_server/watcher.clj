@@ -45,9 +45,9 @@
 
 (defn- list-files
   "Lists files related to the video by title and filter."
-  [folder video filter]
-  (distinct (concat (.listFiles (:file folder) (filter (:title video)))
-                    (.listFiles (:file folder) (filter (norm-title (:title video)))))))
+  [folder video ffilter]
+  (distinct (concat (.listFiles (:file folder) (ffilter (:title video)))
+                    (.listFiles (:file folder) (ffilter (norm-title (:title video)))))))
 
 (defn add-subtitles
   "Performs the initial scan for subtitles."
