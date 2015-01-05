@@ -40,7 +40,6 @@
                      (:video container)
                      (:audio container)
                      (format-size (:size container))
-                     (format-bitrate (:bitrate container))
                      (format-filetype (:filetype container))]
                     (remove str/blank?)
                     (map #(vector :td %)))])))
