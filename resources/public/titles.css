@@ -3,6 +3,9 @@ div.video {
   min-height: 7em;
   border-top: 1px solid rgba(0,0,0,0.12);
 }
+div.video:first-child {
+  border-top: none;
+}
 
 div.poster {
   float: left;
