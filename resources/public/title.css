@@ -66,6 +66,10 @@ li.selected {
   font-weight: bold;
 }
 
+div#episodes {
+  margin-bottom: 2em;
+}
+
 div#player {
   text-align: center;
 }
