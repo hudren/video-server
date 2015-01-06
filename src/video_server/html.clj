@@ -40,8 +40,9 @@
                      (:video container)
                      (:audio container)
                      (format-size (:size container))
-                     (format-filetype (:filetype container))]
-                    (remove str/blank?)
+                     [:a {:href (:url container) :download nil}
+                      (format-filetype (:filetype container))]]
+                    (remove #(if (string? %) (str/blank? %)))
                     (map #(vector :td %)))])))
 
 (defn video-link
