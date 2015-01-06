@@ -33,13 +33,25 @@
       (let [[top bottom prog und] (parse-ints frames)]
         (> (+ top bottom) (/ (+ top bottom prog und) 10))))))
 
+(defn detect-crop-section
+  "Performs crop detection for the specified period."
+  [input start duration]
+  (let [output (:err (exec "ffmpeg" "-y" "-ss" start "-i" input "-f" "matroska"
+                           "-t" duration "-an" "-sn" "-vf" "cropdetect=24:2:0"
+                           "-crf" 51 "-preset" "ultrafast" "/dev/null"))]
+    (distinct (re-seq #"crop=[0-9:]*" output))))
+
+(defn- crop-size
+  "Returns the number of pixels in the crop detection."
+  [crop]
+  (let [[width height] (parse-ints crop)]
+    (* width height)))
+
 (defn detect-crop
   "Performs crop detection, returning the filter argument or nil."
   [input]
-  (let [output (:err (exec "ffmpeg" "-y" "-ss" 300 "-i" input "-f" "matroska"
-                           "-t" 120 "-an" "-sn" "-vf" "cropdetect=24:2:0"
-                           "-crf" 51 "-preset" "ultrafast" "/dev/null"))]
-    (when-let [crop (-> (re-seq #"crop=[0-9:]*" output) distinct sort last)]
+  (let [crops (for [start [300 600 900 1200]] (detect-crop-section input start 30))]
+    (when-let [crop (->> crops flatten distinct (sort-by crop-size) last)]
       (when-not (.endsWith crop ":0:0") crop))))
 
 (defn deinterlace
