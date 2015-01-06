@@ -13,7 +13,7 @@
             [net.cgrand.enlive-html :refer :all]
             [video-server.format :refer [format-bitrate format-filetype format-size lang-two-letter]]
             [video-server.library :refer [video-for-key]]
-            [video-server.title :refer [best-containers best-video episode-title has-episodes? has-parts? has-seasons? season-desc
+            [video-server.title :refer [best-containers best-video episode-title full-title has-episodes? has-parts? has-seasons? season-desc
                                         season-titles]]
             [video-server.video :refer [rank-containers]])
   (:import (java.net URLEncoder)
@@ -171,7 +171,7 @@
 
 (deftemplate title-template "templates/title.html"
   [title info video containers season episode]
-  [:head :title] (content (or (:title info) (:title title)))
+  [:head :title] (content (full-title title info video))
   [:core-toolbar :div] (content (or (:title info) (:title title)))
   [:div#desc] (when (or (:year info) (:plot info)) identity)
   [:div#poster :img] (set-attr :src (or (:poster title) "placeholder.png"))

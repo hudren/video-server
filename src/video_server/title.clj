@@ -76,6 +76,24 @@
     (if-not (zero? c) c
       (compare (:episode k1) (:episode k2)))))
 
+(defn full-title
+  "Returns the full title including part and episode."
+  [title video]
+  (let [series (or (:title (:info title)) (:title title))
+        season (:season video)
+        episode (:episode video)
+        episode-title (episode-title title video)]
+    (if episode
+      (str series " - "
+           (if season
+             (if episode-title
+               (str season "." episode " " episode-title)
+               (str "Season " season " Episode " episode))
+             (if episode-title
+               (str episode ". " episode-title)
+               (str "Part " episode))))
+      series)))
+
 (defn best-video
   "Returns the best video for the specified season and episode."
   [videos season episode]
