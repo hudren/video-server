@@ -172,7 +172,7 @@
 
 (deftemplate title-template "templates/title.html"
   [title info video containers season episode]
-  [:head :title] (content (full-title title info video))
+  [:head :title] (content (full-title title video))
   [:core-toolbar :div] (content (or (:title info) (:title title)))
   [:div#desc] (when (or (:year info) (:plot info)) identity)
   [:div#poster :img] (set-attr :src (or (:poster title) "placeholder.png"))
