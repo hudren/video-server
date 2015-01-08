@@ -1,4 +1,4 @@
-(defproject com.hudren.homevideo/video-server "0.3"
+(defproject com.hudren.homevideo/video-server "0.3.1-SNAPSHOT"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -44,7 +44,7 @@
 
   :profiles {:dev {:source-paths ["dev"]}
              :uberjar {:aot :all}}
-  
+
   :eastwood {:continue-on-exception true}
   :codox {:exclude user
           :output-dir "docs"
@@ -52,5 +52,6 @@
           :src-dir-uri "http://github.com/hudren/video-server/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
-  :aliases {"build" ["do" "clean," "bower" "install," "uberjar"]
-            "docs" ["do" "doc," "shell" "open" "docs/index.html"]})
+  :aliases {"build" ["do" "clean" ["bower" "install"] "uberjar"]
+            "docs" ["do" "doc" ["shell" "open" "docs/index.html"]]})
+
