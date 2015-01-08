@@ -14,7 +14,7 @@
             [clojure.tools.logging :as log]
             [video-server.file :refer [image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
             [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos has-file?
-                                                      norm-title remove-all title-for-file video-for-file]]
+                                                      norm-title remove-all title-for-file up-to-date? video-for-file]]
             [video-server.metadata :refer [read-metadata]]
             [video-server.process :refer [process-file]]
             [video-server.util :refer :all]
@@ -116,7 +116,8 @@
     #_(log/trace "checking pending files")
     (doseq [file @pending-files]
       (try (when (stable? file)
-             (add-file folder file))
+             (when-not (up-to-date? folder file)
+               (add-file folder file)))
            (when (or (stable? file) (not (.exists file)))
              (dosync (alter pending-files disj file)))
            (catch Exception e (log/error e "adding pending file" (str file)))))))

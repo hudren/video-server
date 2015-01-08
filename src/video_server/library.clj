@@ -27,7 +27,7 @@
 ; Map of title strings to Titles
 (defonce titles (ref {}))
 
-; Map of file to video key
+; Map of file to [video-key modified]
 (defonce ^:private files (ref {}))
 
 (defn remove-all
@@ -42,6 +42,13 @@
   "Returns whether the file belongs to the library."
   [folder file]
   (contains? @files file))
+
+(defn up-to-date?
+  "Returns whether the file in the library is up to date with respect
+  to the file on the file system."
+  [folder file]
+  (when-let [existing (@files file)]
+    (= (.lastModified file) (second existing))))
 
 (defn norm-title
   "Returns a normalized title that can be used in a filename."
@@ -85,7 +92,7 @@
 (defn video-for-file
   "Returns the Video for the given File."
   [folder file]
-  (or (get-in @library [folder (files file)])
+  (or (get-in @library [folder (first (files file))])
       (video-for-key folder (video-key file))))
 
 (defn title-for-file
@@ -118,7 +125,7 @@
             (if title-exists
               (alter titles update-in [(:title key) :videos] conj [folder key])
               (alter titles assoc (:title key) (title-record (:title video) folder key)))
-            (alter files assoc file key)
+            (alter files assoc file [key (.lastModified file)])
             (not video-exists)))))))
 
 (defn remove-video
@@ -147,7 +154,7 @@
          subtitle (->Subtitle (lang-name lang) lang (.getName file) subtitle-url (mimetype file))]
      (dosync
        (alter library update-in [folder (video-key video) :subtitles] conj subtitle)
-       (alter files assoc file (video-key video))
+       (alter files assoc file [(video-key video) (.lastModified file)])
        true))))
 
 (defn remove-subtitle

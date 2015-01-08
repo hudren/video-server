@@ -24,6 +24,8 @@
 
 (def port 8090)
 (def hostname "Dev Server")
+(def log-level "debug")
+(def fake true)
 (def encode true)
 (def fetch true)
 (def output-format :mkv)
@@ -32,7 +34,7 @@
 (def directory (main/default-folder))
 (def options (main/read-options directory))
 (def url (main/host-url port))
-(def folder (->Folder "videos" (io/file directory) (str url "/" "videos") nil))
+(def folder (->Folder "videos" (io/file directory) (str url "/" "videos") options))
 
 (defn rescan []
   (watcher/scan-folder folder))
@@ -50,8 +52,8 @@
   (fetch-metadata (map->Video {:title title :season 1 :episode 1})))
 
 (defn start []
-  (main/set-log-level (main/log-level "debug"))
-  (binding [encoder/*fake-encode* true]
+  (main/set-log-level (main/log-level log-level))
+  (binding [encoder/*fake-encode* (and fake (nil? (:encode options)))]
     (process/start-encoding))
   (process/start-processing encode fetch output-format output-size)
   (watcher/start-watcher folder)
