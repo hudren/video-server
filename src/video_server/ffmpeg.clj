@@ -39,7 +39,7 @@
   (let [output (:err (exec "ffmpeg" "-y" "-ss" start "-i" input "-f" "matroska"
                            "-t" duration "-an" "-sn" "-vf" "cropdetect=24:2:0"
                            "-crf" 51 "-preset" "ultrafast" "/dev/null"))]
-    (distinct (re-seq #"crop=[0-9:]*" output))))
+    (distinct (re-seq #"crop=[0-9:]+" output))))
 
 (defn- crop-size
   "Returns the number of pixels in the crop detection."
