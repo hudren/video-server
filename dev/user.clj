@@ -51,6 +51,22 @@
 (defn fetch-tv [title]
   (fetch-metadata (map->Video {:title title :season 1 :episode 1})))
 
+(defn save-netflix [title netflix-id]
+  (when-let [title (title-for-title title)]
+    (as-> title x
+      (read-metadata folder title)
+      (assoc x :netflix-id (str netflix-id))
+      (save-metadata folder title x))))
+
+(defn fix-match [title imdb-id & [series?]]
+  (when-let [title (title-for-title title)]
+    (let [matches (if series? (query-tv (:title title)) (query-film (:title title)))]
+      (when-let [fb (first (filter #(= (get-imdb-id %) imdb-id) (map (comp get-topic :mid) matches)))]
+        (let [info (fetch-metadata title fb)]
+          (save-metadata folder title info)
+          (when-let [poster (:poster info)]
+            (save-poster folder title poster)))))))
+
 (defn start []
   (main/set-log-level (main/log-level log-level))
   (binding [encoder/*fake-encode* (and fake (nil? (:encode options)))]

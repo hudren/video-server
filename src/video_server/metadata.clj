@@ -75,12 +75,12 @@
       title)))
 
 (defn fetch-metadata
-  "Returns the pair of metadata and poster URL."
-  [item]
+  "Returns the movie or series metadata including the poster URL."
+  [item & [fb]]
   (let [[title year] (title-parts (:title item))
         duration (when-let [duration (:duration item)] (/ duration 60))
         series? (some? (:episode item))
-        fb (freebase-metadata title series? year duration)
+        fb (or fb (freebase-metadata title series? year duration))
         db (when-let [id (get-imdb-id fb)] (retrieve-id id))
         db (or db (omdb-metadata title series? year duration))]
     (merge (freebase-info fb) (omdb-info db)
