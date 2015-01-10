@@ -78,9 +78,9 @@
   "Returns a human-readable description of the video dimensions."
   [width height]
   (cond
-    (= width 1920) "1080p"
-    (= width 1280) "720p"
-    (= width 4096) "4K"
+    (<= 1910 width 1920) "1080p"
+    (<= 1270 width 1280) "720p"
+    (<= 4086 width 4096) "4K"
     (> width 7680) "FUHD"
     (> width 3840) "UHD"
     (> width 1920) "FHD"
