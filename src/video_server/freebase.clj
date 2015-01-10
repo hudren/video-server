@@ -43,7 +43,7 @@
   [ftype title]
   (:result (get-json cache
                      (str "https://www.googleapis.com/freebase/v1/search?type=" ftype
-                          "&query=" (URLEncoder/encode title))
+                          "&query=" (URLEncoder/encode title "UTF-8"))
                      :auth authorize
                      :key-fn norm-keyword)))
 
