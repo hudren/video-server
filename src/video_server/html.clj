@@ -55,11 +55,12 @@
 (defn video-links
   "Returns a sequence of links for the video."
   [info]
-  (into [] [(when (:website info) (video-link (:website info) "Website" "home"))
-            (when (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
-            (when (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
-            (when (:imdb-id info) (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDB"))
-            (when (:netflix-id info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix"))]))
+  (vector
+    (when (:website info) (video-link (:website info) "Website" "home"))
+    (when (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
+    (when (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
+    (when (:imdb-id info) (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDb"))
+    (when (:netflix-id info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix"))))
 
 (defn video-tag
   "Returns the video tag for the specified video and container."

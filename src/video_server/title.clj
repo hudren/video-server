@@ -55,7 +55,7 @@
 (defn season-desc
   "Returns a description of the seasons belonging to the title."
   [title]
-  (let [seasons (into #{} (map #(:season (video-info %)) (:videos title)))]
+  (let [seasons (set (map #(:season (video-info %)) (:videos title)))]
     (str "Season" (if (> (count seasons) 1) "s") " " (format-ranges (find-ranges seasons)))))
 
 (defn episode-title
