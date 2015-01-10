@@ -51,8 +51,7 @@
 (defn format-filetype
   "Returns the file type as a human-readable string."
   [filetype]
-  (when-not (nil? filetype)
-    (str/upper-case (name filetype))))
+  (when filetype (str/upper-case (name filetype))))
 
 (defn format-mimetype
   "Returns the mimetype as a human-readable string."
