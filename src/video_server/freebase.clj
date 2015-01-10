@@ -17,7 +17,9 @@
 
 (defonce ^:private cache (atom (cache/lru-cache-factory {})))
 
-(def ^:private api-key (delay (str/trim (slurp (io/resource "freebase.key")))))
+(def ^:private api-key
+  (delay (try (str/trim (slurp (io/resource "freebase.key")))
+              (catch Exception e))))
 
 (defn- path->key
   "Converts key paths to keyword names."
