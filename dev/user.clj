@@ -74,7 +74,6 @@
   (process/start-processing encode fetch output-format output-size)
   (watcher/start-watcher folder)
   (server/start-server url port (handler/app url) folder)
-  (discovery/start-discovery url main/discovery-port hostname))
-
-(auto-reload (find-ns 'video-server.html))
+  (discovery/start-discovery url main/discovery-port hostname)
+  (auto-reload (find-ns 'video-server.html)))
 
