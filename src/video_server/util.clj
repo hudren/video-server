@@ -58,16 +58,15 @@
 
 (defn get-json
   "Retrieves and caches the JSON body."
-  ([cache url] (get-json cache url nil))
-  ([cache url auth]
-   (if (cache/has? @cache url)
-     (swap! cache #(cache/hit % url))
-     (do
-       (log/trace "fetching" url)
-       (let [resp (client/get (if auth (auth url) url) {:accept :json})]
-         (when (= (:status resp) 200)
-           (log/trace "fetched" url)
-           (let [json (json/read-str (:body resp) :key-fn (comp keyword str/lower-case))]
-             (swap! cache #(cache/miss % url json)))))))
-   (get @cache url)))
+  [cache url & {:keys [auth key-fn]}]
+  (if (cache/has? @cache url)
+    (swap! cache #(cache/hit % url))
+    (do
+      (log/trace "fetching" url)
+      (let [resp (client/get (if auth (auth url) url) {:accept :json})]
+        (when (= (:status resp) 200)
+          (log/trace "fetched" url)
+          (let [json (json/read-str (:body resp) :key-fn (or key-fn (comp keyword str/lower-case)))]
+            (swap! cache #(cache/miss % url json)))))))
+  (get @cache url))
 
