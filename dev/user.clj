@@ -61,11 +61,11 @@
 (defn fix-match [title imdb-id & [series?]]
   (when-let [title (title-for-title title)]
     (let [matches (if series? (query-tv (:title title)) (query-film (:title title)))]
-      (when-let [fb (first (filter #(= (get-imdb-id %) imdb-id) (map (comp get-topic :mid) matches)))]
-        (let [info (fetch-metadata title fb)]
-          (save-metadata folder title info)
-          (when-let [poster (:poster info)]
-            (save-poster folder title poster)))))))
+      (let [fb (first (filter #(= (get-imdb-id %) imdb-id) (map (comp get-topic :mid) matches)))
+            info (fetch-metadata title fb imdb-id)]
+        (save-metadata folder title info)
+        (when-let [poster (:poster info)]
+          (save-poster folder title poster))))))
 
 (defn start []
   (main/set-log-level (main/log-level log-level))
