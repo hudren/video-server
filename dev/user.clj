@@ -1,5 +1,6 @@
 (ns user
   (:require [clojure.java.io :as io]
+            [clojure.tools.logging :as log]
             [net.cgrand.reload :refer [auto-reload]]
             [video-server.android :as android]
             [video-server.discovery :as discovery]
@@ -68,6 +69,20 @@
         (save-metadata folder title info)
         (when-let [poster (:poster info)]
           (save-poster folder title poster))))))
+
+(defn match [title & [series? year duration]]
+  (when-let [title (title-for-title title)]
+    (let [fb (freebase-metadata (:title title) series? year duration)
+          info (fetch-metadata title fb)]
+      (save-metadata folder title info)
+      (when-let [poster (:poster info)]
+        (save-poster folder title poster)))))
+
+(defn unmatch [title & {:as info}]
+  (when-let [title (title-for-title title)]
+    (save-metadata folder title (merge (select-keys title [:title]) info))
+    (when-let [image (log/spy (poster-for-title title))]
+      (io/delete-file image))))
 
 (defn start []
   (main/set-log-level (main/log-level log-level))
