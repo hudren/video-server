@@ -14,16 +14,8 @@
             [video-server.format :refer [audio-desc video-desc video-dimension]]
             [video-server.model :refer :all]
             [video-server.util :refer :all])
-  (:import (java.net URLEncoder)
-           (java.util Locale UUID)
+  (:import (java.util Locale UUID)
            (video_server.model Container Video)))
-
-(defn encoded-url
-  "Returns an encoded url for the file (and folder) that can be used
-  by clients to access the file."
-  [url file]
-  (let [filename (URLEncoder/encode (.getName file) "UTF-8")]
-    (str url "/" (str/replace filename "+" "%20"))))
 
 (def locales (into {} (map #(vector (.getISO3Language %) %) (map #(Locale. %) (Locale/getISOLanguages)))))
 

@@ -14,7 +14,8 @@
             [clojure.data.json :as json]
             [clojure.java.shell :as shell]
             [clojure.string :as str]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log])
+  (:import (java.net URLDecoder URLEncoder)))
 
 (defn parse-long
   "Parses a long value from a string or number."
@@ -37,6 +38,20 @@
   [pattern string]
   (when-not (str/blank? string)
     (->> (re-find pattern string) (drop 1) (map #(Integer/parseInt %)))))
+
+(defn encoded-url
+  "Returns an encoded url for the file (and folder) that can be used
+  by clients to access the file."
+  [base file]
+  (let [filename (URLEncoder/encode (.getName file) "UTF-8")]
+    (str base "/" (str/replace filename "+" "%20"))))
+
+(defn decoded-url
+  "Returns the base url and file from the encoded url."
+  [url]
+  (let [decoded (URLDecoder/decode (str url) "UTF-8")
+        pos (.lastIndexOf decoded "/")]
+    [(subs decoded 0 pos) (subs decoded (inc pos))]))
 
 (defn exec
   "Flattens and sanitizes the arguments before executing the shell

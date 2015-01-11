@@ -9,7 +9,8 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.library
-  (:require [clojure.string :as str]
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.encoder :as encoder]
             [video-server.ffmpeg :refer [video-info]]
@@ -17,7 +18,8 @@
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
             [video-server.title :refer [episode-title season-title]]
-            [video-server.video :refer [encoded-url sorting-title video-container video-record]])
+            [video-server.video :refer [sorting-title video-container video-record]]
+            [video-server.util :refer :all])
   (:import (java.io File)
            (video_server.model Title VideoKey)))
 
@@ -27,7 +29,7 @@
 ; Map of title strings to Titles
 (defonce titles (ref {}))
 
-; Map of file to [video-key modified]
+; Map of file to [id|key modified]
 (defonce ^:private files (ref {}))
 
 (defn remove-all
@@ -50,6 +52,11 @@
   (when-let [existing (@files file)]
     (= (.lastModified file) (second existing))))
 
+(defn folder-for-url
+  "Returns the Folder related to the base url."
+  [url]
+  (ffirst (filter #(= (-> % first :url) url) @library)))
+
 (defn norm-title
   "Returns a normalized title that can be used in a filename."
   [title]
@@ -68,6 +75,7 @@
   "Returns the key for the given Video, info, or title string."
   [data]
   (cond
+    (instance? VideoKey data) data
     (map? data) (make-record VideoKey (norm-key data))
     (string? data) (video-key (title-info data))
     (instance? File data) (video-key (file-base data))))
@@ -99,6 +107,25 @@
   "Returns the Title for the given File."
   [file]
   (@titles (:title (video-key file))))
+
+(defn files-for-video
+  "Returns the Files assoicated with the video."
+  [video]
+  (let [key (video-key video)]
+    (map first (filter #(= (-> % second first) key) @files))))
+
+(defn files-for-title
+  "Returns all of the Files assoicated with the title."
+  [title]
+  (into (map first (filter #(= (-> % second first) (:id title)) @files))
+        (mapcat (comp files-for-video second) (:videos title))))
+
+(defn poster-for-title
+  "Returns a File referencing the poster image."
+  [title]
+  (when-let [poster (:poster title)]
+    (let [[url file] (decoded-url poster)]
+      (io/file (:file (folder-for-url url)) file))))
 
 (defn title-record
   "Returns a new Title containing the video."
@@ -194,7 +221,8 @@
    (let [key (video-key title)
          url (encoded-url (:url folder) file)]
      (dosync
-       (alter titles assoc-in [(:title key) (image-type file)] url)))))
+       (alter titles assoc-in [(:title key) (image-type file)] url)
+       (alter files assoc file [(:id title) (.lastModified file)])))))
 
 (defn remove-image
   "Removes an image file from a video."
@@ -205,7 +233,8 @@
     (log/debug "removing image" (str file))
     (dosync
       (when (= url (get-in @titles [(:title key) image]))
-        (alter titles assoc-in [(:title key) image] nil)))))
+        (alter titles assoc-in [(:title key) image] nil)
+        (alter files dissoc file)))))
 
 (defn remove-file
   "Removes a file from the library."
