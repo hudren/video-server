@@ -91,8 +91,8 @@
   [folder video title]
   (let [info (fetch-metadata video)
         poster (:poster info)]
-    (save-metadata folder video info)
+    (save-metadata folder title info)
     (when (and (not (:poster title)) poster)
-      (save-poster folder video poster))
+      (save-poster folder title poster))
     info))
 
