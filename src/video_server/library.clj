@@ -115,10 +115,10 @@
   (when-let [info (video-info file)]
     (when-let [container (video-container file info (:url folder))]
       (when-let [video (video-record container info)]
-        (let [key (video-key video)
-              video-exists (get-in @library [folder key])
-              title-exists (get @titles (:title key))]
-          (dosync
+        (dosync
+          (let [key (video-key video)
+                video-exists (get-in @library [folder key])
+                title-exists (get @titles (:title key))]
             (if video-exists
               (alter library update-in [folder key :containers] conj (first (:containers video)))
               (alter library update-in [folder] assoc key video))
@@ -132,13 +132,18 @@
   "Removes a file from a video. When the last file is removed, the
   video is also removed from the library."
   [folder file video]
-  (let [key (video-key video)
-        containers (remove #(= (.getName file) (:filename %)) (:containers video))]
-    (log/debug "removing video" (str file))
-    (dosync
+  (log/debug "removing video" (str file))
+  (dosync
+    (let [key (video-key video)
+          title (@titles (:title key))
+          containers (remove #(= (.getName file) (:filename %)) (:containers video))
+          videos (remove #(= % [folder key]) (:videos title))]
       (if (empty? containers)
         (do (alter library update-in [folder] dissoc key)
-            (alter files (partial apply dissoc) (map clojure.core/key (filter #(= key (val %)) @files))))
+            (alter files (partial apply dissoc) (map clojure.core/key (filter #(= key (val %)) @files)))
+            (if (empty? videos)
+              (alter titles dissoc (:title key))
+              (alter titles update-in [(:title key)] assoc :videos videos)))
         (do (alter library update-in [folder key] assoc :containers containers)
             (alter files dissoc file))))))
 
