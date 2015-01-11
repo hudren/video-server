@@ -20,16 +20,18 @@
             [video-server.title :as title :refer :all]
             [video-server.util :as util :refer :all]
             [video-server.video :as video :refer :all]
-            [video-server.watcher :as watcher]))
+            [video-server.watcher :as watcher])
+  (:import (java.net InetAddress)))
 
+(def hostname (.getHostName (InetAddress/getLocalHost)))
 (def port 8090)
-(def hostname "Dev Server")
-(def log-level "debug")
-(def fake true)
-(def encode true)
-(def fetch true)
 (def output-format :mkv)
 (def output-size :720)
+
+(def log-level "debug")
+(def fake true)
+(def encode false)
+(def fetch true)
 
 (def directory (main/default-folder))
 (def options (main/read-options directory))
