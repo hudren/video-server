@@ -119,6 +119,6 @@
             (try (when fetch?
                    (fetch-info folder key video))
                  (when encode?
-                   (process-video folder video fmt size (:encode (:options folder))))
+                   (process-video folder video fmt size (-> folder :options :encoder :containers)))
                  (catch Exception e (log/error e "error processing video" (str video)))))))))
 
