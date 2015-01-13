@@ -13,6 +13,8 @@
   (:import (java.util Locale)
            (java.util.concurrent TimeUnit)))
 
+(def dimensions #{"4K" "1080p" "720p" "FUHD" "UHD" "FHD" "HD" "SD"})
+
 (defn locale
   "Constructs a Locale object."
   ([lang] (Locale. lang))
@@ -77,9 +79,9 @@
   "Returns a human-readable description of the video dimensions."
   [width height]
   (cond
+    (<= 4086 width 4096) "4K"
     (<= 1910 width 1920) "1080p"
     (<= 1270 width 1280) "720p"
-    (<= 4086 width 4096) "4K"
     (> width 7680) "FUHD"
     (> width 3840) "UHD"
     (> width 1920) "FHD"

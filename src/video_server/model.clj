@@ -24,15 +24,15 @@
                              (str " - Season " season " Episode " episode)))))
 
 ;; External file containing video, audio and other tracks
-(defrecord Container [filename filetype language size bitrate width height
+(defrecord Container [path filename filetype language size bitrate width height
                       dimension video audio modified url mimetype]
   Object
-  (toString [_] filename))
+  (toString [_] path))
 
 ;; External file containing subtitles
-(defrecord Subtitle [title language filename url mimetype]
+(defrecord Subtitle [path filename title language url mimetype]
   Object
-  (toString [_] title))
+  (toString [_] (str title " " path)))
 
 ;; Video containing one or more containers
 (defrecord Video [title season episode episode-title duration containers subtitles]

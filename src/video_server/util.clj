@@ -42,16 +42,15 @@
 (defn encoded-url
   "Returns an encoded url for the file (and folder) that can be used
   by clients to access the file."
-  [base file]
-  (let [filename (URLEncoder/encode (.getName file) "UTF-8")]
-    (str base "/" (str/replace filename "+" "%20"))))
+  [base path]
+  (str base "/" (-> (URLEncoder/encode path "UTF-8")
+                    (str/replace "%2F" "/")
+                    (str/replace "+" "%20"))))
 
 (defn decoded-url
   "Returns the base url and file from the encoded url."
   [url]
-  (let [decoded (URLDecoder/decode (str url) "UTF-8")
-        pos (.lastIndexOf decoded "/")]
-    [(subs decoded 0 pos) (subs decoded (inc pos))]))
+  (URLDecoder/decode (str url) "UTF-8"))
 
 (defn exec
   "Flattens and sanitizes the arguments before executing the shell

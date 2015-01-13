@@ -32,7 +32,7 @@
 (def log-level "debug")
 (def fake true)
 (def encode false)
-(def fetch true)
+(def fetch false)
 
 (def directory (main/default-folder))
 (def options (main/read-options directory))
@@ -58,31 +58,31 @@
 (defn save-netflix [title netflix-id]
   (when-let [title (title-for-title title)]
     (as-> title x
-      (read-metadata folder title)
+      (read-metadata title)
       (assoc x :netflix-id (str netflix-id))
-      (save-metadata folder title x))))
+      (save-metadata title x))))
 
 (defn fix-match [title imdb-id & [series?]]
   (when-let [title (title-for-title title)]
     (let [matches (if series? (query-tv (:title title)) (query-film (:title title)))]
       (let [fb (first (filter #(= (get-imdb-id %) imdb-id) (map (comp get-topic :mid) matches)))
             info (fetch-metadata title fb imdb-id)]
-        (save-metadata folder title info)
+        (save-metadata title info)
         (when-let [poster (:poster info)]
-          (save-poster folder title poster))))))
+          (save-poster title poster))))))
 
 (defn match [title & [series? year duration]]
   (when-let [title (title-for-title title)]
     (let [fb (freebase-metadata (:title title) series? year duration)
           info (fetch-metadata title fb)]
-      (save-metadata folder title info)
+      (save-metadata title info)
       (when-let [poster (:poster info)]
-        (save-poster folder title poster)))))
+        (save-poster title poster)))))
 
 (defn unmatch [title & {:as info}]
   (when-let [title (title-for-title title)]
-    (save-metadata folder title (merge (select-keys title [:title]) info))
-    (when-let [image (log/spy (poster-for-title title))]
+    (save-metadata title (merge (select-keys title [:title]) info))
+    #_(when-let [image (poster-for-title title)]
       (io/delete-file image))))
 
 (defn start []

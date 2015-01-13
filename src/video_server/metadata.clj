@@ -16,9 +16,10 @@
             [clojure.tools.logging :as log]
             [video-server.file :refer [file-ext]]
             [video-server.freebase :refer [freebase-info freebase-metadata get-imdb-id]]
-            [video-server.library :refer [norm-title]]
+            [video-server.library :refer [folders-for-title norm-title video-for-key]]
             [video-server.omdb :refer [omdb-info omdb-metadata retrieve-id]]
-            [video-server.util :refer :all]))
+            [video-server.util :refer :all])
+  (:import (java.io File)))
 
 (defn retrieve-image
   "Returns the image as a byte array."
@@ -27,31 +28,50 @@
     (when (= (:status resp) 200)
       (:body resp))))
 
-(defn- metadata-file
+(defn title-dir
+  "Returns the root directory of the videos belonging to the title."
+  ([title]
+   (title-dir title (first (folders-for-title title))))
+  ([title folder]
+   (let [videos (map video-for-key (filter #(= (first %) folder) (:videos title)))
+         containers (mapcat :containers videos)
+         pos (-> folder :url decoded-url count inc)
+         files (map #(subs (-> % :url decoded-url) pos) containers)
+         dirs (distinct (map #(str/join "/" (remove nil? (drop-last 1 (str/split % #"/")))) files))]
+     (if (seq dirs)
+       (loop [common [] segments (apply map list (map #(str/split % #"/") dirs))]
+         (if (and (seq segments) (apply = (first segments)))
+           (recur (conj common (ffirst segments)) (rest segments))
+           (if (re-find #"s(?:eason)? *\d+" (str/lower-case (last common)))
+             (io/file (:file folder) (str/join "/" (drop-last common)))
+             (io/file (:file folder) (str/join "/" common)))))
+       (io/file (:file folder))))))
+
+(defn metadata-file
   "Returns the File for the video metadata."
-  [folder title]
-  (io/file (:file folder) (str (norm-title (:title title)) ".json")))
+  ^File [title]
+  (io/file (title-dir title) (str (norm-title (:title title)) ".json")))
 
 (defn read-metadata
   "Reads the stored metadata for the video."
-  [folder title]
-  (let [file (metadata-file folder title)]
+  [title]
+  (let [file (metadata-file title)]
     (when (.isFile file)
       (try (json/read-str (slurp file) :key-fn keyword)
            (catch Exception e (log/error e "reading .json file" (str file)))))))
 
 (defn save-metadata
   "Stores the metadata for later retrieval."
-  [folder title info]
-  (let [file (metadata-file folder title)]
+  [title info]
+  (let [file (metadata-file title)]
     (log/debug "saving metadata" (str file))
     (with-open [w (io/writer file)]
       (.write w (with-out-str (json/pprint info :key-fn name))))))
 
 (defn save-poster
   "Downloads the poster for the specified video."
-  [folder title url]
-  (let [file (io/file (:file folder) (str (norm-title (:title title)) (file-ext url)))]
+  [title url]
+  (let [file (io/file (title-dir title) (str (norm-title (:title title)) (file-ext url)))]
     (log/info "downloading poster for" (:title title))
     (when-let [contents (retrieve-image url)]
       (with-open [w (io/output-stream file)]
@@ -88,11 +108,12 @@
 
 (defn retrieve-metadata
   "Retrieves metadata from the Internet and persists it in the folder."
-  [folder video title]
-  (let [info (fetch-metadata video)
+  [title]
+  (let [video (video-for-key (-> title :videos first))
+        info (fetch-metadata (or video title))
         poster (:poster info)]
-    (save-metadata folder title info)
+    (save-metadata title info)
     (when (and (not (:poster title)) poster)
-      (save-poster folder title poster))
+      (save-poster title poster))
     info))
 

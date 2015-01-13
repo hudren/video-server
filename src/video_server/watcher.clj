@@ -12,10 +12,11 @@
   (:require [clojure-watch.core :refer [start-watch]]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [video-server.file :refer [fullpath hidden? image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
+            [video-server.file :refer [dir-filter fullpath hidden? image-filter image? metadata? movie-filter subtitle-filter
+                                       subtitle? video?]]
             [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos has-file?
                                                       norm-title title-for-file up-to-date? video-for-file]]
-            [video-server.metadata :refer [read-metadata]]
+            [video-server.metadata :refer [read-metadata title-dir]]
             [video-server.process :refer [process-file]]
             [video-server.util :refer :all]
             [video-server.video :refer [modified]])
@@ -39,63 +40,90 @@
 
 (defn add-metadata
   "Reads existing metadata for the given video."
-  [folder title]
+  [title]
   (when title
-    (when-let [info (read-metadata folder title)]
+    (when-let [info (read-metadata title)]
       (add-info title info))))
 
-(defn- list-files
-  "Lists files related to the video by title and filter."
-  [folder video filter]
-  (let [file (io/file (:file folder))]
-    (distinct (concat (.listFiles file ^FilenameFilter (filter (:title video)))
-                      (.listFiles file ^FilenameFilter (filter (norm-title (:title video))))))))
-
-(defn add-subtitles
-  "Performs the initial scan for subtitles."
-  [folder video]
-  (doseq [file (list-files folder video subtitle-filter)]
-    (log/info "adding subtitle" (str file))
-    (add-subtitle folder file video)))
-
-(defn add-images
-  "Performs the initial scan for image files."
-  [folder title]
-  (doseq [file (list-files folder title image-filter)]
-    (log/info "adding image" (str file))
-    (add-image folder file title)))
-
-(defn add-videos
+(defn scan-videos
   "Performs the initial folder scan, adding videos to the library."
-  [folder]
-  (let [file (io/file (:file folder))
-        files (.listFiles file (movie-filter))]
+  [folder & [path]]
+  (let [dir (io/file (or path (:file folder)))
+        files (.listFiles dir (movie-filter))]
     (doseq [file (filter stable? files)]
       (log/info "adding video" (str file))
       (library/add-video folder file))
-    (doseq [title (current-titles)]
-      (add-metadata folder title)
-      (add-images folder title))
-    (doseq [video (sort-by modified (current-videos))]
-      (add-subtitles folder video)
-      (process-file folder video))))
+    (doseq [dir (.listFiles dir (dir-filter))]
+      (log/debug "scanning directory" (str dir))
+      (scan-videos folder dir))))
+
+(defn scan-images
+  "Recursively scans the folder for images."
+  [folder & [path]]
+  (let [dir (io/file (or path (:file folder)))]
+    (doseq [file (.listFiles dir (image-filter))]
+      (when-let [title (title-for-file file)]
+        (log/info "adding image" (str file))
+        (add-image folder file title)))
+    (doseq [dir (.listFiles dir (dir-filter))]
+      (scan-images folder dir))))
+
+(defn scan-subtitles
+  "Recursively scans the folder for subtitles."
+  [folder & [path]]
+  (let [dir (io/file (or path (:file folder)))]
+    (doseq [file (.listFiles dir (subtitle-filter))]
+      (when-let [video (video-for-file folder file)]
+        (log/info "adding subtitle" (str file))
+        (add-subtitle folder file video)))
+    (doseq [dir (.listFiles dir (dir-filter))]
+      (scan-subtitles folder dir))))
 
 (defn scan-folder
   "Loads all of the videos and subtitles in the folder."
   [folder path]
   (log/info "scanning" path "as" (:name folder))
-  (add-videos folder))
+  (scan-videos folder)
+  (doseq [title (current-titles folder)]
+    (add-metadata title))
+  (scan-images folder)
+  (scan-subtitles folder)
+  (doseq [video (sort-by modified (current-videos folder))]
+    (process-file folder video)))
+
+(defn- list-files
+  "Lists files related to the video by title and filter."
+  [dir video filter]
+  (let [file (io/file dir)]
+    (distinct (concat (.listFiles file ^FilenameFilter (filter (:title video)))
+                      (.listFiles file ^FilenameFilter (filter (norm-title (:title video))))))))
+
+(defn add-images
+  "Performs a scan for image files related to the title."
+  [folder title]
+  (doseq [file (list-files (title-dir title) title image-filter)]
+    (log/info "adding image" (str file))
+    (add-image folder file title)))
+
+(defn add-subtitles
+  "Performs a scan for subtitles related to the video."
+  [folder video]
+  (doseq [file (list-files (:file folder) video subtitle-filter)]
+    (log/info "adding subtitle" (str file))
+    (add-subtitle folder file video)))
 
 (defn add-video
   "Adds a video file to the library and checks for subtitles and
   images if the video was added (is new) to the library."
   [folder file]
-  (when (library/add-video folder file)
-    (let [title (title-for-file file)]
-      (add-metadata folder title)
-      (add-images folder title))
-    (let [video (video-for-file folder file)]
-      (add-subtitles folder video))))
+  (let [added (library/add-video folder file)]
+    (when (:title added)
+      (let [title (title-for-file file)]
+        (add-metadata title)
+        (add-images folder title)))
+    (when (:video added)
+      (let [video (video-for-file folder file)]
+        (add-subtitles folder video)))))
 
 (defn add-file
   "Adds a newly discovered file to the library and queues it for
@@ -108,7 +136,7 @@
     (video? file) (add-video folder file)
     (subtitle? file) (add-subtitle folder file)
     (image? file) (add-image folder file)
-    (metadata? file) (add-metadata folder (title-for-file file)))
+    (metadata? file) (add-metadata (title-for-file file)))
   (process-file folder file))
 
 (defn check-pending-files
@@ -142,7 +170,7 @@
   [folder event filename]
   (when ((some-fn video? subtitle? image? metadata?) filename)
     (let [file (io/file filename)]
-      (when (and (.isFile file) (not (hidden? folder file)))
+      (when (and (or (.isFile file) (= event :delete)) (not (hidden? folder file)))
         (try (case event
                :create (if (stable? file)
                          (add-file folder file)
@@ -159,7 +187,7 @@
    :event-types [:create :modify :delete]
    :bootstrap (partial scan-folder folder)
    :callback (partial file-event-callback folder)
-   :options {:recursive false}})
+   :options {:recursive true}})
 
 (defn start-watcher
   "Watches for file system changes in the given folders."

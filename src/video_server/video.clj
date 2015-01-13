@@ -10,7 +10,8 @@
 
 (ns video-server.video
   (:require [clojure.string :as str]
-            [video-server.file :refer [file-base file-type mimetype title-info]]
+            [clojure.tools.logging :as log]
+            [video-server.file :refer [filename file-base file-type mimetype relative-path title-info]]
             [video-server.format :refer [audio-desc video-desc video-dimension]]
             [video-server.model :refer :all]
             [video-server.util :refer :all])
@@ -61,14 +62,15 @@
 
 (defn video-container
   "Returns a container record for the specified file."
-  [file info url]
-  (let [video (video-stream info)
+  [folder file info]
+  (let [path (relative-path folder file)
+        video (video-stream info)
         audio (audio-streams info)
         subtitles (subtitle-streams info)
         width (parse-long (:width video))
         height (parse-long (:height video))
-        url (encoded-url url file)
-        fields {:filename (.getName file)
+        fields {:path path
+                :filename (filename file)
                 :filetype (file-type file)
                 :language (audio-language info)
                 :size (parse-long (-> info :format :size))
@@ -79,7 +81,7 @@
                 :video (video-desc (:codec_name video))
                 :audio (str/join ", " (distinct (map #(audio-desc (:codec_name %)) audio)))
                 :modified (.lastModified file)
-                :url url
+                :url (encoded-url (:url folder) path)
                 :mimetype (mimetype file)}]
     (make-record Container fields)))
 
@@ -114,9 +116,9 @@
   [title]
   (str/trim
     (condp #(.startsWith %2 %1) title
-      "The " (.substring title 4)
-      "An " (.substring title 3)
-      "A " (.substring title 2)
+      "The " (subs title 4)
+      "An " (subs title 3)
+      "A " (subs title 2)
       title title)))
 
 (defn video-record

@@ -9,11 +9,12 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.file
-  (:require [clojure.string :as str]
-            [video-server.format :refer [video-dimension]])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]
+            [video-server.format :refer [dimensions]])
   (:import (java.io File FilenameFilter)))
 
-(def movie-exts #{".mkv" ".mp4" ".m4v"})
+(def movie-exts #{".mkv" ".mp4" ".m4v" ".avi"})
 (def subtitle-exts #{".vtt" ".srt"})
 (def image-exts #{".jpg" ".jpeg" ".png" ".webp"})
 (def metadata-exts #{".json"})
@@ -76,13 +77,14 @@
   ({".mp4" "video/mp4"
     ".m4v" "video/mp4"
     ".mkv" "video/x-matroska"
+    ".avi" "video/x-msvideo"
     ".vtt" "text/vtt"
     ".srt" "application/x-subrip"
     ".png" "image/png"
     ".jpg" "image/jpeg"
     ".jpeg" "image/jpeg"
     ".webp" "image/webp"}
-    (file-ext file)))
+   (file-ext file)))
 
 (defn relative-path
   "Returns the relative path of the file to the folder, or the
@@ -99,8 +101,8 @@
   ([file]
    (.startsWith (filename file) "."))
   ([folder file]
-  (let [segments (str/split (relative-path folder file) (re-pattern File/separator))]
-    (true? (some #(.startsWith ^String % ".") segments)))))
+   (let [segments (str/split (relative-path folder file) (re-pattern File/separator))]
+     (true? (some #(.startsWith ^String % ".") segments)))))
 
 (defn clean-title
   "Returns the video title based on the filename."
@@ -116,7 +118,8 @@
   title extracted from a string in the format of `title - S01E01 -
   episode` or `title - Part 1`."
   [name]
-  (let [[series program episode] (map str/trim (str/split (clean-title name) #" - ")) ]
+  (let [[series program episode] (map str/trim (str/split (clean-title name) #" - "))
+        episode (when-not (dimensions episode) episode)]
     (merge {:title (clean-title series)}
            (when program
              (when-let [nums (re-find #"s(\d+)e(\d+)" (str/lower-case program))]
@@ -143,10 +146,21 @@
        (when qual (str "." qual))
        ext))
 
+(defn dir?
+  "Returns true if the file represents a directory."
+  [file]
+  (.isDirectory (io/file file)))
+
 (defn file-with-ext?
   "Returns whether the filename ends with one of the extensions."
   [file exts]
   (some? (exts (file-ext file))))
+
+(defn dir-filter
+  ^FilenameFilter []
+  (reify FilenameFilter
+    (accept [_ dir name] (and (not (hidden? name))
+                              (dir? (io/file dir name))))))
 
 (defn ext-filter
   "Returns a filename filter that matches the extensions."

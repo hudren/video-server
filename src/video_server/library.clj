@@ -14,7 +14,7 @@
             [clojure.tools.logging :as log]
             [video-server.encoder :as encoder]
             [video-server.ffmpeg :refer [video-info]]
-            [video-server.file :refer [file-base file-subtype image? mimetype subtitle? title-info video?]]
+            [video-server.file :refer [filename file-base file-subtype image? mimetype relative-path subtitle? title-info video?]]
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
             [video-server.title :refer [episode-title season-title]]
@@ -48,7 +48,7 @@
 (defn up-to-date?
   "Returns whether the file in the library is up to date with respect
   to the file on the file system."
-  [folder file]
+  [folder ^File file]
   (when-let [existing (@files file)]
     (= (.lastModified file) (second existing))))
 
@@ -97,16 +97,16 @@
   [key]
   (title-for-id (:title key)))
 
+(defn title-for-file
+  "Returns the Title for the given File."
+  [file]
+  (title-for-id (:title (video-key file))))
+
 (defn video-for-file
   "Returns the Video for the given File."
   [folder file]
   (or (get-in @library [folder (first (files file))])
       (video-for-key folder (video-key file))))
-
-(defn title-for-file
-  "Returns the Title for the given File."
-  [file]
-  (@titles (:title (video-key file))))
 
 (defn files-for-video
   "Returns the Files assoicated with the video."
@@ -120,12 +120,10 @@
   (into (map first (filter #(= (-> % second first) (:id title)) @files))
         (mapcat (comp files-for-video second) (:videos title))))
 
-(defn poster-for-title
-  "Returns a File referencing the poster image."
+(defn folders-for-title
+  "Returns the Folders containing the given title."
   [title]
-  (when-let [poster (:poster title)]
-    (let [[url file] (decoded-url poster)]
-      (io/file (:file (folder-for-url url)) file))))
+  (distinct (map first (:videos title))))
 
 (defn title-record
   "Returns a new Title containing the video."
@@ -136,11 +134,11 @@
                       :videos #{[folder key]}}))
 
 (defn add-video
-  "Returns true if a new video was added, false if it was added to an
-  existing video."
+  "Adds a container to the library, returning a map indicating whether
+  a new video and/or title was created."
   [folder file]
   (when-let [info (video-info file)]
-    (when-let [container (video-container file info (:url folder))]
+    (when-let [container (video-container folder file info)]
       (when-let [video (video-record container info)]
         (dosync
           (let [key (video-key video)
@@ -152,8 +150,8 @@
             (if title-exists
               (alter titles update-in [(:title key) :videos] conj [folder key])
               (alter titles assoc (:title key) (title-record (:title video) folder key)))
-            (alter files assoc file [key (.lastModified file)])
-            (not video-exists)))))))
+            (alter files assoc file [key (.lastModified ^File file)])
+            {:video (not video-exists) :title (not title-exists)}))))))
 
 (defn remove-video
   "Removes a file from a video. When the last file is removed, the
@@ -163,7 +161,7 @@
   (dosync
     (let [key (video-key video)
           title (@titles (:title key))
-          containers (remove #(= (.getName file) (:filename %)) (:containers video))
+          containers (remove #(= (filename file) (:filename %)) (:containers video))
           videos (remove #(= % [folder key]) (:videos title))]
       (if (empty? containers)
         (do (alter library update-in [folder] dissoc key)
@@ -181,19 +179,20 @@
      (add-subtitle folder file video)))
   ([folder file video]
    (log/debug "adding subtitle" (str file))
-   (let [[_ lang _] (str/split (.getName file) #"\.")
-         subtitle-url (encoded-url (:url folder) file)
-         subtitle (->Subtitle (lang-name lang) lang (.getName file) subtitle-url (mimetype file))]
+   (let [[_ lang _] (str/split (filename file) #"\.")
+         path (relative-path folder file)
+         subtitle-url (encoded-url (:url folder) path)
+         subtitle (->Subtitle path (filename file) (lang-name lang) lang subtitle-url (mimetype file))]
      (dosync
        (alter library update-in [folder (video-key video) :subtitles] conj subtitle)
-       (alter files assoc file [(video-key video) (.lastModified file)])
+       (alter files assoc file [(video-key video) (.lastModified ^File file)])
        true))))
 
 (defn remove-subtitle
   "Removes a subtitle file from a video."
   [folder file video]
   (let [key (video-key video)
-        subtitles (remove #(= (.getName file) (:filename %)) (:subtitles video))]
+        subtitles (remove #(= (filename file) (:filename %)) (:subtitles video))]
     (log/debug "removing subtitle" (str file))
     (dosync
       (alter library assoc-in [folder key :subtitles] subtitles)
@@ -219,16 +218,16 @@
   ([folder file title]
    (log/debug "adding image" (str file))
    (let [key (video-key title)
-         url (encoded-url (:url folder) file)]
+         url (encoded-url (:url folder) (relative-path folder file))]
      (dosync
        (alter titles assoc-in [(:title key) (image-type file)] url)
-       (alter files assoc file [(:id title) (.lastModified file)])))))
+       (alter files assoc file [(:id title) (.lastModified ^File file)])))))
 
 (defn remove-image
   "Removes an image file from a video."
   [folder file title]
   (let [key (video-key title)
-        url (encoded-url (:url folder) file)
+        url (encoded-url (:url folder) (relative-path folder file))
         image (image-type file)]
     (log/debug "removing image" (str file))
     (dosync
@@ -247,6 +246,20 @@
       (video? file) (remove-video folder file video)
       (subtitle? file) (remove-subtitle folder file video))))
 
+(defn current-videos
+  "Returns a sequence of all of the videos in the library."
+  ([]
+   (for [folder @library video (second folder)] (second video)))
+  ([folder]
+   (for [video (@library folder)] (second video))))
+
+(defn current-titles
+  "Returns a sequence of all the titles in the library."
+  ([]
+   (vals @titles))
+  ([folder]
+   (filter #(some #{folder} (folders-for-title %)) (vals @titles))))
+
 (defn ^:deprecated video-with-metadata
   "Appends missing fields from the title metadata."
   [video]
@@ -263,18 +276,18 @@
                {:episode-title et})))
     video))
 
-(defn current-videos
+(defn video-listing
   "Returns a sequence of all of the videos in the library."
   []
-  (map video-with-metadata (for [folder @library video (second folder)] (second video))))
+  (map video-with-metadata (current-videos)))
 
 (defn title-with-videos
   "Return the title with Videos subsituted for keys."
   [title]
   (assoc title :videos (map (fn [[f k]] (video-for-key f k)) (:videos title))))
 
-(defn current-titles
-  "Returns a sequence of all the titles in the library."
+(defn title-listing
+  "Returns a sequence of all the titles in the library with videos."
   []
-  (map title-with-videos (vals @titles)))
+  (map title-with-videos (current-titles)))
 

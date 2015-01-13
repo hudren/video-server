@@ -17,7 +17,7 @@
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version]]
             [video-server.html :refer [downloads-template title-page titles-template]]
-            [video-server.library :refer [current-titles current-videos title-for-id]]
+            [video-server.library :refer [title-for-id title-listing video-listing]]
             [video-server.util :refer :all]))
 
 (def ^:private base-url (atom "http://localhost"))
@@ -39,7 +39,7 @@
 (defn titles
   "Returns the index or home page listing the titles."
   []
-  (let [titles (sort-by :sorting (current-titles))]
+  (let [titles (sort-by :sorting (title-listing))]
     (html-response (titles-template titles))))
 
 (defn title
@@ -56,12 +56,12 @@
 (defn videos-api
   "Responds with a list of available videos."
   []
-  (json-response (current-videos)))
+  (json-response (video-listing)))
 
 (defn titles-api
   "Responds with a list of available titles."
   []
-  (json-response (current-titles)))
+  (json-response (title-listing)))
 
 (defn android-api
   "Responds with the android client version info."

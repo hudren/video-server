@@ -19,7 +19,7 @@
             [video-server.util :refer :all]
             [video-server.video :refer [can-cast? can-download? web-playback?]]))
 
-(def ^:private process-chan (chan 100))
+(def ^:private process-chan (chan 500))
 (def ^:private encoder-chan (chan 100))
 
 (defn should-process-file?
@@ -46,7 +46,7 @@
   matching the specified format and size."
   [video fmt size]
   (let [containers (filter web-playback? (:containers video))]
-    (some #(and (= (file-type (:filename %)) fmt) (= size (container-size %))) containers)))
+    (some #(and (= (file-type (:path %)) fmt) (= size (container-size %))) containers)))
 
 (defn should-encode-video?
   "Returns whether the video should be encoded for downloading or
@@ -69,7 +69,7 @@
   [folder key video]
   (when-let [title (title-for-key key)]
     (when-not (:info title)
-      (when-let [info (retrieve-metadata folder video title)]
+      (when-let [info (retrieve-metadata title)]
         (add-info title info)))
     (when-not (:thumb title)
       (extract-thumbnail folder video))))

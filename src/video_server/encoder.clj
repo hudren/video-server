@@ -70,7 +70,7 @@
   "Returns the specification for an encoding job."
   [folder video fmt size]
   (when-let [container (container-to-encode (:containers video))]
-    (let [file (io/file (:file folder) (:filename container))
+    (let [file (io/file (:file folder) (:path container))
           info (video-info file)]
       {:format fmt
        :size size
@@ -136,7 +136,7 @@
   "Encodes the subtitle files for a particular video."
   [folder video]
   (doseq [subtitle (:subtitles video)]
-    (encode-subtitle (io/file (:file folder) (:filename subtitle)))))
+    (encode-subtitle (io/file (:file folder) (:path subtitle)))))
 
 (def mkvtools (delay (and (-> ["which" "mkvmerge"] exec :exit zero?)
                           (-> ["which" "mkvextract"] exec :exit zero?))))
@@ -160,7 +160,7 @@
   "Extracts the thumbnail image from the matroska video."
   [folder video]
   (when-let [container (container-to-encode (:containers video))]
-    (let [file (io/file (:file folder) (:filename container))]
+    (let [file (io/file (:file folder) (:path container))]
       (when (= (file-type file) :mkv)
         (when-let [info (mkv-info file)]
           (when-let [id (second (re-find #"Attachment ID (\d+):.*file name 'cover\.jpg'" info))]
