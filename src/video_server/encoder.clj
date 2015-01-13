@@ -13,10 +13,11 @@
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.ffmpeg :refer [encode-cmd filter-video video-info]]
-            [video-server.file :refer [file-type replace-ext video-filename]]
+            [video-server.file :refer [file-type fullpath replace-ext video-filename]]
             [video-server.format :refer [video-dimension]]
             [video-server.util :refer :all]
-            [video-server.video :refer [audio-streams subtitle-streams video-stream]]))
+            [video-server.video :refer [audio-streams subtitle-streams video-stream]])
+  (:import (java.io File)))
 
 (def ^:dynamic *fake-encode* false)
 
@@ -78,7 +79,7 @@
        :target-width (min (:width container) (width-for-size size))
        :folder folder
        :file file
-       :input (.getCanonicalPath file)
+       :input (fullpath file)
        :info info
        :video video
        :video-stream (video-stream info)
@@ -87,7 +88,7 @@
 
 (defn output-file
   "Returns the File representing the encoder output."
-  [{:keys [video file format size scale width height] :as spec}]
+  [{:keys [video ^File file format size scale width height] :as spec}]
   (let [ext (str "." (name format))
         filename (video-filename video ext (when scale size))
         output (io/file (.getParent file) filename)]
@@ -99,7 +100,7 @@
 (defn output-options
   "Returns the spec with an appropriate output filename."
   [spec]
-  (assoc spec :output (.getCanonicalPath (output-file spec))))
+  (assoc spec :output (fullpath (output-file spec))))
 
 (defn video-encode-spec
   "Returns a spec for encoding a video."
@@ -125,7 +126,7 @@
   "Encodes a single subtitle file into WebVTT format."
   [file]
   (when-not (= (file-type file) :vtt)
-    (let [filename (.getCanonicalPath file)]
+    (let [filename (fullpath file)]
       (log/info "encoding subtitle" filename)
       (let [cmd ["ffmpeg" "-i" filename (replace-ext filename ".vtt")]]
         (log/debug "executing" (str/join " " cmd))
@@ -144,7 +145,7 @@
   "Returns the mkv info by calling mkvmerge."
   [file]
   (when @mkvtools
-    (try (let [exec (exec ["mkvmerge" "-i" (.getCanonicalPath file)])]
+    (try (let [exec (exec ["mkvmerge" "-i" (fullpath file)])]
            (when (zero? (:exit exec))
              (:out exec)))
          (catch Exception e (log/error e "error extracting info")))))
@@ -152,7 +153,7 @@
 (defn mkv-extract
   "Extracts the embedded attachment into a separate file."
   [file id output]
-  (try (exec ["mkvextract" "attachments" (.getCanonicalPath file) (str id ":" (.getCanonicalPath output))])
+  (try (exec ["mkvextract" "attachments" (fullpath file) (str id ":" (fullpath output))])
        (catch Exception e (log/error e "error extracting attactment"))))
 
 (defn extract-thumbnail

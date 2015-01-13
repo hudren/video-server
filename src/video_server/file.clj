@@ -18,38 +18,33 @@
 (def image-exts #{".jpg" ".jpeg" ".png" ".webp"})
 (def metadata-exts #{".json"})
 
-(defn mimetype
-  "Returns a mimetype based on the file metadata or extension."
-  [file]
-  (condp #(.endsWith %2 %1) (.getName file)
-    ".mp4" "video/mp4"
-    ".m4v" "video/mp4"
-    ".mkv" "video/x-matroska"
-    ".vtt" "text/vtt"
-    ".srt" "application/x-subrip"
-    ".png" "image/png"
-    ".jpg" "image/jpeg"
-    ".jpeg" "image/jpeg"
-    ".webp" "image/webp"
-    nil))
+(defn filename
+  "Returns the filename of the File or String."
+  ^String [file]
+  (if (instance? File file) (.getName ^File file) (str file)))
+
+(defn fullpath
+  "Returns the canonical path of the File."
+  ^String [^File file]
+  (.getCanonicalPath file))
 
 (defn file-base
   "Returns the base filename up to but not including the first period."
   [file]
-  (let [name (if (instance? File file) (.getName file) file)
+  (let [name (filename file)
         pos (.indexOf name ".")]
     (if (>= pos 0) (subs name 0 pos) name)))
 
 (defn file-ext
   "Returns the file extension including the last period."
   [file]
-  (let [name (if (instance? File file) (.getName file) file)
+  (let [name (filename file)
         pos (.lastIndexOf name ".")]
     (when (>= pos 0) (subs name pos))))
 
 (defn replace-ext
   "Replaces the last file extension."
-  [filename ext]
+  [^String filename ext]
   (let [pos (.lastIndexOf filename ".")]
     (if (> pos -1)
       (str (subs filename 0 pos) ext)
@@ -57,7 +52,7 @@
 
 (defn replace-full-ext
   "Replaces everything past the first period with the file extension."
-  [filename ext]
+  [^String filename ext]
   (let [pos (.indexOf filename ".")]
     (if (> pos -1)
       (str (subs filename 0 pos) ext)
@@ -71,9 +66,41 @@
 (defn file-subtype
   "Returns the file subtype as a keyword."
   [file]
-  (let [parts (str/split (.getName file) #"\.")]
+  (let [parts (str/split (filename file) #"\.")]
     (when (> (count parts) 2)
       (keyword (second (reverse parts))))))
+
+(defn mimetype
+  "Returns a mimetype based on the file metadata or extension."
+  [file]
+  ({".mp4" "video/mp4"
+    ".m4v" "video/mp4"
+    ".mkv" "video/x-matroska"
+    ".vtt" "text/vtt"
+    ".srt" "application/x-subrip"
+    ".png" "image/png"
+    ".jpg" "image/jpeg"
+    ".jpeg" "image/jpeg"
+    ".webp" "image/webp"}
+    (file-ext file)))
+
+(defn relative-path
+  "Returns the relative path of the file to the folder, or the
+  absolute path if the file is not contained within a subfolder."
+  [folder file]
+  (let [dir (fullpath (:file folder))
+        path (fullpath file)]
+    (if (.startsWith path dir)
+      (subs path (inc (count dir)))
+      path)))
+
+(defn hidden?
+  "Returns true if the file is considered hidden."
+  ([file]
+   (.startsWith (filename file) "."))
+  ([folder file]
+  (let [segments (str/split (relative-path folder file) (re-pattern File/separator))]
+    (true? (some #(.startsWith ^String % ".") segments)))))
 
 (defn clean-title
   "Returns the video title based on the filename."
@@ -116,32 +143,28 @@
        (when qual (str "." qual))
        ext))
 
-(defn ends-with?
+(defn file-with-ext?
   "Returns whether the filename ends with one of the extensions."
-  [name exts]
-  (true? (some #(.endsWith name %) exts)))
+  [file exts]
+  (some? (exts (file-ext file))))
 
 (defn ext-filter
   "Returns a filename filter that matches the extensions."
-  [exts]
+  ^FilenameFilter [exts]
   (reify FilenameFilter
-    (accept [this dir name] (ends-with? name exts))))
+    (accept [_ dir name] (and (not (hidden? name))
+                              (file-with-ext? name exts)))))
 
 (defn title-filter
   "Returns a filename filter that matches the video title and
   extensions."
-  [title exts]
+  ^FilenameFilter [title exts]
   (let [title (str/lower-case (clean-title title))]
     (reify FilenameFilter
       (accept [this dir name]
-        (and (= title (str/lower-case (:title (title-info (file-base name))))) (ends-with? name exts))))))
-
-(defn- file-with-ext?
-  "Returns whether the file or filename ends with one of the given
-  file extensions."
-  [file exts]
-  (let [filename (if (instance? File file) (.getName file) file)]
-    (ends-with? filename exts)))
+        (and (not (hidden? name))
+             (= title (str/lower-case (:title (title-info (file-base name)))))
+             (file-with-ext? name exts))))))
 
 (defn video?
   "Returns whether the file is a movie file."
@@ -165,18 +188,18 @@
 
 (defn movie-filter
   "A filter for listing movie files."
-  []
+  ^FilenameFilter []
   (ext-filter movie-exts))
 
 (defn subtitle-filter
   "A filter for listing subtitle files. If a title is specified, the
   filter will only match files related to that title."
-  ([] (ext-filter subtitle-exts))
-  ([title] (title-filter title subtitle-exts)))
+  (^FilenameFilter [] (ext-filter subtitle-exts))
+  (^FilenameFilter [title] (title-filter title subtitle-exts)))
 
 (defn image-filter
   "A filter for listing image files. If a title is specified, the
   filter will only match files related to that title."
-  ([] (ext-filter image-exts))
-  ([title] (title-filter title image-exts)))
+  (^FilenameFilter [] (ext-filter image-exts))
+  (^FilenameFilter [title] (title-filter title image-exts)))
 

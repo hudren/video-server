@@ -11,6 +11,7 @@
 (ns video-server.ffmpeg
   (:require [clojure.data.json :as json]
             [clojure.string :as str]
+            [video-server.file :refer [fullpath]]
             [video-server.format :refer [audio-title]]
             [video-server.util :refer :all]))
 
@@ -20,7 +21,7 @@
   "Executes ffprobe to extract metadata from the video file."
   [file]
   (let [exec (exec "ffprobe" "-v" "quiet" "-print_format" "json"
-                   "-show_format" "-show_streams" (.getCanonicalPath file))]
+                   "-show_format" "-show_streams" (fullpath file))]
     (when (zero? (:exit exec))
       (json/read-str (:out exec) :key-fn (comp keyword str/lower-case)))))
 
@@ -51,7 +52,7 @@
   "Performs crop detection, returning the filter argument or nil."
   [input]
   (let [crops (for [start [300 600 900 1200]] (detect-crop-section input start 30))]
-    (when-let [crop (->> crops flatten distinct (sort-by crop-size) last)]
+    (when-let [^String crop (->> crops flatten distinct (sort-by crop-size) last)]
       (when-not (.endsWith crop ":0:0") crop))))
 
 (defn deinterlace

@@ -12,13 +12,14 @@
   (:require [clojure-watch.core :refer [start-watch]]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [video-server.file :refer [image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
+            [video-server.file :refer [fullpath hidden? image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
             [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos has-file?
                                                       norm-title title-for-file up-to-date? video-for-file]]
             [video-server.metadata :refer [read-metadata]]
             [video-server.process :refer [process-file]]
             [video-server.util :refer :all]
-            [video-server.video :refer [modified]]))
+            [video-server.video :refer [modified]])
+  (:import (java.io File FilenameFilter)))
 
 (def ^:const stable-time 60000)
 (def ^:const check-time 10000)
@@ -29,7 +30,7 @@
 (defn stable?
   "Returns true if the file has has content and has not been modified
   for a reasonable duration."
-  [file]
+  [^File file]
   (and (.isFile file)
        (pos? (.length file))
        (or (image? file)
@@ -45,9 +46,10 @@
 
 (defn- list-files
   "Lists files related to the video by title and filter."
-  [folder video ffilter]
-  (distinct (concat (.listFiles (:file folder) (ffilter (:title video)))
-                    (.listFiles (:file folder) (ffilter (norm-title (:title video)))))))
+  [folder video filter]
+  (let [file (io/file (:file folder))]
+    (distinct (concat (.listFiles file ^FilenameFilter (filter (:title video)))
+                      (.listFiles file ^FilenameFilter (filter (norm-title (:title video))))))))
 
 (defn add-subtitles
   "Performs the initial scan for subtitles."
@@ -66,7 +68,8 @@
 (defn add-videos
   "Performs the initial folder scan, adding videos to the library."
   [folder]
-  (let [files (.listFiles (:file folder) (movie-filter))]
+  (let [file (io/file (:file folder))
+        files (.listFiles file (movie-filter))]
     (doseq [file (filter stable? files)]
       (log/info "adding video" (str file))
       (library/add-video folder file))
@@ -111,7 +114,7 @@
 (defn check-pending-files
   "Checks the pending files and adds the stable ones to the library."
   []
-  (doseq [[folder file] @pending-files]
+  (doseq [[folder ^File file] @pending-files]
     (try (when (stable? file)
            (when-not (up-to-date? folder file)
              (add-file folder file)))
@@ -129,7 +132,7 @@
 (defn add-pending-file
   "Adds a new or changing file to the list of pending files."
   [folder file]
-  (when (and (.isFile file) (not (contains? @pending-files [folder file])))
+  (when-not (contains? @pending-files [folder file])
     (log/info "watching file" (str file))
     (remove-file folder file)
     (dosync (alter pending-files conj [folder file]))))
@@ -139,19 +142,20 @@
   [folder event filename]
   (when ((some-fn video? subtitle? image? metadata?) filename)
     (let [file (io/file filename)]
-      (try (case event
-             :create (if (stable? file)
-                       (add-file folder file)
-                       (add-pending-file folder file))
-             :modify (add-pending-file folder file)
-             :delete (remove-file folder file)
-             nil)
-           (catch Exception e (log/error e "error in file-event-callback"))))))
+      (when (and (.isFile file) (not (hidden? folder file)))
+        (try (case event
+               :create (if (stable? file)
+                         (add-file folder file)
+                         (add-pending-file folder file))
+               :modify (add-pending-file folder file)
+               :delete (remove-file folder file)
+               nil)
+             (catch Exception e (log/error e "error in file-event-callback")))))))
 
 (defn watcher-spec
   "Returns a watcher spec for watching a particular folder."
   [folder]
-  {:path (-> folder :file .getCanonicalPath)
+  {:path (-> folder :file fullpath)
    :event-types [:create :modify :delete]
    :bootstrap (partial scan-folder folder)
    :callback (partial file-event-callback folder)

@@ -41,10 +41,10 @@
 
 (defn rescan []
   (library/remove-all)
-  (watcher/scan-folder folder))
+  (watcher/scan-folder folder (-> folder :file fullpath)))
 
 (defn video-for-title [title]
-  (first (filter #(.contains (:title %) title) (library/current-videos))))
+  (first (filter #(.contains ^String (:title %) title) (library/current-videos))))
 
 (defn title-for-title [title]
   (title-for-id (:title (video-key title))))
