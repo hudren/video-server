@@ -37,9 +37,10 @@
 (def directory (main/default-folder))
 (def options (main/read-options directory))
 (def url (main/host-url port))
-(def folder (->Folder "videos" (io/file directory) (str url "/" "videos") options))
+(def folder (->Folder "movies" (io/file directory) (str url "/videos/movies") options))
 
 (defn rescan []
+  (library/remove-all)
   (watcher/scan-folder folder))
 
 (defn video-for-title [title]
@@ -89,8 +90,8 @@
   (binding [encoder/*fake-encode* (and fake (nil? (:encode options)))]
     (process/start-encoding))
   (process/start-processing encode fetch output-format output-size)
-  (watcher/start-watcher folder)
-  (server/start-server url port (handler/app url) folder)
+  (watcher/start-watcher [folder])
+  (server/start-server url port (handler/app url) [folder])
   (discovery/start-discovery url main/discovery-port hostname)
   (auto-reload (find-ns 'video-server.html)))
 

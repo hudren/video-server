@@ -120,17 +120,35 @@
       (with-open [rdr (PushbackReader. (io/reader file))]
         (edn/read rdr)))))
 
+(defn unique-name
+  "Returns a unique name that does not exist in the set of names."
+  [name names]
+  (loop [base (-> name str/lower-case (str/replace " " "")) index 2]
+    (if (contains? names base)
+      (recur (str name index) (inc index))
+      base)))
+
+(defn make-folders
+  "Returns Folders corresponding to the directories."
+  [url dirs]
+  (loop [dirs dirs folders [] names #{}]
+    (if-let [dir (first dirs)]
+      (let [name (unique-name (-> dir io/file .getName) names)
+            folder (->Folder name (io/file dir) (str url "/videos/" name) (read-options dir))]
+        (recur (rest dirs) (conj folders folder) (conj names name)))
+      folders)))
+
 (defn start
   "Starts all of the components, returning the Jetty web server."
-  [dir options]
+  [dirs options]
   (let [fmt (keyword (:format options))
         size (-> (:size options) str keyword)
         url (host-url (:port options))
-        folder (->Folder "videos" (io/file dir) (str url "/" "videos") (read-options dir))]
+        folders (make-folders url dirs)]
     (start-encoding)
     (start-processing (:encode options) (:fetch options) fmt size)
-    (start-watcher folder)
-    (let [server (start-server url (:port options) (app url) folder)]
+    (start-watcher folders)
+    (let [server (start-server url (:port options) (app url) folders)]
       (start-discovery url discovery-port (:name options))
       server)))
 
@@ -141,9 +159,8 @@
     (cond
       (:version options) (exit 0 (version))
       (:help options) (exit 0 (usage summary))
-      (> (count arguments) 1) (exit 1 "Only one folder is allowed.")
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
-    (let [dir (or (first arguments) (default-folder))]
-      (.join (start dir options)))))
+    (let [dirs (or (seq arguments) (list (default-folder)))]
+      (.join (start dirs options)))))
 

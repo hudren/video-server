@@ -59,32 +59,34 @@
   "Returns a servlet that serves the movie files in the specified
   folder."
   [folder]
-  (doto (ServletHolder. DefaultServlet)
+  (doto (ServletHolder. (:name folder) DefaultServlet)
     (.setInitParameter "resourceBase" (.getAbsolutePath (:file folder)))
     (.setInitParameter "useFileMappedBuffer" "true")))
 
 (defn context
   "Returns a Jetty handler combining the movie servlet and ring
   handler."
-  [handler folder]
-  (doto (HandlerList.)
-    #_(.addHandler (request-log-handler))
-    (.addHandler (doto (ServletContextHandler. ServletContextHandler/SESSIONS)
-                   (.setContextPath (str "/" (:name folder)))
-                   (.addFilter (cors-filter-holder) "/*" (EnumSet/allOf DispatcherType))
-                   (.addServlet (movies-servlet-holder folder) "/")))
-    (.addHandler (proxy-handler handler))))
+  [handler folders]
+  (let [handlers (HandlerList.)]
+    #_(.addHandler handlers (request-log-handler))
+    (doseq [folder folders]
+      (.addHandler handlers (doto (ServletContextHandler. ServletContextHandler/NO_SESSIONS)
+                              (.setContextPath (str "/videos/" (:name folder)))
+                              (.addFilter (cors-filter-holder) "/*" (EnumSet/allOf DispatcherType))
+                              (.addServlet (movies-servlet-holder folder) "/"))))
+    (.addHandler handlers (proxy-handler handler))
+    handlers))
 
 (defn create-server
   "Returns a Jetty server instance."
-  [port handler folder]
+  [port handler folders]
   (doto (Server. port)
-    (.setHandler (context handler folder))))
+    (.setHandler (context handler folders))))
 
 (defn ^Server start-server
-  "Starts the web server for the video folder and ring handler."
-  [url port handler folder]
+  "Starts the web server for the ring handler and video folders."
+  [url port handler folders]
   (log/info "starting the web server at" url)
-  (doto (create-server port handler folder)
+  (doto (create-server port handler folders)
     (.start)))
 

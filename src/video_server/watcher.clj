@@ -14,7 +14,7 @@
             [clojure.tools.logging :as log]
             [video-server.file :refer [image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
             [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos has-file?
-                                                      norm-title remove-all title-for-file up-to-date? video-for-file]]
+                                                      norm-title title-for-file up-to-date? video-for-file]]
             [video-server.metadata :refer [read-metadata]]
             [video-server.process :refer [process-file]]
             [video-server.util :refer :all]
@@ -79,9 +79,8 @@
 
 (defn scan-folder
   "Loads all of the videos and subtitles in the folder."
-  [folder]
-  (log/info "scanning" (str (:file folder)) "as" (:name folder))
-  (remove-all)
+  [folder path]
+  (log/info "scanning" path "as" (:name folder))
   (add-videos folder))
 
 (defn add-video
@@ -111,16 +110,14 @@
 
 (defn check-pending-files
   "Checks the pending files and adds the stable ones to the library."
-  [folder]
-  (when (seq @pending-files)
-    #_(log/trace "checking pending files")
-    (doseq [file @pending-files]
-      (try (when (stable? file)
-             (when-not (up-to-date? folder file)
-               (add-file folder file)))
-           (when (or (stable? file) (not (.exists file)))
-             (dosync (alter pending-files disj file)))
-           (catch Exception e (log/error e "adding pending file" (str file)))))))
+  []
+  (doseq [[folder file] @pending-files]
+    (try (when (stable? file)
+           (when-not (up-to-date? folder file)
+             (add-file folder file)))
+         (when (or (stable? file) (not (.exists file)))
+           (dosync (alter pending-files disj [folder file])))
+         (catch Exception e (log/error e "adding pending file" (str file))))))
 
 (defn remove-file
   "Removes the file from the video library."
@@ -132,10 +129,10 @@
 (defn add-pending-file
   "Adds a new or changing file to the list of pending files."
   [folder file]
-  (when (and (.isFile file) (not (contains? @pending-files file)))
+  (when (and (.isFile file) (not (contains? @pending-files [folder file])))
     (log/info "watching file" (str file))
     (remove-file folder file)
-    (dosync (alter pending-files conj file))))
+    (dosync (alter pending-files conj [folder file]))))
 
 (defn file-event-callback
   "Processes the file system events."
@@ -151,14 +148,18 @@
              nil)
            (catch Exception e (log/error e "error in file-event-callback"))))))
 
-(defn start-watcher
-  "Watches for file system changes in the video folder."
+(defn watcher-spec
+  "Returns a watcher spec for watching a particular folder."
   [folder]
-  (scan-folder folder)
-  (let [path (-> folder :file .getAbsolutePath)]
-    (log/info "starting watcher on" path)
-    (start-watch [{:path path
-                   :event-types [:create :modify :delete]
-                   :callback (partial file-event-callback folder)}])
-    (periodically (partial check-pending-files folder) check-time)))
+  {:path (-> folder :file .getCanonicalPath)
+   :event-types [:create :modify :delete]
+   :bootstrap (partial scan-folder folder)
+   :callback (partial file-event-callback folder)
+   :options {:recursive false}})
+
+(defn start-watcher
+  "Watches for file system changes in the given folders."
+  [folders]
+  (start-watch (map watcher-spec folders))
+  (periodically check-pending-files check-time))
 
