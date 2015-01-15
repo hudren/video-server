@@ -1,8 +1,12 @@
 # Videos@Home Changelog
 
+## Version 0.3.2
+
+* Added support for multiple folders and subfolders
+
 ## Version 0.3
 
-* Added metadata collection
+* Added metadata fetching
 * Enhanced web UI
 * Added support for titles (tv seasons)
 
