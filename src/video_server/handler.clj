@@ -17,7 +17,7 @@
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version]]
             [video-server.html :refer [downloads-template title-page titles-template]]
-            [video-server.library :refer [title-for-id title-listing video-listing]]
+            [video-server.library :refer [current-titles title-for-id title-listing video-listing]]
             [video-server.util :refer :all]))
 
 (def ^:private base-url (atom "http://localhost"))
@@ -39,7 +39,7 @@
 (defn titles
   "Returns the index or home page listing the titles."
   []
-  (let [titles (sort-by :sorting (title-listing))]
+  (let [titles (sort-by :sorting (current-titles))]
     (html-response (titles-template titles))))
 
 (defn title

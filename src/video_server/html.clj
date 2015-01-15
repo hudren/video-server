@@ -119,7 +119,7 @@
   [& lists]
   (if (string? (first lists))
     (let [values (combine (rest lists))]
-      (when values (html [:span {:class "label"} (str (first lists) ":")] (str " " values))))
+      (when values (html [:span.label (str (first lists) ":")] (str " " values))))
     (let [values (distinct (remove nil? (flatten lists)))]
       (when (seq values)
         (str/join ", " values)))))
@@ -136,23 +136,29 @@
 
 ;;; Title listing
 
-(defsnippet title-item "templates/title-item.html" [:div.video]
-  [title info]
-  [:div.poster :a] (set-attr :href (title-url title))
-  [:div.poster :img] (set-attr :src (or (:poster title) "placeholder.png"))
-  [:span.title :a] (do-> (set-attr :href (title-url title))
-                         (content (or (:title info) (:title title))))
-  [:span.year] (when-let [year (:year info)] (content (str year)))
-  [:span.rated] (when-let [rated (:rated info)] (content rated))
-  [:span.duration] (if (has-seasons? title)
-                     (content (season-desc title))
-                     (when-let [runtime (:runtime info)] (content runtime)))
-  [:p.genres] (when-content (combine "Genres" (:genres info)))
-  [:p.stars] (when-content (combine "Starring" (:stars info))))
+(defn title-item
+  [title]
+  (let [info (:info title)
+        url (title-url title)]
+    [:div.video
+     [:div.poster.small
+      [:a {:href url :target "_blank"}
+       [:img {:src (or (:poster title) "placeholder.png") :alt "poster"}]]]
+     [:div.desc
+      [:p
+       [:span.title
+        [:a {:href url :target "_blank"} (or (:title info) (:title title))]]
+       [:span.info
+        (when-let [year (:year info)] [:span.year (str year)])
+        (when-let [rated (:rated info)] [:span.rated rated])
+        (when-let [runtime (if (has-seasons? title) (season-desc title) (:runtime info))]
+          [:span.duration runtime])]]
+      (when-let [genres (combine "Genres" (:genres info))] [:p.genres genres])
+      (when-let [stars (combine "Starring" (:stars info))] [:p.stars stars])]]))
 
 (deftemplate titles-template "templates/titles.html"
   [titles]
-  [:#content] (content (map #(title-item % (:info %)) titles)))
+  [:#content] (content (html (map title-item titles))))
 
 ;;; Title page
 
