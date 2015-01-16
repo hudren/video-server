@@ -29,6 +29,12 @@
   ^String [^File file]
   (.getCanonicalPath file))
 
+(defn descendant?
+  "Returns true if the second is a descendent of the first."
+  [^File parent ^File child]
+  (or (= parent child)
+      (.startsWith (.toPath child) (.toPath parent))))
+
 (defn file-base
   "Returns the base filename up to but not including the first period."
   [file]

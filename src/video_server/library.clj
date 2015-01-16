@@ -14,7 +14,8 @@
             [clojure.tools.logging :as log]
             [video-server.encoder :as encoder]
             [video-server.ffmpeg :refer [video-info]]
-            [video-server.file :refer [filename file-base file-subtype image? mimetype relative-path subtitle? title-info video?]]
+            [video-server.file :refer [descendant? filename file-base file-subtype fullpath image? mimetype relative-path subtitle?
+                                       title-info video?]]
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
             [video-server.title :refer [episode-title season-title]]
@@ -30,7 +31,7 @@
 (defonce titles (ref {}))
 
 ; Map of file to [id|key modified]
-(defonce ^:private files (ref {}))
+(defonce files (ref {}))
 
 (defn remove-all
   "Removes all videos from the library."
@@ -108,6 +109,11 @@
   (or (get-in @library [folder (first (files file))])
       (video-for-key folder (video-key file))))
 
+(defn files-for-dir
+  "Returns the files located in the directory."
+  [dir]
+  (filter #(descendant? dir %) (keys @files)))
+
 (defn files-for-video
   "Returns the Files assoicated with the video."
   [video]
@@ -165,7 +171,7 @@
           videos (remove #(= % [folder key]) (:videos title))]
       (if (empty? containers)
         (do (alter library update-in [folder] dissoc key)
-            (alter files (partial apply dissoc) (map clojure.core/key (filter #(= key (val %)) @files)))
+            (alter files (partial apply dissoc) (files-for-video key))
             (if (empty? videos)
               (alter titles dissoc (:title key))
               (alter titles update-in [(:title key)] assoc :videos videos)))
@@ -251,14 +257,18 @@
   ([]
    (for [folder @library video (second folder)] (second video)))
   ([folder]
-   (for [video (@library folder)] (second video))))
+   (vals (@library folder)))
+  ([folder path]
+   (filter #(some (fn [file] (= (.getParentFile file) path)) (files-for-video %)) (current-videos folder))))
 
 (defn current-titles
   "Returns a sequence of all the titles in the library."
   ([]
    (vals @titles))
   ([folder]
-   (filter #(some #{folder} (folders-for-title %)) (vals @titles))))
+   (filter #(some #{folder} (folders-for-title %)) (vals @titles)))
+  ([folder path]
+   (filter #(some (fn [file] (= (.getParentFile file) path)) (files-for-title %)) (current-titles folder))))
 
 (defn ^:deprecated video-with-metadata
   "Appends missing fields from the title metadata."

@@ -9,13 +9,12 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.watcher
-  (:require [clojure-watch.core :refer [start-watch]]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [video-server.file :refer [dir-filter fullpath hidden? image-filter image? metadata? movie-filter subtitle-filter
-                                       subtitle? video?]]
-            [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos has-file?
-                                                      norm-title title-for-file up-to-date? video-for-file]]
+            [video-server.directory :refer [watch-directory]]
+            [video-server.file :refer [image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
+            [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos files-for-dir
+                                                      has-file? norm-title title-for-file up-to-date? video-for-file]]
             [video-server.metadata :refer [read-metadata title-dir]]
             [video-server.process :refer [process-file]]
             [video-server.util :refer :all]
@@ -24,6 +23,7 @@
 
 (def ^:const stable-time 60000)
 (def ^:const check-time 10000)
+(def ^:const scan-threads 4)
 
 ;; Set of changing files
 (defonce pending-files (ref #{}))
@@ -46,50 +46,50 @@
       (add-info title info))))
 
 (defn scan-videos
-  "Performs the initial folder scan, adding videos to the library."
-  [folder & [path]]
+  "Scans the directory for videos."
+  [folder path]
   (let [dir (io/file (or path (:file folder)))
         files (.listFiles dir (movie-filter))]
-    (doseq [file (filter stable? files)]
+    (dopar scan-threads [file (filter stable? files)]
       (log/info "adding video" (str file))
-      (library/add-video folder file))
-    (doseq [dir (.listFiles dir (dir-filter))]
-      (log/debug "scanning directory" (str dir))
-      (scan-videos folder dir))))
+      (library/add-video folder file))))
 
 (defn scan-images
-  "Recursively scans the folder for images."
-  [folder & [path]]
+  "Scans the directory for images."
+  [folder path]
   (let [dir (io/file (or path (:file folder)))]
-    (doseq [file (.listFiles dir (image-filter))]
+    (dopar scan-threads [file (.listFiles dir (image-filter))]
       (when-let [title (title-for-file file)]
         (log/info "adding image" (str file))
-        (add-image folder file title)))
-    (doseq [dir (.listFiles dir (dir-filter))]
-      (scan-images folder dir))))
+        (add-image folder file title)))))
 
 (defn scan-subtitles
-  "Recursively scans the folder for subtitles."
-  [folder & [path]]
+  "Scans the directory for subtitles."
+  [folder path]
   (let [dir (io/file (or path (:file folder)))]
-    (doseq [file (.listFiles dir (subtitle-filter))]
+    (dopar scan-threads [file (.listFiles dir (subtitle-filter))]
       (when-let [video (video-for-file folder file)]
         (log/info "adding subtitle" (str file))
-        (add-subtitle folder file video)))
-    (doseq [dir (.listFiles dir (dir-filter))]
-      (scan-subtitles folder dir))))
+        (add-subtitle folder file video)))))
 
-(defn scan-folder
+(defn scan-dir
   "Loads all of the videos and subtitles in the folder."
   [folder path]
   (log/info "scanning" path "as" (:name folder))
-  (scan-videos folder)
-  (doseq [title (current-titles folder)]
+  (scan-videos folder path)
+  (dopar scan-threads [title (current-titles folder path)]
     (add-metadata title))
-  (scan-images folder)
-  (scan-subtitles folder)
-  (doseq [video (sort-by modified (current-videos folder))]
+  (scan-images folder path)
+  (scan-subtitles folder path)
+  (doseq [video (sort-by modified (current-videos folder path))]
     (process-file folder video)))
+
+(defn remove-dir
+  "Removes all of the files in the directory."
+  [folder dir]
+  (doseq [file (files-for-dir dir)]
+    (log/info "removing file" (str file))
+    (library/remove-file folder file)))
 
 (defn- list-files
   "Lists files related to the video by title and filter."
@@ -165,33 +165,35 @@
     (remove-file folder file)
     (dosync (alter pending-files conj [folder file]))))
 
-(defn file-event-callback
-  "Processes the file system events."
-  [folder event filename]
-  (when ((some-fn video? subtitle? image? metadata?) filename)
-    (let [file (io/file filename)]
-      (when (and (or (.isFile file) (= event :delete)) (not (hidden? folder file)))
-        (try (case event
-               :create (if (stable? file)
-                         (add-file folder file)
-                         (add-pending-file folder file))
-               :modify (add-pending-file folder file)
-               :delete (remove-file folder file)
-               nil)
-             (catch Exception e (log/error e "error in file-event-callback")))))))
+(defn file-event
+  "Processes the file system events related to files."
+  [folder event file]
+  (log/trace "file event" event file)
+  (when ((some-fn video? subtitle? image? metadata?) file)
+    (try (case event
+           :create (if (stable? file)
+                     (add-file folder file)
+                     (add-pending-file folder file))
+           :modify (add-pending-file folder file)
+           :delete (remove-file folder file)
+           nil)
+         (catch Exception e (log/error e "error in file-event-callback")))))
 
-(defn watcher-spec
-  "Returns a watcher spec for watching a particular folder."
-  [folder]
-  {:path (-> folder :file fullpath)
-   :event-types [:create :modify :delete]
-   :bootstrap (partial scan-folder folder)
-   :callback (partial file-event-callback folder)
-   :options {:recursive true}})
+(defn dir-event
+  "Processes the file system events related to directories."
+  [folder event dir]
+  (log/trace "dir event" event dir)
+  (try
+    (case event
+      :create (scan-dir folder dir)
+      :delete (remove-dir folder dir)
+      nil)
+    (catch Exception e (log/error e "error in dir-event-callback"))))
 
 (defn start-watcher
   "Watches for file system changes in the given folders."
   [folders]
-  (start-watch (map watcher-spec folders))
+  (doseq [folder folders]
+    (watch-directory (:file folder) (partial #'file-event folder) (partial #'dir-event folder)))
   (periodically check-pending-files check-time))
 

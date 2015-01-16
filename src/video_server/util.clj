@@ -52,6 +52,26 @@
   [url]
   (URLDecoder/decode (str url) "UTF-8"))
 
+(defn split-equally [num coll]
+  "Split a collection into a vector of (as close as possible) equally sized parts"
+  (loop [num num
+         parts []
+         coll coll
+         c (count coll)]
+    (if (<= num 0)
+      parts
+      (let [t (quot (+ c num -1) num)]
+        (recur (dec num) (conj parts (take t coll)) (drop t coll) (- c t))))))
+
+(defmacro dopar
+  "Creates a number of doseq blocks that run in parallel."
+  [thread-count [sym coll] & body]
+  `(dorun (pmap
+            (fn [vals#]
+              (doseq [~sym vals#]
+                ~@body))
+            (split-equally ~thread-count ~coll))))
+
 (defn exec
   "Flattens and sanitizes the arguments before executing the shell
   command."

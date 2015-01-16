@@ -3,6 +3,7 @@
             [clojure.tools.logging :as log]
             [net.cgrand.reload :refer [auto-reload]]
             [video-server.android :as android]
+            [video-server.directory :as directory]
             [video-server.discovery :as discovery]
             [video-server.encoder :as encoder :refer :all]
             [video-server.ffmpeg :as ffmpeg]
@@ -41,7 +42,7 @@
 
 (defn rescan []
   (library/remove-all)
-  (watcher/scan-folder folder (-> folder :file fullpath)))
+  (watcher/scan-dir folder (-> folder :file fullpath)))
 
 (defn video-for-title [title]
   (first (filter #(.contains ^String (:title %) title) (library/current-videos))))

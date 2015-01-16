@@ -16,7 +16,6 @@
                  [org.eclipse.jetty/jetty-server "9.2.3.v20140905"]
                  [org.eclipse.jetty/jetty-servlet "9.2.3.v20140905"]
                  [org.eclipse.jetty/jetty-servlets "9.2.3.v20140905"]
-                 [clojure-watch "0.1.10"]
                  [ring/ring-core "1.3.2"]
                  [ring/ring-devel "1.3.2"]
                  [ring/ring-servlet "1.3.2"]
