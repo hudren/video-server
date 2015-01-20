@@ -52,8 +52,9 @@
   [url]
   (URLDecoder/decode (str url) "UTF-8"))
 
-(defn split-equally [num coll]
-  "Split a collection into a vector of (as close as possible) equally sized parts"
+(defn split-equally
+  "Split a collection into a vector of (as close as possible) equally sized parts."
+  [num coll]
   (loop [num num
          parts []
          coll coll
