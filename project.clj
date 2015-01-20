@@ -24,7 +24,8 @@
                  [enlive "1.1.5"]]
 
   :plugins [[lein-bower "0.5.1"]
-            [codox "0.8.10"]]
+            [codox "0.8.10"]
+            [lein-ns-dep-graph "0.1.0-SNAPSHOT"]]
 
   :bower-dependencies [[polymer "~0.5.1"]
                        [font-roboto "Polymer/font-roboto#~0.5.1"]
@@ -42,6 +43,7 @@
   :repl-options {:init-ns user}
 
   :profiles {:dev {:source-paths ["dev"]}
+             :prod {}
              :uberjar {:aot :all}}
 
   :eastwood {:continue-on-exception true}
@@ -51,6 +53,7 @@
           :src-dir-uri "http://github.com/hudren/video-server/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
-  :aliases {"build" ["do" "clean" ["bower" "install"] "uberjar"]
-            "docs" ["do" "doc" ["shell" "open" "docs/index.html"]]})
+  :aliases {"build" ["with-profiles" "prod" "do" "clean" ["bower" "install"] "uberjar"]
+            "docs" ["do" "doc" ["shell" "open" "docs/index.html"]]
+            "graph" ["with-profiles" "prod" "ns-dep-graph"]})
 
