@@ -112,7 +112,7 @@
   (let [video (video-for-key (-> title :videos first))
         info (fetch-metadata (or video title))
         poster (:poster info)]
-    (save-metadata title info)
+    (save-metadata title (dissoc info :poster))
     (when (and (not (:poster title)) poster)
       (save-poster title poster))
     info))
