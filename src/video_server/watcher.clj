@@ -40,10 +40,10 @@
 
 (defn add-metadata
   "Reads existing metadata for the given video."
-  [title]
+  [folder title]
   (when title
     (when-let [info (read-metadata title)]
-      (add-info title info))))
+      (add-info folder title info))))
 
 (defn scan-videos
   "Scans the directory for videos."
@@ -78,7 +78,7 @@
   (log/info "scanning" path "as" (:name folder))
   (scan-videos folder path)
   (dopar scan-threads [title (current-titles folder path)]
-    (add-metadata title))
+    (add-metadata folder title))
   (scan-images folder path)
   (scan-subtitles folder path)
   (doseq [video (sort-by modified (current-videos folder path))]
@@ -119,7 +119,7 @@
   (let [added (library/add-video folder file)]
     (when (:title added)
       (let [title (title-for-file file)]
-        (add-metadata title)
+        (add-metadata folder title)
         (add-images folder title)))
     (when (:video added)
       (let [video (video-for-file folder file)]
@@ -136,7 +136,7 @@
     (video? file) (add-video folder file)
     (subtitle? file) (add-subtitle folder file)
     (image? file) (add-image folder file)
-    (metadata? file) (add-metadata (title-for-file file)))
+    (metadata? file) (add-metadata folder (title-for-file file)))
   (process-file folder file))
 
 (defn check-pending-files

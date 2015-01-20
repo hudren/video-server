@@ -70,7 +70,7 @@
   (when-let [title (title-for-key key)]
     (when-not (:info title)
       (when-let [info (retrieve-metadata title)]
-        (add-info title info)))
+        (add-info folder title info)))
     (when-not (:thumb title)
       (extract-thumbnail folder video))))
 
@@ -113,12 +113,15 @@
   [encode? fetch? fmt size]
   (log/debug "starting file processing")
   (go (while true
-        (let [[folder key] (<! process-chan)]
+        (let [[folder key] (<! process-chan)
+              options (:options folder)]
           (log/trace "processing" folder key)
           (when-let [video (video-for-key folder key)]
-            (try (when fetch?
+            (try (when (get options :fetch fetch?)
                    (fetch-info folder key video))
-                 (when encode?
-                   (process-video folder video fmt size (-> folder :options :encoder :containers)))
+                 (when (get options :encode encode?)
+                   (process-video folder video
+                                  (get options :format fmt) (get options :size size)
+                                  (-> folder :options :encoder :containers)))
                  (catch Exception e (log/error e "error processing video" (str video)))))))))
 

@@ -2,5 +2,7 @@
 /.nrepl-port
 /docs
 /target
-publish
+/publish
+/install
+/*.edn
 *.key

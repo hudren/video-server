@@ -112,13 +112,17 @@
   (when msg (println msg))
   (System/exit code))
 
+(defn read-edn
+  "Reads EDN data from a file."
+  [file]
+  (when (.isFile file)
+    (with-open [rdr (PushbackReader. (io/reader file))]
+      (edn/read rdr))))
+
 (defn read-options
   "Reads folder-specific options."
-  [file]
-  (let [file (io/file (io/file file) "options.edn")]
-    (when (.isFile file)
-      (with-open [rdr (PushbackReader. (io/reader file))]
-        (edn/read rdr)))))
+  [dir]
+  (read-edn (io/file dir "options.edn")))
 
 (defn unique-name
   "Returns a unique name that does not exist in the set of names."
@@ -130,21 +134,41 @@
 
 (defn make-folders
   "Returns Folders corresponding to the directories."
-  [url dirs]
+  [dirs url]
   (loop [dirs dirs folders [] names #{}]
     (if-let [dir (first dirs)]
-      (let [name (unique-name (-> dir io/file .getName) names)
-            folder (->Folder name (io/file dir) (str url "/videos/" name) (read-options dir))]
+      (let [file (if (coll? dir) (first dir) dir)
+            options (if (coll? dir) (second dir) {})
+            name (unique-name (-> file io/file .getName) names)
+            folder (->Folder name (io/file file) (str url "/videos/" name) (merge options (read-options file)))]
         (recur (rest dirs) (conj folders folder) (conj names name)))
       folders)))
 
+(defn process-settings
+  "Processes folders and options from the file or command line."
+  [file dirs options url]
+  (if (.isFile file)
+    (let [settings (read-edn file)
+          options (merge options (dissoc settings :folders))]
+      [(make-folders (:folders settings) url) options])
+    [(make-folders dirs url) options]))
+
+(defn process-args
+  "Processes the arguments looking for a settings file or folders to
+  serve. The settings file may override options provided on the
+  command line and provide folder-specific options."
+  [args options url]
+  (let [file (io/file (or (first args) "settings.edn"))
+        dirs (if (seq args) args (list (default-folder)))]
+    (process-settings file dirs options url)))
+
 (defn start
   "Starts all of the components, returning the Jetty web server."
-  [dirs options]
+  [args options]
   (let [fmt (keyword (:format options))
         size (-> (:size options) str keyword)
         url (host-url (:port options))
-        folders (make-folders url dirs)]
+        [folders options] (process-args args options url)]
     (start-encoding)
     (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folders)
@@ -161,6 +185,5 @@
       (:help options) (exit 0 (usage summary))
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
-    (let [dirs (or (seq arguments) (list (default-folder)))]
-      (.join (start dirs options)))))
+    (.join (start args options))))
 

@@ -35,14 +35,8 @@
 (def encode false)
 (def fetch false)
 
-(def directory (main/default-folder))
-(def options (main/read-options directory))
-(def url (main/host-url port))
-(def folder (->Folder "movies" (io/file directory) (str url "/videos/movies") options))
-
-(defn rescan []
-  (library/remove-all)
-  (watcher/scan-dir folder (-> folder :file fullpath)))
+(def args [])
+(def options {:name hostname :port port :fake fake :encode encode :fetch fetch :format output-format :size output-size})
 
 (defn video-for-title [title]
   (first (filter #(.contains ^String (:title %) title) (library/current-videos))))
@@ -89,10 +83,6 @@
 (defn start []
   (main/set-log-level (main/log-level log-level))
   (binding [encoder/*fake-encode* (and fake (nil? (:encode options)))]
-    (process/start-encoding))
-  (process/start-processing encode fetch output-format output-size)
-  (watcher/start-watcher [folder])
-  (server/start-server url port (handler/app url) [folder])
-  (discovery/start-discovery url main/discovery-port hostname)
+    (main/start args options))
   (auto-reload (find-ns 'video-server.html)))
 

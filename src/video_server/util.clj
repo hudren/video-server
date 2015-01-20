@@ -72,6 +72,21 @@
                 ~@body))
             (split-equally ~thread-count ~coll))))
 
+(defn merge-options
+  "Merges two maps by combining their values."
+  [options override]
+  (reduce (fn [m [k v]]
+            (let [ov (get m k)]
+              (if-not ov
+                (assoc m k v)
+                (let [nv (cond
+                           (and (coll? ov) (coll? v)) (into ov v)
+                           (coll? ov) (conj ov v)
+                           (coll? v) (conj v ov)
+                           :default v)]
+                (assoc m k (if (sequential? nv) (distinct nv) nv))))))
+          (or options {}) override))
+
 (defn exec
   "Flattens and sanitizes the arguments before executing the shell
   command."

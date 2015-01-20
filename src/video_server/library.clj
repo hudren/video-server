@@ -205,11 +205,11 @@
       (alter files dissoc file))))
 
 (defn add-info
-  "Adds the metadata to the Title."
-  [title info]
+  "Adds the metadata to the Title, merging info for the folder."
+  [folder title info]
   (log/debug "adding metadata for" (:title title))
   (dosync
-    (alter titles assoc-in [(:title (video-key title)) :info] info)))
+    (alter titles assoc-in [(:title (video-key title)) :info] (merge-options info (-> folder :options :info)))))
 
 (defn- image-type
   "Returns the image type, :thumb or :poster."
