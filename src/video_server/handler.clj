@@ -15,7 +15,7 @@
             [compojure.route :refer [not-found resources]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
-            [video-server.android :refer [android-version]]
+            [video-server.android :refer [android-version apk-filename]]
             [video-server.html :refer [downloads-template title-page titles-template]]
             [video-server.library :refer [current-titles title-for-id title-listing video-listing]]
             [video-server.util :refer :all]))
@@ -51,7 +51,7 @@
 (defn downloads
   "Returns the downloads page."
   []
-  (html-response (downloads-template @base-url "video-client-release.apk")))
+  (html-response (downloads-template @base-url (apk-filename))))
 
 (defn videos-api
   "Responds with a list of available videos."
