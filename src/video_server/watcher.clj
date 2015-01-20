@@ -93,10 +93,10 @@
 
 (defn- list-files
   "Lists files related to the video by title and filter."
-  [dir video filter]
+  [dir video filt]
   (let [file (io/file dir)]
-    (distinct (concat (.listFiles file ^FilenameFilter (filter (:title video)))
-                      (.listFiles file ^FilenameFilter (filter (norm-title (:title video))))))))
+    (distinct (concat (.listFiles file ^FilenameFilter (filt (:title video)))
+                      (.listFiles file ^FilenameFilter (filt (norm-title (:title video))))))))
 
 (defn add-images
   "Performs a scan for image files related to the title."
