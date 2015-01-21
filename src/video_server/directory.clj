@@ -40,8 +40,8 @@
 
 (defn process-events
   "Processes file system events calling the appropriate callback."
-  [^WatchService ws dir file-fn dir-fn]
-  (let [dirs (atom (register ws dir dir-fn))]
+  [^WatchService ws dir dirs file-fn dir-fn]
+  (let [dirs (atom dirs)]
     (try
       (while true
         (let [k (.take ws)]
@@ -69,7 +69,8 @@
   removals. The initial scan will invoke the dir-fn for each dir."
   [dir file-fn & [dir-fn]]
   (log/debug "watching" (str dir))
-  (let [ws (.newWatchService (FileSystems/getDefault))]
-    (future (process-events ws dir file-fn dir-fn))
+  (let [ws (.newWatchService (FileSystems/getDefault))
+        dirs (register ws dir dir-fn)]
+    (future (process-events ws dir dirs file-fn dir-fn))
     (fn [] (.close ws))))
 
