@@ -64,7 +64,7 @@
       (let [t (quot (+ c num -1) num)]
         (recur (dec num) (conj parts (take t coll)) (drop t coll) (- c t))))))
 
-(defmacro dopar
+(defmacro parseq
   "Creates a number of doseq blocks that run in parallel."
   [thread-count [sym coll] & body]
   `(dorun (pmap
@@ -72,6 +72,11 @@
               (doseq [~sym vals#]
                 ~@body))
             (split-equally ~thread-count ~coll))))
+
+(defn parall
+  "Executes the expressions in parallel, returning the results."
+  [& expr]
+  (map deref (doall (map #(future %) expr))))
 
 (defn merge-options
   "Merges two maps by combining their values."

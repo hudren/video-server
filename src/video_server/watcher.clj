@@ -16,7 +16,7 @@
             [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos files-for-dir
                                                       has-file? norm-title title-for-file up-to-date? video-for-file]]
             [video-server.metadata :refer [read-metadata title-dir]]
-            [video-server.process :refer [process-file]]
+            [video-server.process :refer [process-file process-title]]
             [video-server.util :refer :all]
             [video-server.video :refer [modified]])
   (:import (java.io File FilenameFilter)))
@@ -42,23 +42,26 @@
   "Reads existing metadata for the given video."
   [folder title]
   (when title
-    (when-let [info (read-metadata title)]
-      (add-info folder title info))))
+    (if-let [info (read-metadata title)]
+      (add-info folder title info)
+      (process-title folder title))))
 
 (defn scan-videos
   "Scans the directory for videos."
   [folder path]
   (let [dir (io/file (or path (:file folder)))
         files (.listFiles dir (movie-filter))]
-    (dopar scan-threads [file (filter stable? files)]
+    (parseq scan-threads [file (filter stable? files)]
       (log/info "adding video" (str file))
-      (library/add-video folder file))))
+      (let [added (library/add-video folder file)]
+        (when (:title added)
+          (add-metadata folder (title-for-file file)))))))
 
 (defn scan-images
   "Scans the directory for images."
   [folder path]
   (let [dir (io/file (or path (:file folder)))]
-    (dopar scan-threads [file (.listFiles dir (image-filter))]
+    (parseq scan-threads [file (.listFiles dir (image-filter))]
       (when-let [title (title-for-file file)]
         (log/info "adding image" (str file))
         (add-image folder file title)))))
@@ -67,7 +70,7 @@
   "Scans the directory for subtitles."
   [folder path]
   (let [dir (io/file (or path (:file folder)))]
-    (dopar scan-threads [file (.listFiles dir (subtitle-filter))]
+    (parseq scan-threads [file (.listFiles dir (subtitle-filter))]
       (when-let [video (video-for-file folder file)]
         (log/info "adding subtitle" (str file))
         (add-subtitle folder file video)))))
@@ -77,10 +80,8 @@
   [folder path]
   (log/info "scanning" path "as" (:name folder))
   (scan-videos folder path)
-  (dopar scan-threads [title (current-titles folder path)]
-    (add-metadata folder title))
-  (scan-images folder path)
-  (scan-subtitles folder path)
+  (parall (scan-images folder path)
+          (scan-subtitles folder path))
   (doseq [video (sort-by modified (current-videos folder path))]
     (process-file folder video)))
 

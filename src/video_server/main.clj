@@ -17,7 +17,7 @@
             [video-server.discovery :refer [start-discovery]]
             [video-server.handler :refer [app]]
             [video-server.model :refer [->Folder]]
-            [video-server.process :refer [start-encoding start-processing]]
+            [video-server.process :refer [start-processing]]
             [video-server.server :refer [start-server]]
             [video-server.watcher :refer [start-watcher]])
   (:import (ch.qos.logback.classic Level Logger)
@@ -169,7 +169,6 @@
         size (-> (:size options) str keyword)
         url (host-url (:port options))
         [folders options] (process-args args options url)]
-    (start-encoding)
     (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folders)
     (let [server (start-server url (:port options) (app url) folders)]
