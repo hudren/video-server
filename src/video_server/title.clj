@@ -37,13 +37,14 @@
   "Returns the season title, if there is one."
   [title season]
   (when season
-    (get-in title [:info :seasons season :title])))
+    (or (get-in title [:info :seasons season :title])
+        (get-in title [:seasons season :title]))))
 
 (defn season-meta-titles
   "Returns the season titles from the metadata."
   [title]
-  (into {} (for [season (-> title :info :seasons)]
-             [(first season) (:title (second season))])))
+  (into {} (for [season (concat (keys (:seasons title)) (-> title :info :seasons keys))]
+             [season (season-title title season)])))
 
 (defn season-titles
   "Returns the season number and title pairs for the given title."
@@ -97,7 +98,8 @@
   ([image title season episode]
    (or (get-in title [:seasons season :episodes episode image])
        (get-in title [:seasons season image])
-       (image title))))
+       (image title)
+       (get-in title [:seasons (first (sort (keys (:seasons title))))]))))
 
 (defn best-video
   "Returns the best video for the specified season and episode."

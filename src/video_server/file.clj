@@ -131,17 +131,21 @@
         episode (when-not (dimensions episode) episode)]
     (merge {:title (clean-title series)}
            (when dirname
-             (when-let [nums (re-find #"^s(?:eason)?\s*(\d+)$" (str/lower-case dirname))]
+             (let [[season title] (map str/trim (str/split (clean-title dirname) #" - "))]
+               (when-let [nums (re-find #"^s(?:eason)?\s*(\d+)" (str/lower-case season))]
                  {:season (Integer/parseInt (nth nums 1))
-                  :season-title (clean-title episode)}))
+                  :season-title (clean-title title)})))
            (when program
              (if-let [nums (re-find #"s(\d+)e(\d+)" (str/lower-case program))]
                {:season (Integer/parseInt (nth nums 1))
                 :episode (Integer/parseInt (nth nums 2))
                 :episode-title (clean-title episode)}
-               (when-let [nums (re-find #"s(\d+)" (str/lower-case program))]
+               (if-let [nums (re-find #"s(\d+)" (str/lower-case program))]
                  {:season (Integer/parseInt (nth nums 1))
-                  :season-title (clean-title episode)})))
+                  :season-title (clean-title episode)}
+                 (if-let [nums (re-find #"e(\d+)" (str/lower-case program))]
+                   {:episode (Integer/parseInt (nth nums 1))
+                    :episode-title (clean-title episode)}))))
            (when program
              (when-let [nums (re-find #"p(?:ar)?t\s*(\d+)" (str/lower-case program))]
                {:episode (Integer/parseInt (nth nums 1))

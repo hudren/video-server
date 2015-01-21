@@ -131,6 +131,20 @@
   [title]
   (distinct (map first (:videos title))))
 
+(defn add-title
+  "Adds a season or episode title to the title record."
+  ([info]
+   (when-let [title (title-for-key (video-key info))]
+     (dosync (alter titles assoc (:id title) (add-title title info)))))
+  ([title info]
+   (let [title (if (and (:season info) (:season-title info))
+                 (update-in title [:seasons (:season info)] assoc :title (:season-title info))
+                 title)
+         title (if (and (:episode info) (:episode-title info))
+                 (update-in title [:seasons (:season info) :episodes (:episode info)] assoc :title (:episode-title info))
+                 title)]
+     title)))
+
 (defn title-record
   "Returns a new Title containing the video."
   [title folder key]
@@ -157,6 +171,7 @@
               (alter titles update-in [(:title key) :videos] conj [folder key])
               (alter titles assoc (:title key) (title-record (:title video) folder key)))
             (alter files assoc file [key (.lastModified ^File file)])
+            (add-title (title-info file))
             {:video (not video-exists) :title (not title-exists)}))))))
 
 (defn remove-video
@@ -239,7 +254,8 @@
          image (image-key path)]
      (dosync
        (alter titles assoc-in (cons (:title key) image) url)
-       (alter files assoc file [(:id title) (.lastModified ^File file)])))))
+       (alter files assoc file [(:id title) (.lastModified ^File file)])
+       (add-title file)))))
 
 (defn remove-image
   "Removes an image file from a video."

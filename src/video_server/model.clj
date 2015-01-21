@@ -43,7 +43,7 @@
            (if episode (str " Part " episode))))))
 
 ;; Title containing one or more related videos
-(defrecord Title [id title sorting poster thumb info videos]
+(defrecord Title [id title sorting poster thumb info seasons videos]
   Object
   (toString [_] title))
 
