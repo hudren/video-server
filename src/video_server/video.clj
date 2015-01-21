@@ -109,7 +109,7 @@
   "Returns the video title based on the metadata or filename."
   [container info]
   (title-info (or (-> info :format :title)
-                  (-> container :filename file-base))))
+                  (-> container :filename))))
 
 (defn sorting-title
   "Returns a title suitable for sorting."

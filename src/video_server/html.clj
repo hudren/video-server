@@ -11,10 +11,10 @@
 (ns video-server.html
   (:require [clojure.string :as str]
             [net.cgrand.enlive-html :refer :all]
-            [video-server.format :refer [format-bitrate format-filetype format-size lang-two-letter]]
+            [video-server.format :refer [format-filetype format-size lang-two-letter]]
             [video-server.library :refer [video-for-key]]
-            [video-server.title :refer [best-containers best-video episode-title full-title has-episodes? has-parts? has-seasons? season-desc
-                                        season-titles]]
+            [video-server.title :refer [best-containers best-image best-video episode-title full-title has-episodes? has-parts?
+                                        has-seasons? season-desc season-titles]]
             [video-server.video :refer [rank-containers]])
   (:import (java.net URLEncoder)
            (java.util Locale)))
@@ -182,7 +182,7 @@
   [:head :title] (content (full-title title video))
   [:core-toolbar :div] (content (or (:title info) (:title title)))
   [:div#desc] (when (or (:year info) (:plot info)) identity)
-  [:div#poster :img] (set-attr :src (or (:poster title) "placeholder.png"))
+  [:div#poster :img] (set-attr :src (or (best-image :poster title season episode) "placeholder.png"))
   [:div#info] (substitute (title-info info (rank-containers video)))
   [:div#links] (content (apply html (video-links info)))
   [:div#seasons] (when (has-seasons? title)

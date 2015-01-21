@@ -18,7 +18,7 @@
                                        title-info video?]]
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
-            [video-server.title :refer [episode-title season-title]]
+            [video-server.title :refer [best-image episode-title season-title]]
             [video-server.video :refer [sorting-title video-container video-record]]
             [video-server.util :refer :all])
   (:import (java.io File)
@@ -216,6 +216,16 @@
   [file]
   (or (#{:thumb} (file-subtype file)) :poster))
 
+(defn- image-key
+  "Returns the indexes to uniquely store the image."
+  [path]
+  (let [title (title-info path)]
+    (->> [(when-let [season (:season title)] [:seasons season])
+          (when-let [episode (:episode title)] [:episodes episode])
+          (image-type path)]
+         flatten
+         (remove nil?))))
+
 (defn add-image
   "Adds an image to an existing Title."
   ([folder file]
@@ -224,21 +234,24 @@
   ([folder file title]
    (log/debug "adding image" (str file))
    (let [key (video-key title)
-         url (encoded-url (:url folder) (relative-path folder file))]
+         path (relative-path folder file)
+         url (encoded-url (:url folder) path)
+         image (image-key path)]
      (dosync
-       (alter titles assoc-in [(:title key) (image-type file)] url)
+       (alter titles assoc-in (cons (:title key) image) url)
        (alter files assoc file [(:id title) (.lastModified ^File file)])))))
 
 (defn remove-image
   "Removes an image file from a video."
   [folder file title]
   (let [key (video-key title)
-        url (encoded-url (:url folder) (relative-path folder file))
-        image (image-type file)]
+        path (relative-path folder file)
+        url (encoded-url (:url folder) path)
+        image (image-key path)]
     (log/debug "removing image" (str file))
     (dosync
-      (when (= url (get-in @titles [(:title key) image]))
-        (alter titles assoc-in [(:title key) image] nil)
+      (when (= url (get-in @titles (cons (:title key) image)))
+        (alter titles assoc-in (cons (:title key) image) nil)
         (alter files dissoc file)))))
 
 (defn remove-file
@@ -278,7 +291,7 @@
       (merge video
              {:title (or (:title info) (:title title))
               :sorting (:sorting title)
-              :poster (:poster title)
+              :poster (best-image :poster title video)
               :thumb (:thumb title)}
              (when-let [st (season-title title (:season video))]
                {:season-title st})

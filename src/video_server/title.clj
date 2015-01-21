@@ -91,6 +91,14 @@
                (str "Part " episode))))
       series)))
 
+(defn best-image
+  "Returns the best image for the video."
+  ([image title video] (best-image image title (:season video) (:episode video)))
+  ([image title season episode]
+   (or (get-in title [:seasons season :episodes episode image])
+       (get-in title [:seasons season image])
+       (image title))))
+
 (defn best-video
   "Returns the best video for the specified season and episode."
   [videos season episode]

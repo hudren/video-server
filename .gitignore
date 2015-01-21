@@ -6,3 +6,4 @@
 /install
 /*.edn
 *.key
+ns-dep-graph.png

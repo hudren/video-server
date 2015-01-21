@@ -123,15 +123,25 @@
   "Returns a map containing the title, season, episode number and
   title extracted from a string in the format of `title - S01E01 -
   episode` or `title - Part 1`."
-  [name]
-  (let [[series program episode] (map str/trim (str/split (clean-title name) #" - "))
+  [path]
+  (let [file (io/file path)
+        dirname (when-let [parent (.getParent (.toPath file))] (.getFileName parent))
+        name (-> file .getName file-base)
+        [series program episode] (map str/trim (str/split (clean-title name) #" - "))
         episode (when-not (dimensions episode) episode)]
     (merge {:title (clean-title series)}
+           (when dirname
+             (when-let [nums (re-find #"^s(?:eason)?\s*(\d+)$" (str/lower-case dirname))]
+                 {:season (Integer/parseInt (nth nums 1))
+                  :season-title (clean-title episode)}))
            (when program
-             (when-let [nums (re-find #"s(\d+)e(\d+)" (str/lower-case program))]
+             (if-let [nums (re-find #"s(\d+)e(\d+)" (str/lower-case program))]
                {:season (Integer/parseInt (nth nums 1))
                 :episode (Integer/parseInt (nth nums 2))
-                :episode-title (clean-title episode)}))
+                :episode-title (clean-title episode)}
+               (when-let [nums (re-find #"s(\d+)" (str/lower-case program))]
+                 {:season (Integer/parseInt (nth nums 1))
+                  :season-title (clean-title episode)})))
            (when program
              (when-let [nums (re-find #"p(?:ar)?t\s*(\d+)" (str/lower-case program))]
                {:episode (Integer/parseInt (nth nums 1))
