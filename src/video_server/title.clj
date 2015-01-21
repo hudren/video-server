@@ -37,13 +37,13 @@
   "Returns the season title, if there is one."
   [title season]
   (when season
-    (get-in title [:info :seasons (-> season str keyword) :title])))
+    (get-in title [:info :seasons season :title])))
 
 (defn season-meta-titles
   "Returns the season titles from the metadata."
   [title]
   (into {} (for [season (-> title :info :seasons)]
-             [(parse-long (name (first season))) (:title (second season))])))
+             [(first season) (:title (second season))])))
 
 (defn season-titles
   "Returns the season number and title pairs for the given title."
@@ -61,10 +61,7 @@
 (defn episode-title
   "Returns the episode title from the metadata or video."
   [title video]
-  (or (get-in title [:info
-                     :seasons (-> (:season video) str keyword)
-                     :episodes (-> (:episode video) str keyword)
-                     :title])
+  (or (get-in title [:info :seasons (:season video) :episodes (:episode video) :title])
       (:episode-title video)))
 
 (defn episodes

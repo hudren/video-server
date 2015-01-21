@@ -52,12 +52,22 @@
   ^File [title]
   (io/file (title-dir title) (str (norm-title (:title title)) ".json")))
 
+(defn- clj-key
+  "Returns a long for strings that represent a number, or a keyword."
+  [k]
+  (if (re-find #"^-?\d+$" k) (parse-long k) (keyword k)))
+
+(defn- json-key
+  "Returns a string, suitable as a JSON key."
+  [k]
+  (if (keyword? k) (name k) (str k)))
+
 (defn read-metadata
   "Reads the stored metadata for the video."
   [title]
   (let [file (metadata-file title)]
     (when (.isFile file)
-      (try (json/read-str (slurp file) :key-fn keyword)
+      (try (json/read-str (slurp file) :key-fn clj-key)
            (catch Exception e (log/error e "reading .json file" (str file)))))))
 
 (defn save-metadata
@@ -66,7 +76,7 @@
   (let [file (metadata-file title)]
     (log/debug "saving metadata" (str file))
     (with-open [w (io/writer file)]
-      (.write w (with-out-str (json/pprint info :key-fn name))))))
+      (.write w (with-out-str (json/pprint info :key-fn json-key))))))
 
 (defn save-poster
   "Downloads the poster for the specified video."
