@@ -57,11 +57,6 @@
   [k]
   (if (re-find #"^-?\d+$" k) (parse-long k) (keyword k)))
 
-(defn- json-key
-  "Returns a string, suitable as a JSON key."
-  [k]
-  (if (keyword? k) (name k) (str k)))
-
 (defn read-metadata
   "Reads the stored metadata for the video."
   [title]
@@ -76,7 +71,7 @@
   (let [file (metadata-file title)]
     (log/debug "saving metadata" (str file))
     (with-open [w (io/writer file)]
-      (.write w (with-out-str (json/pprint info :key-fn json-key))))))
+      (.write w (with-out-str (json/pprint info))))))
 
 (defn save-poster
   "Downloads the poster for the specified video."
