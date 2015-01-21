@@ -137,11 +137,13 @@
   [dirs url]
   (loop [dirs dirs folders [] names #{}]
     (if-let [dir (first dirs)]
-      (let [file (if (coll? dir) (first dir) dir)
-            options (if (coll? dir) (second dir) {})
-            name (unique-name (-> file io/file .getName) names)
-            folder (->Folder name (io/file file) (str url "/videos/" name) (merge options (read-options file)))]
-        (recur (rest dirs) (conj folders folder) (conj names name)))
+      (let [file (io/file (if (coll? dir) (first dir) dir))]
+        (if (.isDirectory file)
+          (let [options (if (coll? dir) (second dir) {})
+                name (unique-name (.getName file) names)
+                folder (->Folder name file (str url "/videos/" name) (merge options (read-options file)))]
+            (recur (rest dirs) (conj folders folder) (conj names name)))
+          (recur (rest dirs) folders names)))
       folders)))
 
 (defn process-settings
