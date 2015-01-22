@@ -15,7 +15,7 @@
             [video-server.library :refer [video-for-key]]
             [video-server.title :refer [best-containers best-image best-video episode-title full-title has-episodes? has-parts?
                                         has-seasons? season-desc season-titles]]
-            [video-server.video :refer [rank-containers]])
+            [video-server.video :refer [rank-containers web-playback?]])
   (:import (java.net URLEncoder)
            (java.util Locale)))
 
@@ -62,18 +62,24 @@
     (when (:imdb-id info) (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDb"))
     (when (:netflix-id info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix"))))
 
+(defn- video-type
+  "Conditionally promotes the video type for better web playability."
+  [container]
+  (if (and (web-playback? container) (= (:mimetype container) "video/x-matroska")) "video/mp4" (:mimetype container)))
+
 (defn video-tag
-  "Returns the video tag for the specified video and container."
+  "Returns the video tag for the specified video and containers."
   [video containers]
-  (html [:video {:controls nil :preload "metadata"}
-         (for [container containers]
-           [:source {:src (:url container) :type (if (> (count containers) 1) (:mimetype container) "video/mp4")}])
-         (for [subtitle (filter #(= (:mimetype %) "text/vtt") (:subtitles video))]
-           [:track (merge {:kind "subtitles"
-                           :label (:title subtitle)
-                           :src (:url subtitle)
-                           :srclang (lang-two-letter (:language subtitle))}
-                          (when (or (:default subtitle) (:forced subtitle)) {:default nil}))])]))
+  (let [web (some #{"video/mp4" "video/webm" "video/ogg"} (map :mimetype containers))]
+    (html [:video {:controls nil :preload "metadata"}
+           (for [container containers]
+             [:source {:src (:url container) :type (if-not web (video-type container) (:mimetype container))}])
+           (for [subtitle (filter #(= (:mimetype %) "text/vtt") (:subtitles video))]
+             [:track (merge {:kind "subtitles"
+                             :label (:title subtitle)
+                             :src (:url subtitle)
+                             :srclang (lang-two-letter (:language subtitle))}
+                            (when (or (:default subtitle) (:forced subtitle)) {:default nil}))])])))
 
 (defn title-url
   "Returns the URL for the given title."
