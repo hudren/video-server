@@ -13,7 +13,9 @@
             [clojure.tools.logging :as log]
             [clojure.core.async :refer [chan go thread <! <!! >!]]
             [video-server.file :refer [file-type subtitle? video?]]
-            [video-server.encoder :refer [*fake-encode* can-source? container-size container-to-encode encode-size encode-subtitles encode-video extract-thumbnail video-encode-spec]]
+            [video-server.encoder :refer [*fake-encode* can-source? container-to-encode encode-size encode-subtitles encode-video
+                                          extract-thumbnail video-encode-spec]]
+            [video-server.format :refer [video-size]]
             [video-server.library :refer [add-info add-video title-for-key video-key video-for-key]]
             [video-server.metadata :refer [retrieve-metadata]]
             [video-server.util :refer :all]
@@ -54,7 +56,7 @@
   matching the specified format and size."
   [video fmt size]
   (let [containers (filter web-playback? (:containers video))]
-    (some #(and (= (file-type (:path %)) fmt) (= size (container-size %))) containers)))
+    (some #(and (= (file-type (:path %)) fmt) (= size (-> % :width video-size))) containers)))
 
 (defn should-encode-video?
   "Returns whether the video should be encoded for downloading or
@@ -63,19 +65,13 @@
    (not (and (can-download? video) (can-cast? video))))
   ([video fmt size]
    (and (not (has-fmt-size? video fmt size))
-        (can-source? (container-size (container-to-encode (:containers video))) size))))
+        (can-source? (-> video :containers (container-to-encode size) :width video-size) size))))
 
 (defn should-encode-subtitles?
   "Returns whether the subtitles need to be transcoded for casting."
   [video]
   (and (not-any? #(= (:mimetype %) "text/vtt") (:subtitles video))
        (some #(not= (:mimetype %) "text/vtt") (:subtitles video))))
-
-(defn fetch-info
-  "Fetches metadata for the title and extracts thumbnails from the
-  video."
-  [folder title]
-  )
 
 (defn- encode
   "Creates an encoding spec and queues it for processing."
@@ -101,7 +97,8 @@
               (encode folder video fmt size)
               (recur (rest options)))))))))
 
-(defn start-fetching
+(defn- start-fetching
+  "Processes requests in the fetch channel using real threads."
   [fetch?]
   (dotimes [_ fetch-threads]
     (thread
@@ -115,7 +112,7 @@
                      (add-info folder title info))
                    (catch Exception e (log/error e "error fetching metadata" (str title)))))))))))
 
-(defn start-encoding
+(defn- start-encoding
   "Processes requests in the encoder channel."
   []
   (go

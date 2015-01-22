@@ -85,19 +85,21 @@
 (defn filter-video
   "Returns an updated spec with video filters applied (crop and scale)."
   [spec]
-  (-> spec deinterlace crop scale))
+  (if (:source? spec)
+    (-> spec deinterlace crop scale)
+    (scale spec)))
 
 (defn encode-video?
   "Returns whether the video stream should be transcoded."
-  [video size]
-  true) ; TODO: implement some logic here
+  [{:keys [video-stream source? crop scale]}]
+  (or source? crop scale (not= (:codec_name video-stream) "h264")))
 
 (defn video-options
   "Returns the ffmpeg options for encoding / copying the video
   stream."
-  [{:keys [video-stream size]}]
+  [{:keys [video-stream source? size crop scale] :as spec}]
   (let [quality (if (= size :480) 18 19)]
-    (if (encode-video? video-stream size)
+    (if (encode-video? spec)
       ["-map" (str "0:" (:index video-stream)) "-c:v" "libx264" "-crf" quality "-profile:v" "high" "-level" 41]
       ["-map" (str "0:" (:index video-stream)) "-c:v" "copy"])))
 

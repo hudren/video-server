@@ -89,6 +89,20 @@
     (>= width 710) "SD"
     :default (str width "x" height)))
 
+(defn video-size
+  "Returns the probable video size based on the width."
+  [width]
+  (cond
+    (> width 1920) :2160
+    (> width 1280) :1080
+    (> width 720) :720
+    :default :480))
+
+(defn video-width
+  "Returns the video width for the given size."
+  [size]
+  ({:2160 3840 :1080 1920 :720 1280 :480 720} size))
+
 (defn video-desc
   "Returns a human-readable description of the video codecs."
   [codec]

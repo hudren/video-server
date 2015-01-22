@@ -87,7 +87,7 @@
    ["-s" "--size INT" "Preferred video size when transcoding"
     :default 720
     :parse-fn #(Integer/parseInt %)
-    :validate [#{480 720 1080} "The size must be 480, 720 or 1080"]]
+    :validate [#{480 720 1080 2160} "The size must be 480, 720, 1080 or 2160"]]
    [nil "--log-level LEVEL" "Override the default logging level"
     :parse-fn log-level
     :validate [identity "The log level must be one of ALL, TRACE, DEBUG, INFO, WARN, ERROR or OFF"]]
@@ -167,8 +167,8 @@
 (defn start
   "Starts all of the components, returning the Jetty web server."
   [args options]
-  (let [fmt (keyword (:format options))
-        size (-> (:size options) str keyword)
+  (let [fmt (-> options :format keyword)
+        size (-> options :size str keyword)
         url (host-url (:port options))
         [folders options] (process-args args options url)]
     (start-processing (:encode options) (:fetch options) fmt size)

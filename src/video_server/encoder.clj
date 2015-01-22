@@ -14,7 +14,7 @@
             [clojure.tools.logging :as log]
             [video-server.ffmpeg :refer [encode-cmd filter-video video-info]]
             [video-server.file :refer [file-type fullpath replace-ext video-filename]]
-            [video-server.format :refer [video-dimension]]
+            [video-server.format :refer [video-dimension video-size video-width]]
             [video-server.util :refer :all]
             [video-server.video :refer [audio-streams subtitle-streams video-stream]])
   (:import (java.io File)))
@@ -30,27 +30,20 @@
       (log/info "FAKE ENCODE" (str/join " " args))
       {:exit 0})))
 
-(defn container-to-encode
-  "Selects the best (highest quality) container to encode."
+(defn source-container
+  "Returns the source container."
   [containers]
   (last (sort-by :size containers)))
 
-(defn container-size
-  "Returns the probable size for the container."
-  [container]
-  (let [width (:width container)]
-    (cond
-      (> width 1280) :1080
-      (> width 720) :720
-      :default :480)))
-
-(defn width-for-size
-  "Returns the video width for the given size."
-  [size]
-  ({:1080 1920 :720 1280 :480 720} size))
+(defn container-to-encode
+  "Selects the best (highest quality) container to encode."
+  [containers size]
+  (let [source (source-container containers)
+        same (filter #(= (video-size (:width %)) size) (remove #(= % source) containers))]
+    (or (first same) source)))
 
 (defn can-source?
-  "Returns true if the first size bigger or equal to the second."
+  "Returns true if the first size is bigger or equal to the second."
   [source-size dest-size]
   (>= (parse-long (name source-size)) (parse-long (name dest-size))))
 
@@ -63,25 +56,26 @@
 (defn encode-size
   "Returns the minimum of the source and target sizes."
   [video size]
-  (let [container (container-to-encode (:containers video))]
-    (min-size (container-size container) size)))
+  (let [container (container-to-encode (:containers video) size)]
+    (min-size (-> container :width video-size) size)))
 
 (defn encode-spec
   "Returns the specification for an encoding job."
   [folder video fmt size]
-  (when-let [container (container-to-encode (:containers video))]
+  (when-let [container (container-to-encode (:containers video) size)]
     (let [file (io/file (:file folder) (:path container))
           info (video-info file)]
       {:format fmt
        :size size
        :width (:width container)
        :height (:height container)
-       :target-width (min (:width container) (width-for-size size))
+       :target-width (min (:width container) (video-width size))
        :folder folder
        :file file
        :input (fullpath file)
        :info info
        :video video
+       :source? (= container (source-container (:containers video)))
        :video-stream (video-stream info)
        :audio-streams (audio-streams info)
        :subtitle-streams (subtitle-streams info)})))
@@ -159,7 +153,7 @@
 (defn extract-thumbnail
   "Extracts the thumbnail image from the matroska video."
   [folder video]
-  (when-let [container (container-to-encode (:containers video))]
+  (when-let [container (source-container (:containers video))]
     (let [file (io/file (:file folder) (:path container))]
       (when (= (file-type file) :mkv)
         (when-let [info (mkv-info file)]

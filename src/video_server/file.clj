@@ -14,7 +14,7 @@
             [video-server.format :refer [dimensions]])
   (:import (java.io File FilenameFilter)))
 
-(def movie-exts #{".mkv" ".mp4" ".m4v" ".avi"})
+(def movie-exts #{".mkv" ".mp4" ".m4v" ".avi" ".mov"})
 (def subtitle-exts #{".vtt" ".srt"})
 (def image-exts #{".jpg" ".jpeg" ".png" ".webp"})
 (def metadata-exts #{".json"})
@@ -84,6 +84,7 @@
     ".m4v" "video/mp4"
     ".mkv" "video/x-matroska"
     ".avi" "video/x-msvideo"
+    ".mov" "video/quicktime"
     ".vtt" "text/vtt"
     ".srt" "application/x-subrip"
     ".png" "image/png"
@@ -160,7 +161,7 @@
                (format "S%02dE%02d" (:season video) (:episode video))
                (when (:episode video) (format "PT%02d" (:episode video))))
              (:episode-title video)
-             ({:1080 "1080p" :720 "720p"} size)]
+             ({:2160 "4K" :1080 "1080p" :720 "720p"} size)]
             (remove nil?)
             (str/join " - "))
        (when qual (str "." qual))
