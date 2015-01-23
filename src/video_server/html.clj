@@ -149,7 +149,7 @@
     [:div.video
      [:div.poster.small
       [:a {:href url :target "_blank"}
-       [:img {:src (or (:poster title) "placeholder.png") :alt "poster"}]]]
+       [:img {:src (or (best-image :poster title) "placeholder.png") :alt "poster"}]]]
      [:div.desc
       [:p
        [:span.title

@@ -94,12 +94,15 @@
 
 (defn best-image
   "Returns the best image for the video."
+  ([image title] (best-image image title nil nil))
   ([image title video] (best-image image title (:season video) (:episode video)))
   ([image title season episode]
    (or (get-in title [:seasons (or season -1) :episodes episode image])
        (get-in title [:seasons (or season -1) image])
        (image title)
-       (get-in title [:seasons (first (sort (keys (:seasons title))))]))))
+       (get-in title [:seasons (first (sort (keys (:seasons title)))) image])
+       (if-let [part (first (sort (keys (get-in title [:seasons -1 :episodes]))))]
+         (get-in title [:seasons -1 :episodes part image])))))
 
 (defn best-video
   "Returns the best video for the specified season and episode."
