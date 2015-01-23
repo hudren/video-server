@@ -62,7 +62,7 @@
 (defn episode-title
   "Returns the episode title from the metadata or video."
   [title video]
-  (or (get-in title [:info :seasons (:season video) :episodes (:episode video) :title])
+  (or (get-in title [:info :seasons (or (:season video) -1) :episodes (:episode video) :title])
       (:episode-title video)))
 
 (defn episodes
@@ -96,8 +96,8 @@
   "Returns the best image for the video."
   ([image title video] (best-image image title (:season video) (:episode video)))
   ([image title season episode]
-   (or (get-in title [:seasons season :episodes episode image])
-       (get-in title [:seasons season image])
+   (or (get-in title [:seasons (or season -1) :episodes episode image])
+       (get-in title [:seasons (or season -1) image])
        (image title)
        (get-in title [:seasons (first (sort (keys (:seasons title))))]))))
 

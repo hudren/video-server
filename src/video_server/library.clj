@@ -138,10 +138,10 @@
      (dosync (alter titles assoc (:id title) (add-title title info)))))
   ([title info]
    (let [title (if (and (:season info) (:season-title info))
-                 (update-in title [:seasons (:season info)] assoc :title (:season-title info))
+                 (update-in title [:seasons (or (:season info) -1)] assoc :title (:season-title info))
                  title)
          title (if (and (:episode info) (:episode-title info))
-                 (update-in title [:seasons (:season info) :episodes (:episode info)] assoc :title (:episode-title info))
+                 (update-in title [:seasons (or (:season info) -1) :episodes (:episode info)] assoc :title (:episode-title info))
                  title)]
      title)))
 
@@ -234,9 +234,10 @@
 (defn- image-key
   "Returns the indexes to uniquely store the image."
   [path]
-  (let [title (title-info path)]
-    (->> [(when-let [season (:season title)] [:seasons season])
-          (when-let [episode (:episode title)] [:episodes episode])
+  (let [title (title-info path)
+        season (:season title)
+        episode (:episode title)]
+    (->> [(if episode [:seasons (or season -1) :episodes episode])
           (image-type path)]
          flatten
          (remove nil?))))
