@@ -75,12 +75,13 @@
 
 (defn save-poster
   "Downloads the poster for the specified video."
-  [title url]
+  [title url & [overwrite]]
   (let [file (io/file (title-dir title) (str (norm-title (:title title)) (file-ext url)))]
-    (log/info "downloading poster for" (:title title))
-    (when-let [contents (retrieve-image url)]
-      (with-open [w (io/output-stream file)]
-        (.write w contents)))))
+    (when (or overwrite (not (.exists file)))
+      (log/info "downloading poster for" (:title title))
+      (when-let [contents (retrieve-image url)]
+        (with-open [w (io/output-stream file)]
+          (.write w contents))))))
 
 (defn title-parts
   "Extracts the year from the title to aid in metadata lookup."
