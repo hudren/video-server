@@ -49,7 +49,7 @@
   "Returns a button for the specified link."
   [link title & [icon]]
   [:paper-button {:raised nil}
-   [:core-icon {:icon (or icon "launch")}]
+   [:core-icon {:icon (or icon "open-in-new")}]
    [:a {:href link :target "_blank"} title]])
 
 (defn video-links
@@ -59,8 +59,12 @@
     (when (:website info) (video-link (:website info) "Website" "home"))
     (when (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
     (when (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
-    (when (:imdb-id info) (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDb"))
-    (when (:netflix-id info) (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix"))))
+    (if (:imdb-id info)
+      (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDb")
+      (video-link (str "http://www.imdb.com/find?q=" (URLEncoder/encode (:title info) "UTF-8")) "IMDb" "search"))
+    (if (:netflix-id info)
+      (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix")
+      (video-link (str "http://dvd.netflix.com/Search?v1=" (URLEncoder/encode (:title info) "UTF-8")) "Netflix" "search"))))
 
 (defn- video-type
   "Conditionally promotes the video type for better web playability."
