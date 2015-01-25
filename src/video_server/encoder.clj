@@ -111,10 +111,13 @@
     (log/info "encoding into" output)
     (let [exec (encode cmd)]
       (if (zero? (:exit exec))
-        (log/info "encoding was successful")
+        (do
+          (log/info "encoding was successful")
+          spec)
         (do
           (log/error "encoding failed:" \newline cmd \newline exec)
-          (io/delete-file output true))))))
+          (io/delete-file output true)
+          (assoc spec :error {:cmd cmd :exec exec}))))))
 
 (defn encode-subtitle
   "Encodes a single subtitle file into WebVTT format."

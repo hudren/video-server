@@ -118,10 +118,11 @@
   (go
     (while true
       (let [spec (<! encoder-chan)]
-        (log/trace "encoding" spec)
-        (encode-video spec)
-        (add-video (:folder spec) (io/file (:output spec)))
-        (process-file (:folder spec) (:video spec))))))
+        (when (.exists (:file spec))
+          (log/trace "encoding" spec)
+          (when-not (:error (encode-video spec))
+            (add-video (:folder spec) (io/file (:output spec)))
+            (process-file (:folder spec) (:video spec))))))))
 
 (defn start-processing
   "Processes enqueued files."
