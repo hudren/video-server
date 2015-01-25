@@ -16,7 +16,7 @@
             [video-server.file :refer [file-type fullpath replace-ext video-filename]]
             [video-server.format :refer [video-dimension video-size video-width]]
             [video-server.util :refer :all]
-            [video-server.video :refer [audio-streams subtitle-streams video-stream]])
+            [video-server.video :refer [audio-streams subtitle-streams video-stream web-playback?]])
   (:import (java.io File)))
 
 (def ^:dynamic *fake-encode* false)
@@ -29,6 +29,11 @@
     (let [args (->> cmd flatten (remove nil?) (map str))]
       (log/info "FAKE ENCODE" (str/join " " args))
       {:exit 0})))
+
+(defn original?
+  "Returns whether the container may be an original rip."
+  [container]
+  (not (web-playback? container)))
 
 (defn source-container
   "Returns the source container."
@@ -64,7 +69,8 @@
   [folder video fmt size]
   (when-let [container (container-to-encode (:containers video) size)]
     (let [file (io/file (:file folder) (:path container))
-          info (video-info file)]
+          info (video-info file)
+          source (source-container (:containers video))]
       {:format fmt
        :size size
        :width (:width container)
@@ -75,7 +81,8 @@
        :input (fullpath file)
        :info info
        :video video
-       :source? (= container (source-container (:containers video)))
+       :source? (= container source)
+       :original? (and (= container source) (original? container))
        :video-stream (video-stream info)
        :audio-streams (audio-streams info)
        :subtitle-streams (subtitle-streams info)})))

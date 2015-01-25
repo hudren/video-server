@@ -91,8 +91,8 @@
 
 (defn encode-video?
   "Returns whether the video stream should be transcoded."
-  [{:keys [video-stream source? crop scale]}]
-  (or source? crop scale (not= (:codec_name video-stream) "h264")))
+  [{:keys [video-stream original? crop scale]}]
+  (or original? crop scale (not= (:codec_name video-stream) "h264")))
 
 (defn video-options
   "Returns the ffmpeg options for encoding / copying the video
