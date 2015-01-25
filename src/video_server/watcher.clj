@@ -38,6 +38,21 @@
            (metadata? file)
            (< (.lastModified file) (- (System/currentTimeMillis) stable-time)))))
 
+(defn remove-file
+  "Removes the file from the video library."
+  [folder file]
+  (when (has-file? folder file)
+    (log/info "removing file" (str file))
+    (library/remove-file folder file)))
+
+(defn add-pending-file
+  "Adds a new or changing file to the list of pending files."
+  [folder file]
+  (when-not (contains? @pending-files [folder file])
+    (log/info "watching file" (str file))
+    (remove-file folder file)
+    (dosync (alter pending-files conj [folder file]))))
+
 (defn add-metadata
   "Reads existing metadata for the given video."
   [folder title]
@@ -50,12 +65,14 @@
   "Scans the directory for videos."
   [folder path]
   (let [dir (io/file (or path (:file folder)))
-        files (.listFiles dir (movie-filter))]
-    (parseq scan-threads [file (filter stable? files)]
+        files (group-by stable? (.listFiles dir (movie-filter)))]
+    (parseq scan-threads [file (get files true)]
       (log/info "adding video" (str file))
       (let [added (library/add-video folder file)]
         (when (:title added)
-          (add-metadata folder (title-for-file file)))))))
+          (add-metadata folder (title-for-file file)))))
+    (doseq [file (get files false)]
+      (add-pending-file folder file))))
 
 (defn scan-images
   "Scans the directory for images."
@@ -150,21 +167,6 @@
          (when (or (stable? file) (not (.exists file)))
            (dosync (alter pending-files disj [folder file])))
          (catch Exception e (log/error e "adding pending file" (str file))))))
-
-(defn remove-file
-  "Removes the file from the video library."
-  [folder file]
-  (when (has-file? folder file)
-    (log/info "removing file" (str file))
-    (library/remove-file folder file)))
-
-(defn add-pending-file
-  "Adds a new or changing file to the list of pending files."
-  [folder file]
-  (when-not (contains? @pending-files [folder file])
-    (log/info "watching file" (str file))
-    (remove-file folder file)
-    (dosync (alter pending-files conj [folder file]))))
 
 (defn file-event
   "Processes the file system events related to files."
