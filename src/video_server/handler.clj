@@ -11,8 +11,8 @@
 (ns video-server.handler
   (:require [clojure.data.json :as json]
             [compojure.core :refer [GET defroutes]]
-            [compojure.handler :refer [site]]
             [compojure.route :refer [not-found resources]]
+            [ring.middleware.defaults :refer [api-defaults wrap-defaults]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version apk-filename]]
@@ -83,5 +83,5 @@
   [url folders]
   (reset! base-url url)
   (reset! dirs (map (comp str :file) folders))
-  (wrap-gzip (wrap-stacktrace (site app-routes))))
+  (wrap-gzip (wrap-stacktrace (wrap-defaults app-routes api-defaults))))
 
