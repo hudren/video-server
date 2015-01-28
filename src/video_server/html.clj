@@ -170,6 +170,18 @@
   [titles]
   [:#content] (content (html (map title-item titles))))
 
+(defsnippet no-titles "templates/no-titles.html" [:div]
+  [folders]
+  [:ul] (content (html (map #(vector :ul %) folders))))
+
+(deftemplate no-titles-template "templates/titles.html"
+  [dirs]
+  [:#content] (content (no-titles dirs)))
+
+(defn titles-page
+  [titles dirs]
+  (if (seq titles) (titles-template titles) (no-titles-template dirs)))
+
 ;;; Title page
 
 (defsnippet title-info "templates/info.html" [:div#info]

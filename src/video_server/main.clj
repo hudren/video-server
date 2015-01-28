@@ -173,7 +173,7 @@
         [folders options] (process-args args options url)]
     (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folders)
-    (let [server (start-server url (:port options) (app url) folders)]
+    (let [server (start-server url (:port options) (app url folders) folders)]
       (start-discovery url discovery-port (:name options))
       server)))
 

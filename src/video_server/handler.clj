@@ -16,11 +16,12 @@
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version apk-filename]]
-            [video-server.html :refer [downloads-template title-page titles-template]]
+            [video-server.html :refer [downloads-template title-page titles-page]]
             [video-server.library :refer [current-titles title-for-id title-listing video-listing]]
             [video-server.util :refer :all]))
 
-(def ^:private base-url (atom "http://localhost"))
+(defonce ^:private base-url (atom "http://localhost"))
+(defonce ^:private dirs (atom []))
 
 (defn html-response
   "Generates a HTML response from the data."
@@ -40,7 +41,7 @@
   "Returns the index or home page listing the titles."
   []
   (let [titles (sort-by :sorting (current-titles))]
-    (html-response (titles-template titles))))
+    (html-response (titles-page titles @dirs))))
 
 (defn title
   "Returns a title page."
@@ -79,7 +80,8 @@
   (not-found "Not Found"))
 
 (defn app
-  [url]
+  [url folders]
   (reset! base-url url)
+  (reset! dirs (map (comp str :file) folders))
   (wrap-gzip (wrap-stacktrace (site app-routes))))
 
