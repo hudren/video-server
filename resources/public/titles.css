@@ -5,6 +5,7 @@ div.video {
 }
 div.video:first-child {
   border-top: none;
+  padding-top: 1em;
 }
 
 div.poster {
