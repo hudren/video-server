@@ -55,16 +55,17 @@
 (defn video-links
   "Returns a sequence of links for the video."
   [info]
-  (vector
-    (when (:website info) (video-link (:website info) "Website" "home"))
-    (when (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
-    (when (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
-    (if (:imdb-id info)
-      (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDb")
-      (video-link (str "http://www.imdb.com/find?q=" (URLEncoder/encode (:title info) "UTF-8")) "IMDb" "search"))
-    (if (:netflix-id info)
-      (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix")
-      (video-link (str "http://dvd.netflix.com/Search?v1=" (URLEncoder/encode (:title info) "UTF-8")) "Netflix" "search"))))
+  (when (seq (select-keys info [:website :trailer :wikipedia :imdb-id :netflix-id]))
+    (vector
+      (when (:website info) (video-link (:website info) "Website" "home"))
+      (when (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
+      (when (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
+      (if (:imdb-id info)
+        (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDb")
+        (video-link (str "http://www.imdb.com/find?q=" (URLEncoder/encode (:title info) "UTF-8")) "IMDb" "search"))
+      (if (:netflix-id info)
+        (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix")
+        (video-link (str "http://dvd.netflix.com/Search?v1=" (URLEncoder/encode (:title info) "UTF-8")) "Netflix" "search")))))
 
 (defn- video-type
   "Conditionally promotes the video type for better web playability."
