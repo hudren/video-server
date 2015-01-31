@@ -1,4 +1,4 @@
-(defproject com.hudren.homevideo/video-server "0.3.3-SNAPSHOT"
+(defproject com.hudren.homevideo/video-server "0.3.3"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -40,7 +40,7 @@
 
   :main video-server.main
   :aot [video-server.main]
-  :uberjar-name "videos@home.jar"
+  :uberjar-name "video-server.jar"
 
   :repl-options {:init-ns user}
 
