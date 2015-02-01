@@ -1,5 +1,16 @@
 # Videos@Home Changelog
 
+## Version 0.3.4
+
+* Support for mkclean to optimize playback
+
+## Version 0.3.3
+
+* Added support for categories and collections
+* Added settings.edn file for global configuration
+* Improved initial folder scan performance
+* Improved support for series and multi-part videos
+
 ## Version 0.3.2
 
 * Added support for multiple folders and subfolders

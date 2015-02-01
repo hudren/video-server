@@ -109,6 +109,25 @@
   (when-let [spec (encode-spec folder video fmt size)]
     (-> spec filter-video output-options)))
 
+(def mkclean (delay (-> ["which" "mkclean"] exec :exit zero?)))
+
+(defn clean
+  "Cleans the encoded output file."
+  [spec]
+  (let [output (:output spec)]
+    (when (and (= (log/spy (file-type output)) :mkv) (log/spy @mkclean))
+      (log/debug "cleaning" output)
+      (let [out (io/file output)
+            temp (io/file (replace-ext output ".tmp"))]
+        (.renameTo out temp)
+        (let [cmd ["mkclean" "--optimize" temp out]
+              exec (exec cmd)]
+          (if (zero? (:exit exec))
+            (io/delete-file temp false)
+            (do (log/warn "cleaning failed:" \newline cmd \newline exec)
+                (io/delete-file out false)
+                (.renameTo temp out))))))))
+
 (defn encode-video
   "Transcodes the video suitable for downloading and casting."
   [spec]
@@ -120,6 +139,7 @@
       (if (zero? (:exit exec))
         (do
           (log/info "encoding was successful")
+          (clean spec)
           spec)
         (do
           (log/error "encoding failed:" \newline cmd \newline exec)

@@ -10,6 +10,7 @@ Features include:
 * Streaming 1080p full Bluray quality video to your Android devices
 * Downloading videos and subtitles to your device
 * Casting to Google cast devices (including vtt subtitles)
+* Playback on Chromebooks and other browsers
 * Automatic encoding of videos for downloading and casting
 
 This software is intended to be used over your local (high bandwidth) network
@@ -27,12 +28,13 @@ The following runtime dependencies are also required:
 
 * ffmpeg
 * mkvtoolnix (optional)
+* mkclean (recommended)
 
 ## Usage
 
 This project implements the server which is built and started using the
-`video-server` script taking one argument specifying the folder from which to
-serve videos.
+`video-server` script taking an optional argument specifying the folder from
+which to serve videos.
 
 Use the `video-server --help` command for more options.
 
