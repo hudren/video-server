@@ -159,18 +159,19 @@
   "Processes the arguments looking for a settings file or folders to
   serve. The settings file may override options provided on the
   command line and provide folder-specific options."
-  [args options url]
-  (let [file (io/file (or (first args) "settings.edn"))
+  [options url]
+  (let [args (:arguments options)
+        file (io/file (or (first args) "settings.edn"))
         dirs (if (seq args) args (list (default-folder)))]
     (process-settings file dirs options url)))
 
 (defn start
   "Starts all of the components, returning the Jetty web server."
-  [args options]
+  [options]
   (let [fmt (-> options :format keyword)
         size (-> options :size str keyword)
         url (host-url (:port options))
-        [folders options] (process-args args options url)]
+        [folders options] (process-args options url)]
     (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folders)
     (let [server (start-server url (:port options) (app url folders) folders)]
@@ -186,5 +187,5 @@
       (:help options) (exit 0 (usage summary))
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
-    (.join (start args options))))
+    (.join (start options))))
 
