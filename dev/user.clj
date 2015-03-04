@@ -85,6 +85,6 @@
 (defn start []
   (main/set-log-level (main/log-level log-level))
   (binding [encoder/*fake-encode* (and fake (nil? (:encode options)))]
-    (main/start args options))
+    (main/start options))
   (auto-reload (find-ns 'video-server.html)))
 

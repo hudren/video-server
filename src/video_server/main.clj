@@ -102,7 +102,7 @@
   [summary]
   (str/join \newline
             [(version)
-             "Usage: video-server [options] [folder]" ""
+             "Usage: video-server [options] [folder...]" ""
              (str "The default folder is " (default-folder)) ""
              "Options:" summary]))
 
