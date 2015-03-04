@@ -46,7 +46,7 @@
   "Returns the number of pixels in the crop detection."
   [crop]
   (let [[width height] (parse-ints crop)]
-    (* width height)))
+    (if (and width height) (* width height))))
 
 (defn detect-crop
   "Performs crop detection, returning the filter argument or nil."
