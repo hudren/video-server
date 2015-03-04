@@ -159,24 +159,26 @@
   "Processes the arguments looking for a settings file or folders to
   serve. The settings file may override options provided on the
   command line and provide folder-specific options."
-  [options url]
-  (let [args (:arguments options)
-        file (io/file (or (first args) "settings.edn"))
-        dirs (if (seq args) args (list (default-folder)))]
+  [args options url]
+  (let [file (io/file (or (first args) "settings.edn"))
+        dirs (if (and file (.exists file))
+               (or (next args) (list (default-folder)))
+               (if (seq args) args (list (default-folder))))]
     (process-settings file dirs options url)))
 
 (defn start
   "Starts all of the components, returning the Jetty web server."
-  [options]
+  [args options]
   (let [fmt (-> options :format keyword)
         size (-> options :size str keyword)
         url (host-url (:port options))
-        [folders options] (process-args options url)]
+        [folders options] (process-args args options url)]
     (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folders)
-    (let [server (start-server url (:port options) (app url folders) folders)]
-      (start-discovery url discovery-port (:name options))
-      server)))
+    (try (let [server (start-server url (:port options) (app url folders) folders)]
+           (start-discovery url discovery-port (:name options))
+           server)
+         (catch Exception e (exit 2 (str "Cannot start server: " (.getMessage e)))))))
 
 (defn -main
   "Parses the command line options and starts the video server."
@@ -187,5 +189,5 @@
       (:help options) (exit 0 (usage summary))
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
-    (.join (start options))))
+    (.join (start arguments options))))
 
