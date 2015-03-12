@@ -14,7 +14,7 @@
             [video-server.format :refer [dimensions]])
   (:import (java.io File FilenameFilter)))
 
-(def movie-exts #{".mkv" ".mp4" ".m4v" ".avi" ".mov"})
+(def movie-exts #{".mkv" ".mp4" ".m4v" ".webm" ".avi" ".mov" ".flv" ".f4v" ".wmv" ".mpg" ".mpeg"})
 (def subtitle-exts #{".vtt" ".srt"})
 (def image-exts #{".jpg" ".jpeg" ".png" ".webp"})
 (def metadata-exts #{".json"})
