@@ -17,6 +17,9 @@
 
 (def ffmpeg-format {:mkv "matroska" :mp4 "mp4" :m4v "mp4"})
 
+(def metadata? (delay (exec? "ffprobe")))
+(def encoder? (delay (exec? "ffmpeg")))
+
 (defn video-info
   "Executes ffprobe to extract metadata from the video file."
   [file]

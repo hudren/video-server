@@ -15,6 +15,7 @@
             [clojure.tools.cli :refer [parse-opts]]
             [trptcolin.versioneer.core :as version]
             [video-server.discovery :refer [start-discovery]]
+            [video-server.encoder :refer [installed?]]
             [video-server.handler :refer [app]]
             [video-server.model :refer [->Folder]]
             [video-server.process :refer [start-processing]]
@@ -189,5 +190,6 @@
       (:help options) (exit 0 (usage summary))
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
+    (when-not (installed?) (exit 2 "ffmpeg not found on path."))
     (.join (start arguments options))))
 

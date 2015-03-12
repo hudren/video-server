@@ -12,7 +12,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [video-server.ffmpeg :refer [encode-cmd filter-video video-info]]
+            [video-server.ffmpeg :refer [encode-cmd filter-video metadata? video-info]]
             [video-server.file :refer [file-type fullpath replace-ext video-filename]]
             [video-server.format :refer [video-dimension video-size video-width]]
             [video-server.util :refer :all]
@@ -20,6 +20,11 @@
   (:import (java.io File)))
 
 (def ^:dynamic *fake-encode* false)
+
+(defn installed?
+  "Returns whether the encoder is minimally installed."
+  []
+  @metadata?)
 
 (defn- encode
   "Executes the specified command unless *fake-encode* is true."
@@ -109,13 +114,13 @@
   (when-let [spec (encode-spec folder video fmt size)]
     (-> spec filter-video output-options)))
 
-(def mkclean (delay (-> ["which" "mkclean"] exec :exit zero?)))
+(def mkclean (delay (exec? "mkclean")))
 
 (defn clean
   "Cleans the encoded output file."
   [spec]
   (let [output (:output spec)]
-    (when (and (= (log/spy (file-type output)) :mkv) (log/spy @mkclean))
+    (when (and (= (file-type output) :mkv) @mkclean)
       (log/debug "cleaning" output)
       (let [out (io/file output)
             temp (io/file (replace-ext output ".tmp"))]
@@ -162,8 +167,7 @@
   (doseq [subtitle (:subtitles video)]
     (encode-subtitle (io/file (:file folder) (:path subtitle)))))
 
-(def mkvtools (delay (and (-> ["which" "mkvmerge"] exec :exit zero?)
-                          (-> ["which" "mkvextract"] exec :exit zero?))))
+(def mkvtools (delay (and (exec? "mkvmerge") (exec? "mkvextract"))))
 
 (defn mkv-info
   "Returns the mkv info by calling mkvmerge."

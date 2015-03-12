@@ -101,6 +101,14 @@
     (log/trace "executing" (str/join " " args))
     (apply shell/sh args)))
 
+(defn exec?
+  "Returns whether the executable is found on the path."
+  [cmd]
+  (-> (if (.startsWith (System/getProperty "os.name") "Windows")
+        ["where.exe" (str cmd ".exe")]
+        ["which" cmd])
+      exec :exit zero?))
+
 (defn periodically
   "Peridoically calls a function. Returns a stopping function."
   [f ms]
