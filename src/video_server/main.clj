@@ -157,14 +157,15 @@
     [(make-folders dirs url) options]))
 
 (defn process-args
-  "Processes the arguments looking for a settings file or folders to
-  serve. The settings file may override options provided on the
+  "Processes the arguments looking for a settings file and/or folders
+  to serve. The settings file may override options provided on the
   command line and provide folder-specific options."
   [args options url]
   (let [file (io/file (or (first args) "settings.edn"))
         dirs (if (and file (.exists file))
                (or (next args) (list (default-folder)))
-               (if (seq args) args (list (default-folder))))]
+               (if (seq args) args (list (default-folder))))
+        dirs (filter #(.exists (io/file %)) dirs)]
     (process-settings file dirs options url)))
 
 (defn start
@@ -174,12 +175,14 @@
         size (-> options :size str keyword)
         url (host-url (:port options))
         [folders options] (process-args args options url)]
+    (when-not (seq folders)
+      (exit 2 (str "Specified video folder(s) were not found: " (str/join ", " args))))
     (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folders)
     (try (let [server (start-server url (:port options) (app url folders) folders)]
            (start-discovery url discovery-port (:name options))
            server)
-         (catch Exception e (exit 2 (str "Cannot start server: " (.getMessage e)))))))
+         (catch Exception e (exit 4 (str "Cannot start server: " (.getMessage e)))))))
 
 (defn -main
   "Parses the command line options and starts the video server."
@@ -190,6 +193,6 @@
       (:help options) (exit 0 (usage summary))
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
-    (when-not (installed?) (exit 2 "ffmpeg not found on path."))
+    (when-not (installed?) (exit 3 "ffmpeg not found on path."))
     (.join (start arguments options))))
 
