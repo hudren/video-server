@@ -22,6 +22,13 @@
 (def ^:private fs-events
   (into-array (type StandardWatchEventKinds/ENTRY_CREATE) (keys events)))
 
+(defn hidden?
+  "Returns whether the file or directory is hidden using common file
+  nameing conventions."
+  [^File file]
+  (or (.isHidden file)
+      (some #(.startsWith (.getName file) %) ["." "$"])))
+
 (defn- register
   "Recursively registers a directory, calling the dir-fn with a
   :create event for each one that is registered. A depth-first
@@ -32,7 +39,7 @@
               (.register (.toPath dir) ws fs-events)
               (swap! dirs conj (.toPath dir))
               (doseq [subdir (.listFiles dir)]
-                (when (and (.isDirectory subdir) (not (.isHidden subdir)))
+                (when (and (.isDirectory subdir) (not (hidden? subdir)))
                   (register subdir)))
               (when dir-fn (dir-fn :create dir)))]
       (register dir)
