@@ -49,7 +49,7 @@
 
 (defn metadata-file
   "Returns the File for the video metadata."
-  ^File [title]
+  ^java.io.File [title]
   (io/file (title-dir title) (str (norm-title (:title title)) ".json")))
 
 (defn- clj-key

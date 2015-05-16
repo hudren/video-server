@@ -3,6 +3,7 @@
 ## Version 0.3.4
 
 * Support for mkclean to optimize playback
+* Support for more video types
 
 ## Version 0.3.3
 

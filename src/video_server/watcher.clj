@@ -95,7 +95,7 @@
 (defn scan-dir
   "Loads all of the videos and subtitles in the folder."
   [folder path]
-  (log/info "scanning" path "as" (:name folder))
+  (log/info "scanning" (str path) "as" (:name folder))
   (scan-videos folder path)
   (parall (scan-images folder path)
           (scan-subtitles folder path))

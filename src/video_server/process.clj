@@ -11,7 +11,7 @@
 (ns video-server.process
   (:require [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [clojure.core.async :refer [chan go thread <! <!! >!]]
+            [clojure.core.async :refer [chan go go-loop thread <! <!! >!]]
             [video-server.file :refer [file-type subtitle? video?]]
             [video-server.encoder :refer [*fake-encode* can-source? container-to-encode encode-size encode-subtitles encode-video
                                           extract-thumbnail video-encode-spec]]
@@ -102,7 +102,7 @@
   [fetch?]
   (dotimes [_ fetch-threads]
     (thread
-      (while true
+      (loop []
         (let [[folder key] (<!! title-chan)
               options (:options folder)]
           (log/trace "fetching" folder key)
@@ -110,19 +110,20 @@
             (when-let [title (title-for-key key)]
               (try (when-let [info (retrieve-metadata title)]
                      (add-info folder title info))
-                   (catch Exception e (log/error e "error fetching metadata" (str title)))))))))))
+                   (catch Exception e (log/error e "error fetching metadata" (str title)))))))
+        (recur)))))
 
 (defn- start-encoding
   "Processes requests in the encoder channel."
   []
-  (go
-    (while true
-      (let [spec (<! encoder-chan)]
-        (when (.exists (:file spec))
-          (log/trace "encoding" spec)
-          (when-not (:error (encode-video spec))
-            (add-video (:folder spec) (io/file (:output spec)))
-            (process-file (:folder spec) (:video spec))))))))
+  (go-loop []
+    (let [spec (<! encoder-chan)]
+      (when (.exists (:file spec))
+        (log/trace "encoding" spec)
+        (when-not (:error (encode-video spec))
+          (add-video (:folder spec) (io/file (:output spec)))
+          (process-file (:folder spec) (:video spec)))))
+    (recur)))
 
 (defn start-processing
   "Processes enqueued files."
@@ -130,19 +131,19 @@
   (log/debug "starting file processing")
   (start-fetching fetch?)
   (start-encoding)
-  (go
-    (while true
-      (let [[folder key] (<! process-chan)
-            options (:options folder)]
-        (log/trace "processing" folder key)
-        (when-let [video (video-for-key folder key)]
-          (try (when (get options :fetch fetch?)
-                 (when-let [title (title-for-key key)]
-                   (when-not (:thumb title)
-                     (extract-thumbnail folder video))))
-               (when (get options :encode encode?)
-                 (process-video folder video
-                                (get options :format fmt) (get options :size size)
-                                (-> folder :options :encoder :containers)))
-               (catch Exception e (log/error e "error processing video" (str video)))))))))
+  (go-loop []
+    (let [[folder key] (<! process-chan)
+          options (:options folder)]
+      (log/trace "processing" folder key)
+      (when-let [video (video-for-key folder key)]
+        (try (when (get options :fetch fetch?)
+               (when-let [title (title-for-key key)]
+                 (when-not (:thumb title)
+                   (extract-thumbnail folder video))))
+             (when (get options :encode encode?)
+               (process-video folder video
+                              (get options :format fmt) (get options :size size)
+                              (-> folder :options :encoder :containers)))
+             (catch Exception e (log/error e "error processing video" (str video))))))
+    (recur)))
 

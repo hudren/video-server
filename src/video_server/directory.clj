@@ -50,7 +50,7 @@
   [^WatchService ws dir dirs file-fn dir-fn]
   (let [dirs (atom dirs)]
     (try
-      (while true
+      (loop []
         (let [k (.take ws)]
           (when (.isValid k)
             (doseq [ev (.pollEvents k)]
@@ -66,7 +66,8 @@
                                         (file-fn event file))))))
             (when-not (.reset k) (.cancel k)))
           (when-not (.isValid k)
-            (swap! dirs disj (.watchable k)))))
+            (swap! dirs disj (.watchable k))))
+        (recur))
       (catch ClosedWatchServiceException e (log/info "watch service closed for" (str dir)))
       (catch Exception e (log/error e "error watching folder" (str dir))))))
 

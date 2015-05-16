@@ -40,12 +40,13 @@
   identify this server."
   [url port hostname]
   (let [socket (doto (DatagramSocket. port) (.setBroadcast true))]
-    (while true
+    (loop []
       (try (let [request (receive-request socket)
                  message (request-message request)]
              (when (= message "DISCOVER_VIDEO_SERVER_REQUEST")
                (send-response socket request url hostname)))
-           (catch Exception e (log/error e))))))
+           (catch Exception e (log/error e)))
+      (recur))))
 
 (defn start-discovery
   "Starts the discovery thread, listening for clients."
