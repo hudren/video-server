@@ -331,3 +331,9 @@
   []
   (map title-with-videos (current-titles)))
 
+(defn title-hash
+  "Returns a hash that can be used to determine if the titles have
+  changed."
+  []
+  (hash @titles))
+

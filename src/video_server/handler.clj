@@ -17,24 +17,29 @@
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version apk-filename]]
             [video-server.html :refer [downloads-template title-page titles-page]]
-            [video-server.library :refer [current-titles title-for-id title-listing video-listing]]
+            [video-server.library :refer [current-titles title-for-id title-hash title-listing video-listing]]
             [video-server.util :refer :all]))
 
 (defonce ^:private base-url (atom "http://localhost"))
 (defonce ^:private dirs (atom []))
 
+(defn status-response
+  "Generates a simple response with a status code."
+  [status]
+  {:status status})
+
 (defn html-response
   "Generates a HTML response from the data."
-  [data & [status]]
+  [data & [status headers]]
   {:status (or status 200)
-   :headers {"Content-Type" "text/html;charset=utf-8"}
+   :headers (merge {"Content-Type" "text/html;charset=utf-8"} headers)
    :body data})
 
 (defn json-response
   "Generates a JSON response from the data."
-  [data & [status]]
+  [data & [status headers]]
   {:status (or status 200)
-   :headers {"Content-Type" "application/json"}
+   :headers (merge {"Content-Type" "application/json"} headers)
    :body (json/write-str data)})
 
 (defn titles
@@ -61,8 +66,11 @@
 
 (defn titles-api
   "Responds with a list of available titles."
-  []
-  (json-response (title-listing)))
+  [headers]
+  (let [h (title-hash)]
+    (if (= h (get headers "if-none-match"))
+      (status-response 304)
+      (json-response (title-listing) 200 {"ETag" (str h)}))))
 
 (defn android-api
   "Responds with the android client version info."
@@ -74,7 +82,7 @@
   (GET "/title" [id s e] (title id (parse-long s) (parse-long e)))
   (GET "/downloads" [] (downloads))
   (GET "/api/v1/videos" [] (videos-api))
-  (GET "/api/v1/titles" [] (titles-api))
+  (GET "/api/v1/titles" {:keys [headers]} (titles-api headers))
   (GET "/api/v1/android" [] (android-api))
   (resources "/" {:root "public"})
   (not-found "Not Found"))
