@@ -12,7 +12,8 @@
   (:require [clojure.core.cache :as cache]
             [clojure.string :as str]
             [video-server.util :refer :all])
-  (:import (java.net URLEncoder)))
+  (:import (java.net URLEncoder)
+           (java.text SimpleDateFormat)))
 
 (defonce ^:private cache (atom (cache/lru-cache-factory {})))
 
@@ -26,6 +27,13 @@
   (when-not (str/blank? s)
     (map str/trim (str/split s #","))))
 
+(defn- date
+  "Returns an ISO formatted date."
+  [d]
+  (let [input (SimpleDateFormat. "dd MMM yyyy")
+        output (SimpleDateFormat. "yyyy-MM-dd")]
+    (when d (.format output (.parse input d)))))
+
 (defn retrieve-id
   "Fetches the metadata for the given id."
   [id]
@@ -35,16 +43,25 @@
 
 (defn retrieve-title
   "Fetches the metadata for the given title and year."
-  [title & [year]]
+  [title & [series? year]]
   (let [resp (get-json cache (str "http://www.omdbapi.com/?plot=full&r=json&t=" (URLEncoder/encode title "UTF-8")
+                                  (when-not (nil? series?) (if series? "&type=series" "&type=movie"))
                                   (when year (str "&y=" year))))]
     (filter-values resp)))
 
+(defn retrieve-episode
+  "Fetches the metadata for the given episode."
+  [title season episode]
+  (let [resp (get-json cache (str "http://www.omdbapi.com/?plot=full&r=json&t=" (URLEncoder/encode title "UTF-8")
+                                  "&type=episode&season=" season "&episode=" episode))]
+    (filter-values resp)))
+
 (defn omdb-info
-  "Extracts fields for storage from the metadata"
+  "Extracts fields for storage from the metadata."
   [omdb]
   (let [md (merge (select-keys omdb [:title :runtime :rated :plot :type :poster])
                   {:imdb-id (:imdbid omdb)
+                   :released (date (:released omdb))
                    :year (first (parse-ints (:year omdb)))
                    :genres (multi (:genre omdb))
                    :directors (when-let [d (:director omdb)] (list d))
@@ -52,10 +69,28 @@
                    :languages (multi (:language omdb))})]
     (into {} (remove (comp nil? second) md))))
 
+(defn omdb-episode-info
+  "Extracts and converts fields from the episode metadata."
+  [omdb]
+  (merge (select-keys omdb [:title :runtime :plot :poster])
+         {:released (date (:released omdb))
+          :directors (multi (:director omdb))
+          :writers (multi (:writer omdb))
+          :stars (multi (:actors omdb))}))
+
 (defn omdb-metadata
   "Queries for metadata related to the given title and year."
-  [title & [series year duration]]
-  (let [resp (retrieve-title title year)]
+  [title & [series? year duration]]
+  (let [resp (retrieve-title title series? year)]
     (when (= (:response resp) "True")
       resp)))
+
+(defn omdb-season-metadata
+  "Queries for all episode metadata for the given title and season."
+  [title season]
+  (loop [seasons nil episode 1]
+    (let [resp (retrieve-episode title season episode)]
+      (if (= (:response resp) "True")
+        (recur (update-in seasons [:episodes episode] merge (omdb-episode-info resp)) (inc episode))
+        seasons))))
 

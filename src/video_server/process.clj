@@ -17,14 +17,16 @@
                                           extract-thumbnail video-encode-spec]]
             [video-server.format :refer [video-size]]
             [video-server.library :refer [add-info add-video title-for-key video-key video-for-key]]
-            [video-server.metadata :refer [retrieve-metadata]]
+            [video-server.metadata :refer [read-metadata retrieve-season-metadata retrieve-metadata]]
+            [video-server.title :refer [title-seasons]]
             [video-server.util :refer :all]
             [video-server.video :refer [can-cast? can-download? web-playback?]]))
 
 (def ^:const fetch-threads 4)
 
 (def ^:private process-chan (chan 500))
-(def ^:private title-chan (chan 500))
+(def ^:private movie-chan (chan 500))
+(def ^:private series-chan (chan 100))
 (def ^:private encoder-chan (chan 100))
 
 (defn should-process-file?
@@ -43,8 +45,10 @@
 
 (defn process-title
   "Enqueues the title for processing."
-  [folder title]
-  (go (>! title-chan [folder (video-key title)])))
+  [folder file]
+  (let [key (video-key file)
+        chan (if (:season key) series-chan movie-chan)]
+    (go (>! chan [folder key]))))
 
 (defn process-encode
   "Enqueues a spec for transcoding a video."
@@ -99,17 +103,22 @@
 
 (defn- start-fetching
   "Processes requests in the fetch channel using real threads."
-  [fetch?]
-  (dotimes [_ fetch-threads]
+  [chan threads fetch?]
+  (dotimes [_ threads]
     (thread
       (loop []
-        (let [[folder key] (<!! title-chan)
+        (let [[folder key] (<!! chan)
               options (:options folder)]
           (log/trace "fetching" folder key)
           (when (get options :fetch fetch?)
             (when-let [title (title-for-key key)]
-              (try (when-let [info (retrieve-metadata title)]
-                     (add-info folder title info))
+              (try (when-let [info (or (read-metadata title) (retrieve-metadata title))]
+                     (add-info folder title info)
+                     (when (= (:type info) "series")
+                       (doseq [season (remove (-> title :info :seasons keys set) (title-seasons title))]
+                         (log/info "retrieving episodes for" (:title title) "Season" season)
+                         (let [info (retrieve-season-metadata title season)]
+                           (add-info folder title info)))))
                    (catch Exception e (log/error e "error fetching metadata" (str title)))))))
         (recur)))))
 
@@ -129,7 +138,8 @@
   "Processes enqueued files."
   [encode? fetch? fmt size]
   (log/debug "starting file processing")
-  (start-fetching fetch?)
+  (start-fetching movie-chan fetch-threads fetch?)
+  (start-fetching series-chan 1 fetch?)
   (start-encoding)
   (go-loop []
     (let [[folder key] (<! process-chan)

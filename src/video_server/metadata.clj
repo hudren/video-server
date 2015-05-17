@@ -17,9 +17,8 @@
             [video-server.file :refer [file-ext]]
             [video-server.freebase :refer [freebase-info freebase-metadata get-imdb-id]]
             [video-server.library :refer [folders-for-title norm-title video-for-key]]
-            [video-server.omdb :refer [omdb-info omdb-metadata retrieve-id]]
-            [video-server.util :refer :all])
-  (:import (java.io File)))
+            [video-server.omdb :refer [omdb-info omdb-metadata omdb-season-metadata retrieve-id]]
+            [video-server.util :refer :all]))
 
 (defn retrieve-image
   "Returns the image as a byte array."
@@ -122,4 +121,15 @@
     (when (and (not (:poster title)) poster)
       (save-poster title poster))
     info))
+
+(defn retrieve-season-metadata
+  "Retrieves season metadata from the Internet and updates the
+  persisted file."
+  [title season]
+  (let [info (read-metadata title)]
+    (if-let [episodes (omdb-season-metadata (:title title) season)]
+      (let [new-info (update-in info [:seasons season] merge episodes)]
+        (save-metadata title new-info)
+        new-info)
+      info)))
 

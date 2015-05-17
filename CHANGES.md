@@ -1,5 +1,10 @@
 # Videos@Home Changelog
 
+## Version 0.4
+
+* Added fetching for episode metadata
+* Added client caching for titles
+
 ## Version 0.3.4
 
 * Support for mkclean to optimize playback

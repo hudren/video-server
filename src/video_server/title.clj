@@ -10,17 +10,21 @@
 
 (ns video-server.title
   (:require [video-server.format :refer :all]
-            [video-server.util :refer :all]
             [video-server.video :refer [quality web-playback?]]))
 
 (defn- video-info
   [item]
   (if (vector? item) (second item) item))
 
+(defn title-seasons
+  "Returns a set of season numbers."
+  [title]
+  (set (remove nil? (map #(:season (video-info %)) (:videos title)))))
+
 (defn has-seasons?
   "Returns whether the title has seasons."
   [title]
-  (some #(:season (video-info %)) (:videos title)))
+  (seq (title-seasons title)))
 
 (defn has-episodes?
   "Returns whether the title has episodes for the given season."
@@ -56,8 +60,8 @@
 (defn season-desc
   "Returns a description of the seasons belonging to the title."
   [title]
-  (let [seasons (set (map #(:season (video-info %)) (:videos title)))]
-    (str "Season" (if (> (count seasons) 1) "s") " " (format-ranges (find-ranges seasons)))))
+  (let [seasons (title-seasons title)]
+    (str "Season" (if (> (count seasons) 1) "s") " " (-> seasons find-ranges format-ranges))))
 
 (defn episode-title
   "Returns the episode title from the metadata or video."

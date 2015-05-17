@@ -13,8 +13,8 @@
             [clojure.tools.logging :as log]
             [video-server.directory :refer [watch-directory]]
             [video-server.file :refer [image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
-            [video-server.library :as library :refer [add-image add-info add-subtitle current-titles current-videos files-for-dir
-                                                      has-file? norm-title title-for-file up-to-date? video-for-file]]
+            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos files-for-dir has-file?
+                                                      norm-title title-for-file up-to-date? video-for-file]]
             [video-server.metadata :refer [read-metadata title-dir]]
             [video-server.process :refer [process-file process-title]]
             [video-server.util :refer :all]
@@ -55,11 +55,11 @@
 
 (defn add-metadata
   "Reads existing metadata for the given video."
-  [folder title]
-  (when title
+  [folder file]
+  (when-let [title (title-for-file file)]
     (if-let [info (read-metadata title)]
       (add-info folder title info)
-      (process-title folder title))))
+      (process-title folder file))))
 
 (defn scan-videos
   "Scans the directory for videos."
@@ -69,8 +69,9 @@
     (parseq scan-threads [file (get files true)]
       (log/info "adding video" (str file))
       (let [added (library/add-video folder file)]
-        (when (:title added)
-          (add-metadata folder (title-for-file file)))))
+        (cond
+          (:title added) (add-metadata folder file)
+          (:season added) (process-title folder file))))
     (doseq [file (get files false)]
       (add-pending-file folder file))))
 
@@ -137,7 +138,7 @@
   (let [added (library/add-video folder file)]
     (when (:title added)
       (let [title (title-for-file file)]
-        (add-metadata folder title)
+        (add-metadata folder file)
         (add-images folder title)))
     (when (:video added)
       (let [video (video-for-file folder file)]
@@ -154,7 +155,7 @@
     (video? file) (add-video folder file)
     (subtitle? file) (add-subtitle folder file)
     (image? file) (add-image folder file)
-    (metadata? file) (add-metadata folder (title-for-file file)))
+    (metadata? file) (add-metadata folder file))
   (process-file folder file))
 
 (defn check-pending-files

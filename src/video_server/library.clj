@@ -18,7 +18,7 @@
                                        title-info video?]]
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
-            [video-server.title :refer [best-image episode-title season-title]]
+            [video-server.title :refer [best-image episode-title season-title title-seasons]]
             [video-server.video :refer [sorting-title video-container video-record]]
             [video-server.util :refer :all])
   (:import (java.io File)
@@ -163,7 +163,8 @@
         (dosync
           (let [key (video-key video)
                 video-exists (get-in @library [folder key])
-                title-exists (get @titles (:title key))]
+                title-exists (get @titles (:title key))
+                season-exists (get (title-seasons title-exists) (:season key))]
             (if video-exists
               (alter library update-in [folder key :containers] conj (first (:containers video)))
               (alter library update-in [folder] assoc key video))
@@ -172,7 +173,8 @@
               (alter titles assoc (:title key) (title-record (:title video) folder key)))
             (alter files assoc file [key (.lastModified ^File file)])
             (add-title (title-info file))
-            {:video (not video-exists) :title (not title-exists)}))))))
+            {:video (not video-exists) :title (not title-exists)
+             :season (and (:season key) (not season-exists))}))))))
 
 (defn remove-video
   "Removes a file from a video. When the last file is removed, the
