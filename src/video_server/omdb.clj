@@ -72,7 +72,7 @@
 (defn omdb-episode-info
   "Extracts and converts fields from the episode metadata."
   [omdb]
-  (merge (select-keys omdb [:title :runtime :plot :poster])
+  (merge (select-keys omdb [:title :runtime :plot])
          {:released (date (:released omdb))
           :directors (multi (:director omdb))
           :writers (multi (:writer omdb))
