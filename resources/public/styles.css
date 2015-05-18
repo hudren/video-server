@@ -50,6 +50,13 @@ div#content {
   margin: 0 auto;
 }
 
+div#footer {
+  clear: both;
+  max-width: 90%;
+  margin: 3em auto 0;
+  font-size: smaller;
+}
+
 a {
   color: inherit;
   text-decoration: none;

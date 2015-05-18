@@ -24,30 +24,35 @@
       <core-toolbar>
         <div>Video</div>
       </core-toolbar>
-      <div id="content">
-        <div id="desc" class="block two-columns">
-          <div id="poster" class="left-column">
-            <img src="placeholder.png" alt="poster" />
+      <div>
+        <div id="content">
+          <div id="desc" class="block two-columns">
+            <div id="poster" class="left-column">
+              <img src="placeholder.png" alt="poster" />
+            </div>
+            <div id="info">
+            </div>
           </div>
-          <div id="info">
+          <div id="links" class="block">
+            <paper-button raised>
+              <core-icon icon="file-download"></core-icon>
+              <a href="video-client-release.apk" type="application/vnd.android.package-archive">Download App</a>
+            </paper-button>
+          </div>
+          <div id="seasons" class="block">
+          </div>
+          <div id="season" class="block two-columns">
+            <div id="episodes" class="left-column">
+            </div>
+            <div id="player">
+              <video controls="" preload="none">
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
         </div>
-        <div id="links" class="block">
-          <paper-button raised>
-            <core-icon icon="file-download"></core-icon>
-            <a href="video-client-release.apk" type="application/vnd.android.package-archive">Download App</a>
-          </paper-button>
-        </div>
-        <div id="seasons" class="block">
-        </div>
-        <div id="season" class="block two-columns">
-          <div id="episodes" class="left-column">
-          </div>
-          <div id="player">
-            <video controls="" preload="none">
-              Your browser does not support the video tag.
-            </video>
-          </div>
+        <div id="footer">
+          <p>Content on this site may be provided by third parties, see <a href="legal.html">attribution</a>.</p>
         </div>
       </div>
     </core-header-panel>
