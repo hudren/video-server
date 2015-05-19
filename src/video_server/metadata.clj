@@ -17,7 +17,8 @@
             [video-server.file :refer [file-ext]]
             [video-server.freebase :refer [freebase-info freebase-metadata get-imdb-id]]
             [video-server.library :refer [folders-for-title norm-title video-for-key]]
-            [video-server.omdb :refer [omdb-info omdb-metadata omdb-season-metadata retrieve-id]]
+            [video-server.omdb :refer [omdb-info omdb-metadata retrieve-id]]
+            [video-server.tvdb :refer [tvdb-season-metadata]]
             [video-server.util :refer :all]))
 
 (defn retrieve-image
@@ -127,7 +128,7 @@
   persisted file."
   [title season]
   (let [info (read-metadata title)]
-    (if-let [episodes (omdb-season-metadata (:title title) season)]
+    (if-let [episodes (tvdb-season-metadata (:title title) (-> title :info :imdb-id) season)]
       (let [new-info (update-in info [:seasons season] merge episodes)]
         (save-metadata title new-info)
         new-info)

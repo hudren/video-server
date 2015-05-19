@@ -1,6 +1,7 @@
 (ns user
   (:require [clojure.edn :as edn]
             [clojure.data.json :as json]
+            [clojure.java.browse :refer [browse-url]]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
             [net.cgrand.reload :refer [auto-reload]]
@@ -22,6 +23,7 @@
             [video-server.process :as process :refer :all]
             [video-server.server :as server]
             [video-server.title :as title :refer :all]
+            [video-server.tvdb :as tvdb :refer :all]
             [video-server.util :as util :refer :all]
             [video-server.video :as video :refer :all]
             [video-server.watcher :as watcher])
@@ -87,4 +89,11 @@
   (binding [encoder/*fake-encode* (and fake (nil? (:encode options)))]
     (main/start args options))
   (auto-reload (find-ns 'video-server.html)))
+
+(defn open
+  "Opens the title in the system browser."
+  ([] (browse-url (str "http://localhost:" port)))
+  ([title]
+   (let [title (if (string? title) (title-for-title title) title)]
+     (when title (browse-url (str "http://localhost:" port "/" (html/title-url title)))))))
 

@@ -75,8 +75,7 @@
   (merge (select-keys omdb [:title :runtime :plot])
          {:released (date (:released omdb))
           :directors (multi (:director omdb))
-          :writers (multi (:writer omdb))
-          :stars (multi (:actors omdb))}))
+          :writers (multi (:writer omdb))}))
 
 (defn omdb-metadata
   "Queries for metadata related to the given title and year."
@@ -93,4 +92,11 @@
       (if (= (:response resp) "True")
         (recur (update-in seasons [:episodes episode] merge (omdb-episode-info resp)) (inc episode))
         seasons))))
+
+(defn omdb-episode-metadata
+  "Queries for metadata for a single episode."
+  [title season episode]
+  (let [resp (retrieve-episode title season episode)]
+    (when (= (:response resp) "True")
+      (omdb-episode-info resp))))
 

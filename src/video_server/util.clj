@@ -14,8 +14,10 @@
             [clojure.data.json :as json]
             [clojure.java.shell :as shell]
             [clojure.string :as str]
-            [clojure.tools.logging :as log])
-  (:import (java.net URLDecoder URLEncoder)))
+            [clojure.tools.logging :as log]
+            [clojure.xml :as xml])
+  (:import (java.io ByteArrayInputStream)
+           (java.net URLDecoder URLEncoder)))
 
 (defn parse-long
   "Parses a long value from a string or number."
@@ -38,6 +40,11 @@
   [pattern string]
   (when-not (str/blank? string)
     (->> (re-find pattern string) (drop 1) (map #(Integer/parseInt %)))))
+
+(defn prune
+  "Prunes entries with blank values from the map."
+  [m]
+  (into {} (map #(when-let [v (second %)] (if-not (= v "") %)) m)))
 
 (defn encoded-url
   "Returns an encoded url for the file (and folder) that can be used
@@ -131,5 +138,19 @@
           (log/trace "fetched" url)
           (let [json (json/read-str (:body resp) :key-fn (or key-fn (comp keyword str/lower-case)))]
             (swap! cache #(cache/miss % url json)))))))
+  (get @cache url))
+
+(defn get-xml
+  "Retrieves and caches the XML body."
+  [cache url]
+  (if (cache/has? @cache url)
+    (swap! cache #(cache/hit % url))
+    (do
+      (log/trace "fetching" url)
+      (let [resp (client/get url)]
+        (when (= (:status resp) 200)
+          (log/trace "fetched" url)
+          (let [xml (xml/parse (ByteArrayInputStream. (.getBytes (:body resp))))]
+            (swap! cache #(cache/miss % url xml)))))))
   (get @cache url))
 
