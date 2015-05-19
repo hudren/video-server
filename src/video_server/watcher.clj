@@ -142,7 +142,9 @@
         (add-images folder title)))
     (when (:video added)
       (let [video (video-for-file folder file)]
-        (add-subtitles folder video)))))
+        (add-subtitles folder video)))
+    (when (:season added)
+      (process-title folder file))))
 
 (defn add-file
   "Adds a newly discovered file to the library and queues it for
