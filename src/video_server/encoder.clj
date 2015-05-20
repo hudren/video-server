@@ -116,27 +116,67 @@
 
 (def mkvpropedit (delay (exec? "mkvpropedit")))
 
+(defn relative-track-index
+  "Returns the relative track index (for the type) starting with 1."
+  ([streams track]
+   (loop [index 1 streams streams]
+     (when-let [stream (first streams)]
+       (if (= (:index stream) track)
+         index
+         (recur (inc index) (next streams))))))
+  ([streams codec_type track]
+   (relative-track-index (filter #(= (:codec_type %) codec_type) streams) track)))
+
+(defn default-audio
+  "Returns the default audio stream."
+  [audio-streams]
+  (or (first (filter #(= (-> % :disposition :default) 1) audio-streams))
+      (first audio-streams)))
+
 (defn clear-subtitles
   "Clears the default flag on same language, non-forced subtitles."
   [file]
   (when (and (= (file-type file) :mkv) @mkvpropedit)
     (log/debug "clearing subtitles")
     (let [info (video-info (io/file file))
-          lang (-> (video-stream info) :tags :language)
+          subtitles (subtitle-streams info)
+          lang (-> (default-audio (audio-streams info)) :tags :language)
           actions (atom [])]
-      (loop [track 1 subtitles (subtitle-streams info)]
-        (when-let [subtitle (first subtitles)]
-          (when (and (= (-> subtitle :disposition :default) 1)
-                     (= (-> subtitle :disposition :forced) 0)
-                     (= (-> subtitle :tags :language) lang))
-            (log/trace "clearing default flag on subtitle track" (:index subtitle))
-            (swap! actions conj "--edit" (str "track:s" track) "--set" "flag-default=0"))
-        (recur (inc track) (next subtitles))))
+      (doseq [subtitle subtitles]
+        (when (and (= (-> subtitle :disposition :default) 1)
+                   (= (-> subtitle :disposition :forced) 0)
+                   (= (-> subtitle :tags :language) lang))
+          (log/trace "clearing default flag on subtitle track" (:index subtitle))
+          (swap! actions conj
+                 "--edit" (str "track:s" (relative-track-index subtitles (:index subtitle)))
+                 "--set" "flag-default=0")))
       (when (seq @actions)
         (let [cmd ["mkvpropedit" file @actions]
               exec (exec cmd)]
           (when-not (zero? (:exit exec))
             (log/warn "clearing subtitle tracks failed:" \newline cmd \newline exec)))))))
+
+(defn set-default-subtitles
+  "Sets the default subtitle track."
+  [file track]
+  (when (and (= (file-type file) :mkv) @mkvpropedit)
+    (log/debug "setting default subtitles")
+    (let [info (video-info (io/file file))
+          streams (:streams info)
+          actions (atom [])]
+      (doseq [[index stream] (map-indexed vector streams)]
+        (let [value (if (= index track) 1 0)]
+          (when (and (= (:codec_type stream) "subtitle")
+                     (not= (-> stream :disposition :default) value))
+          (log/trace "changing default flag on subtitle track" (:index stream) "to" value)
+          (swap! actions conj
+                 "--edit" (str "track:s" (relative-track-index streams "subtitle" (:index stream)))
+                 "--set" (str "flag-default=" value)))))
+      (when (seq @actions)
+        (let [cmd ["mkvpropedit" file @actions]
+              exec (exec cmd)]
+          (when-not (zero? (:exit exec))
+            (log/warn "changing subtitle tracks failed:" \newline cmd \newline exec)))))))
 
 (def mkclean (delay (exec? "mkclean")))
 

@@ -48,6 +48,59 @@
 (defn title-for-title [title]
   (title-for-id (:title (video-key title))))
 
+(defn folder-for-title [title]
+  (when-let [title (title-for-title title)]
+    (let [videos (:videos title)]
+      (if (= (count videos) 1)
+        (ffirst videos)))))
+
+(defn video-for-title [title]
+  (when-let [title (title-for-title title)]
+    (let [videos (:videos title)]
+      (if (= (count videos) 1)
+        (apply video-for-key (first videos))))))
+
+(defn folder-video [title]
+  (when-let [title (title-for-title title)]
+    (let [videos (:videos title)]
+      (if (= (count videos) 1)
+        [(-> title :videos ffirst) (apply video-for-key (first videos))]))))
+
+(defn info [title]
+  (when-let [title (title-for-title title)]
+    (when-let [folder (folder-for-title title)]
+      (when-let [video (video-for-title title)]
+        (let [container (container-to-encode (:containers video) (keyword (str output-size)))]
+          (ffmpeg/video-info (io/file (:file folder) (:path container))))))))
+
+(defn field [track label & ks]
+  (when-let [v (get-in track ks)]
+    (str label \= v)))
+
+(defn fields [track & xs]
+  (map #(apply field track %) xs))
+
+(defn pad [s l]
+  (apply str s (repeat (max 0 (- l (count s))) \space)))
+
+(defmulti track-fields :codec_type)
+
+(defmethod track-fields "video" [track]
+  (fields track ["codec" :codec_name] ["sar" :sample_aspect_ratio] ["dar" :display_aspect_ratio]))
+
+(defmethod track-fields "audio" [track]
+  (fields track ["codec" :codec_name] ["default" :disposition :default] ["lang" :tags :language]))
+
+(defmethod track-fields "subtitle" [track]
+  (fields track ["codec" :codec_name] ["default" :disposition :default] ["forced" :disposition :forced] ["lang" :tags :language]))
+
+(defmethod track-fields :default [track]
+  (fields track ["codec" :codec_long_name]))
+
+(defn tracks [title]
+  (doseq [track (:streams (info title))]
+    (apply println (str "Track #" (:index track) " " (pad (:codec_type track) 10)) (track-fields track))))
+
 (defn fetch-film [title]
   (fetch-metadata (map->Video {:title title})))
 
@@ -84,16 +137,44 @@
     #_(when-let [image (poster-for-title title)]
       (io/delete-file image))))
 
+(defn update-file
+  "Processes a file, preserving it's modification time."
+  [file f & [output]]
+  (let [modified (.lastModified file)]
+    (f file)
+    (.setLastModified (or output file) modified)))
+
+(defn set-subtitle [title track]
+  (when-let [title (title-for-title title)]
+    (when-let [folder (folder-for-title title)]
+      (when-let [video (video-for-title title)]
+        (let [container (container-to-encode (:containers video) (keyword (str output-size)))]
+          (update-file (io/file (:file folder) (:path container)) #(set-default-subtitles % track)))))))
+
+(defn clear-subtitle [title]
+  (when-let [title (title-for-title title)]
+    (when-let [folder (folder-for-title title)]
+      (when-let [video (video-for-title title)]
+        (let [container (container-to-encode (:containers video) (keyword (str output-size)))]
+          (update-file (io/file (:file folder) (:path container)) clear-subtitles))))))
+
 (defn start []
   (main/set-log-level (main/log-level log-level))
   (binding [encoder/*fake-encode* (and fake (nil? (:encode options)))]
     (main/start args options))
   (auto-reload (find-ns 'video-server.html)))
 
+(defn encode-title [title]
+  (when-let [[folder video] (folder-video title)]
+    (let [fmt (keyword output-format)
+          size (encode-size video (keyword (str output-size)))]
+      (when-let [spec (video-encode-spec folder video fmt size)]
+        (encode-video spec)))))
+
 (defn open
   "Opens the title in the system browser."
   ([] (browse-url (str "http://localhost:" port)))
   ([title]
-   (let [title (if (string? title) (title-for-title title) title)]
+   (when-let [title (title-for-title title)]
      (when title (browse-url (str "http://localhost:" port "/" (html/title-url title)))))))
 
