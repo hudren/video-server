@@ -114,6 +114,30 @@
   (when-let [spec (encode-spec folder video fmt size)]
     (-> spec filter-video output-options)))
 
+(def mkvpropedit (delay (exec? "mkvpropedit")))
+
+(defn clear-subtitles
+  "Clears the default flag on same language, non-forced subtitles."
+  [file]
+  (when (and (= (file-type file) :mkv) @mkvpropedit)
+    (log/debug "clearing subtitles")
+    (let [info (video-info (io/file file))
+          lang (-> (video-stream info) :tags :language)
+          actions (atom [])]
+      (loop [track 1 subtitles (subtitle-streams info)]
+        (when-let [subtitle (first subtitles)]
+          (when (and (= (-> subtitle :disposition :default) 1)
+                     (= (-> subtitle :disposition :forced) 0)
+                     (= (-> subtitle :tags :language) lang))
+            (log/trace "clearing default flag on subtitle track" (:index subtitle))
+            (swap! actions conj "--edit" (str "track:s" track) "--set" "flag-default=0"))
+        (recur (inc track) (next subtitles))))
+      (when (seq @actions)
+        (let [cmd ["mkvpropedit" file @actions]
+              exec (exec cmd)]
+          (when-not (zero? (:exit exec))
+            (log/warn "clearing subtitle tracks failed:" \newline cmd \newline exec)))))))
+
 (def mkclean (delay (exec? "mkclean")))
 
 (defn clean
@@ -144,6 +168,7 @@
       (if (zero? (:exit exec))
         (do
           (log/info "encoding was successful")
+          (clear-subtitles (:output spec))
           (clean spec)
           spec)
         (do

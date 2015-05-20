@@ -27,7 +27,7 @@ The following software is required to build and run this software:
 The following runtime dependencies are also required:
 
 * ffmpeg
-* mkvtoolnix (optional)
+* mkvtoolnix (recommended)
 * mkclean (recommended)
 
 ## Usage
