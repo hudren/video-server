@@ -36,6 +36,11 @@
   [video]
   (apply max (map :modified (:containers video))))
 
+(defn container-track
+  "Returns the stream corresponding to the track index."
+  [info track]
+  (first (filter #(= (:index %) track) (:streams info))))
+
 (defn video-stream
   "Returns the video stream metadata."
   [info]

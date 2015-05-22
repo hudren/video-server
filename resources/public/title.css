@@ -18,7 +18,7 @@ div#poster img {
   max-width: 100%;
 }
 
-span.year, span.rated, span.duration {
+span.year, span.released, span.rated, span.duration {
   color: rgba(0,0,0,0.54);
   margin-right: 0.7em;
 }
@@ -59,6 +59,13 @@ div#seasons {
 
 div#season.has-episodes {
   max-width: 1280px;
+}
+
+ul {
+  margin-before: 0;
+  margin-after: 0;
+  -webkit-margin-before: 0;
+  -webkit-margin-after: 0;
 }
 
 li.selected {

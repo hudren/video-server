@@ -10,7 +10,8 @@
 
 (ns video-server.format
   (:require [clojure.string :as str])
-  (:import (java.util Locale)
+  (:import (java.text DateFormat SimpleDateFormat)
+           (java.util Locale)
            (java.util.concurrent TimeUnit)))
 
 (def dimensions #{"4K" "1080p" "720p" "FUHD" "UHD" "FHD" "HD" "SD"})
@@ -74,6 +75,19 @@
         seconds (- (.toSeconds TimeUnit/MILLISECONDS ms)
                    (.toSeconds TimeUnit/MINUTES (.toMinutes TimeUnit/MILLISECONDS ms)))]
     (format "%d:%02d:%02d" hours minutes seconds)))
+
+(defn format-runtime
+  "Returns the duration in minutes."
+  [duration]
+  (str (Math/round (/ duration 60)) " mins"))
+
+(defn format-date
+  "Formats the ISO date string."
+  [date]
+  (try (->> date
+            (.parse (SimpleDateFormat. "yyyy-MM-dd"))
+            (.format (DateFormat/getDateInstance DateFormat/MEDIUM)))
+       (catch Exception e date)))
 
 (defn video-dimension
   "Returns a human-readable description of the video dimensions."

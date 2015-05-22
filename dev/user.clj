@@ -51,14 +51,17 @@
 (defn folder-for-title [title]
   (when-let [title (title-for-title title)]
     (let [videos (:videos title)]
-      (if (= (count videos) 1)
-        (ffirst videos)))))
+      (ffirst videos))))
 
-(defn video-for-title [title]
+(defn video-for-title
+  ([title]
   (when-let [title (title-for-title title)]
     (let [videos (:videos title)]
       (if (= (count videos) 1)
         (apply video-for-key (first videos))))))
+  ([title season episode]
+   (when-let [title (title-for-title title)]
+     (video-for-key (folder-for-title title) (video-key {:title (:id title) :season season :episode episode})))))
 
 (defn folder-video [title]
   (when-let [title (title-for-title title)]
@@ -66,12 +69,20 @@
       (if (= (count videos) 1)
         [(-> title :videos ffirst) (apply video-for-key (first videos))]))))
 
-(defn info [title]
-  (when-let [title (title-for-title title)]
-    (when-let [folder (folder-for-title title)]
-      (when-let [video (video-for-title title)]
-        (let [container (container-to-encode (:containers video) (keyword (str output-size)))]
-          (ffmpeg/video-info (io/file (:file folder) (:path container))))))))
+(defn select-container
+  [video & [options]]
+  (let [{:keys [fmt size]} (if (map? options) options (apply hash-map options))]
+    (first (filter #(and (or (nil? fmt) (= (:filetype %) fmt))
+                       (or (nil? size) (= (video-size (:width %)) size)))
+                   (rank-containers video)))))
+
+(defn info [title & [options]]
+  (let [options (if (map? options) options (apply hash-map options))]
+    (when-let [title (title-for-title title)]
+      (when-let [folder (folder-for-title title)]
+        (when-let [video (video-for-title title)]
+          (when-let [container (select-container video options)]
+            (ffmpeg/video-info (io/file (:file folder) (:path container)))))))))
 
 (defn field [track label & ks]
   (when-let [v (get-in track ks)]
@@ -97,8 +108,8 @@
 (defmethod track-fields :default [track]
   (fields track ["codec" :codec_long_name]))
 
-(defn tracks [title]
-  (doseq [track (:streams (info title))]
+(defn tracks [title & {:as options}]
+  (doseq [track (:streams (info title options))]
     (apply println (str "Track #" (:index track) " " (pad (:codec_type track) 10)) (track-fields track))))
 
 (defn fetch-film [title]
@@ -144,18 +155,18 @@
     (f file)
     (.setLastModified (or output file) modified)))
 
-(defn set-subtitle [title track]
+(defn default-track [title track & {:as options}]
   (when-let [title (title-for-title title)]
     (when-let [folder (folder-for-title title)]
       (when-let [video (video-for-title title)]
-        (let [container (container-to-encode (:containers video) (keyword (str output-size)))]
-          (update-file (io/file (:file folder) (:path container)) #(set-default-subtitles % track)))))))
+        (when-let [container (select-container video options)]
+          (update-file (io/file (:file folder) (:path container)) #(set-default-track % track)))))))
 
-(defn clear-subtitle [title]
+(defn clear-subtitle [title & {:as options}]
   (when-let [title (title-for-title title)]
     (when-let [folder (folder-for-title title)]
       (when-let [video (video-for-title title)]
-        (let [container (container-to-encode (:containers video) (keyword (str output-size)))]
+        (when-let [container (select-container video options)]
           (update-file (io/file (:file folder) (:path container)) clear-subtitles))))))
 
 (defn start []
@@ -169,7 +180,11 @@
     (let [fmt (keyword output-format)
           size (encode-size video (keyword (str output-size)))]
       (when-let [spec (video-encode-spec folder video fmt size)]
-        (encode-video spec)))))
+        (future (encode-video spec))))))
+
+(defn ls []
+  (doseq [title (map :title (sort-by :sorting (vals @titles)))]
+    (println title)))
 
 (defn open
   "Opens the title in the system browser."

@@ -11,7 +11,7 @@
 (ns video-server.html
   (:require [clojure.string :as str]
             [net.cgrand.enlive-html :refer :all]
-            [video-server.format :refer [format-filetype format-size lang-two-letter]]
+            [video-server.format :refer [format-date format-filetype format-runtime format-size lang-two-letter]]
             [video-server.library :refer [video-for-key]]
             [video-server.title :refer [best-containers best-image best-video episode-title full-title has-episodes? has-parts?
                                         has-seasons? season-desc season-titles]]
@@ -145,6 +145,11 @@
   [pred class]
   #(if pred ((add-class (name class)) %) %))
 
+(defn if-add-class-or-remove
+  "Conditionally adds a class."
+  [pred class]
+  #(if pred ((add-class (name class)) %)))
+
 ;;; Title listing
 
 (defn title-item
@@ -186,7 +191,7 @@
 ;;; Title page
 
 (defsnippet title-info "templates/info.html" [:div#info]
-  [info containers]
+  [title info containers season]
   [:span.year] (when-let [year (:year info)] (content (str year)))
   [:span.rated] (when-let [rated (:rated info)] (content rated))
   [:span.duration] (when-let [runtime (when-not (= (:type info) "series") (:runtime info))] (content runtime))
@@ -198,25 +203,37 @@
   [:p.languages] (when-let [languages (:languages info)]
                    (when-not (= languages (list "English"))
                      (content (combine "Languages" languages))))
-  [:table.containers :tbody] (content (for [container containers] (container-desc container))))
+  [:table#containers :tbody] (when-not (has-episodes? title season)
+                               (content (for [container containers] (container-desc container)))))
+
+(defsnippet episode-info "templates/episode.html" [:div#episode]
+  [info video containers]
+  [:p.overview] (content (:plot info))
+  [:span.released] (when-let [date (:released info)] (content (format-date date)))
+  [:span.duration] (when-let [runtime (:duration video)] (content (format-runtime runtime)))
+  [:p.writers] (when-content (combine "Written by" (:writers info)))
+  [:p.directors] (when-content (combine "Directed by" (:directors info)))
+  [:table#episode-containers :tbody] (content (for [container containers] (container-desc container))))
 
 (deftemplate title-template "templates/title.html"
   [title info video containers season episode]
   [:head :title] (content (full-title title video))
-  [:core-toolbar :div] (content (or (:title info) (:title title)))
+  [:core-toolbar :div] (content (full-title title video))
   [:div#desc] (when (or (:year info) (:plot info)) identity)
   [:div#poster :img] (set-attr :src (or (best-image :poster title season episode) "placeholder.png"))
-  [:div#info] (substitute (title-info info (rank-containers video)))
+  [:div#info] (substitute (title-info title info (rank-containers video) season))
   [:div#links] (content (apply html (video-links info)))
   [:div#seasons] (when (has-seasons? title)
                    (content (season-tabs (title-url title) (season-titles title) season)))
-  [:div#season] (if-add-class (or (has-episodes? title season) (has-parts? title)) :has-episodes)
+  [:div#season] (if-add-class-or-remove (or (has-episodes? title season) (has-parts? title)) :has-episodes)
   [:div#episodes] (when (has-episodes? title season)
                     (content (episode-list title season episode)))
+  [:div#episode] (when (has-episodes? title season)
+                   (substitute (episode-info (get-in info [:seasons season :episodes episode]) video containers)))
   [:video] (when (seq containers) (substitute (video-tag video containers))))
 
 (defn title-page
-  "Returns the page diplaying the title w/episodes and parts."
+  "Returns the page displaying the title w/episodes and parts."
   [title season episode]
   (let [season (or season (ffirst (season-titles title)))
         episode (or episode (ffirst (episode-titles title season)))
