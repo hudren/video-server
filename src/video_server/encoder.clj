@@ -16,7 +16,7 @@
             [video-server.file :refer [file-type fullpath replace-ext video-filename]]
             [video-server.format :refer [video-dimension video-size video-width]]
             [video-server.util :refer :all]
-            [video-server.video :refer [audio-streams subtitle-streams video-stream web-playback?]])
+            [video-server.video :refer [audio-streams container-track subtitle-streams video-stream web-playback?]])
   (:import (java.io File)))
 
 (def ^:dynamic *fake-encode* false)
@@ -156,27 +156,30 @@
           (when-not (zero? (:exit exec))
             (log/warn "clearing subtitle tracks failed:" \newline cmd \newline exec)))))))
 
-(defn set-default-subtitles
-  "Sets the default subtitle track."
+(defn set-default-track
+  "Sets the default video, audio or subtitle track."
   [file track]
   (when (and (= (file-type file) :mkv) @mkvpropedit)
-    (log/debug "setting default subtitles")
     (let [info (video-info (io/file file))
           streams (:streams info)
+          default (container-track info track)
+          codec (:codec_type default)
           actions (atom [])]
-      (doseq [[index stream] (map-indexed vector streams)]
-        (let [value (if (= index track) 1 0)]
-          (when (and (= (:codec_type stream) "subtitle")
-                     (not= (-> stream :disposition :default) value))
-          (log/trace "changing default flag on subtitle track" (:index stream) "to" value)
-          (swap! actions conj
-                 "--edit" (str "track:s" (relative-track-index streams "subtitle" (:index stream)))
-                 "--set" (str "flag-default=" value)))))
+      (log/debug "setting default" codec "track" track)
+      (when (get-in default [:disposition :default])
+        (doseq [[index stream] (map-indexed vector streams)]
+          (let [value (if (= index track) 1 0)]
+            (when (and (= (:codec_type stream) codec)
+                       (not= (get-in stream [:disposition :default]) value))
+              (log/trace "changing default flag on track" (:index stream) "to" value)
+              (swap! actions conj
+                     "--edit" (str "track:" (first codec) (relative-track-index streams codec (:index stream)))
+                     "--set" (str "flag-default=" value))))))
       (when (seq @actions)
         (let [cmd ["mkvpropedit" file @actions]
               exec (exec cmd)]
           (when-not (zero? (:exit exec))
-            (log/warn "changing subtitle tracks failed:" \newline cmd \newline exec)))))))
+            (log/warn "changing default track failed:" \newline cmd \newline exec)))))))
 
 (def mkclean (delay (exec? "mkclean")))
 
