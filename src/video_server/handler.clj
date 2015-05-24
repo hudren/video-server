@@ -17,7 +17,7 @@
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version apk-filename]]
             [video-server.html :refer [downloads-template title-page titles-page]]
-            [video-server.library :refer [current-titles title-for-id title-hash title-listing video-listing]]
+            [video-server.library :refer [current-titles library-etag title-for-id title-listing video-listing]]
             [video-server.util :refer :all]))
 
 (defonce ^:private base-url (atom "http://localhost"))
@@ -67,7 +67,7 @@
 (defn titles-api
   "Responds with a list of available titles."
   [headers]
-  (let [h (title-hash)]
+  (let [h (library-etag)]
     (if (= h (get headers "if-none-match"))
       (status-response 304)
       (json-response (title-listing) 200 {"ETag" (str h)}))))

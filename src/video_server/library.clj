@@ -333,9 +333,9 @@
   []
   (map title-with-videos (current-titles)))
 
-(defn title-hash
-  "Returns a hash that can be used to determine if the titles have
+(defn library-etag
+  "Returns a hash that can be used to determine if the library has
   changed."
   []
-  (hash @titles))
+  (hash @library))
 
