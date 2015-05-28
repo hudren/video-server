@@ -9,18 +9,16 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.library
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [video-server.encoder :as encoder]
             [video-server.ffmpeg :refer [video-info]]
-            [video-server.file :refer [descendant? filename file-base file-subtype fullpath image? mimetype relative-path subtitle?
+            [video-server.file :refer [descendant? file-base file-subtype filename image? mimetype relative-path subtitle?
                                        title-info video?]]
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
             [video-server.title :refer [best-image episode-title season-title title-seasons]]
-            [video-server.video :refer [sorting-title video-container video-record]]
-            [video-server.util :refer :all])
+            [video-server.util :refer :all]
+            [video-server.video :refer [sorting-title video-container video-record]])
   (:import (java.io File)
            (video_server.model Title VideoKey)))
 

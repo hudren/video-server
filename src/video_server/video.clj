@@ -10,8 +10,7 @@
 
 (ns video-server.video
   (:require [clojure.string :as str]
-            [clojure.tools.logging :as log]
-            [video-server.file :refer [filename file-base file-type mimetype relative-path title-info]]
+            [video-server.file :refer [file-type filename mimetype relative-path title-info]]
             [video-server.format :refer [audio-desc video-desc video-dimension]]
             [video-server.model :refer :all]
             [video-server.util :refer :all])
