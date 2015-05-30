@@ -49,7 +49,7 @@
   "Returns a button for the specified link."
   [link title & [icon]]
   [:paper-button {:raised nil}
-   [:core-icon {:icon (or icon "open-in-new")}]
+   [:iron-icon {:icon (or icon "open-in-new")}]
    [:a {:href link :target "_blank"} title]])
 
 (defn video-links
@@ -99,10 +99,10 @@
 (defn season-tabs
   "Returns the tabs for the given seasons."
   [url seasons selected]
-  (html [:paper-tabs {:link nil :selected (selected-index seasons selected)}
+  (html [:paper-tabs {:selected (selected-index seasons selected)}
          (for [season seasons]
-           [:paper-tab
-            [:a {:href (str url "&s=" (first season)) :horizontal nil :center-center nil :layout nil}
+           [:paper-tab {:link nil}
+            [:a {:href (str url "&s=" (first season)) :class "horizontal center-center layout"}
              (second season)]])]))
 
 (defn episode-titles
@@ -218,7 +218,7 @@
 (deftemplate title-template "templates/title.html"
   [title info video containers season episode]
   [:head :title] (content (full-title title video))
-  [:core-toolbar :div] (content (full-title title video))
+  [:paper-toolbar :div] (content (full-title title video))
   [:div#desc] (when (or (:year info) (:plot info)) identity)
   [:div#poster :img] (set-attr :src (or (best-image :poster title season episode) "placeholder.png"))
   [:div#info] (substitute (title-info title info (rank-containers video) season))
