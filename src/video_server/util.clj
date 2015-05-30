@@ -80,10 +80,10 @@
                 ~@body))
             (split-equally ~thread-count ~coll))))
 
-(defn parall
+(defmacro parall
   "Executes the expressions in parallel, returning the results."
-  [& expr]
-  (map deref (doall (map #(future %) expr))))
+  [& exprs]
+  `(doall (pvalues ~@exprs)))
 
 (defn merge-options
   "Merges two maps by combining their values."
