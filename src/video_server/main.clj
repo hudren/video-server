@@ -82,7 +82,7 @@
     :default "true"
     :parse-fn #(Boolean/parseBoolean %)]
    ["-f" "--format EXT" "Output format: mkv, mp4, m4v"
-    :default "mkv"
+    :default "m4v"
     :parse-fn str/lower-case
     :validate [#{"mkv" "mp4" "m4v"} "The output format must be one of mkv, mp4 or m4v"]]
    ["-s" "--size INT" "Preferred video size when transcoding"
