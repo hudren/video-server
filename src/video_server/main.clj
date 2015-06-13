@@ -82,11 +82,11 @@
     :default "true"
     :parse-fn #(Boolean/parseBoolean %)]
    ["-f" "--format EXT" "Output format: mkv, mp4, m4v"
-    :default "m4v"
+    :default "mkv"
     :parse-fn str/lower-case
     :validate [#{"mkv" "mp4" "m4v"} "The output format must be one of mkv, mp4 or m4v"]]
    ["-s" "--size INT" "Preferred video size when transcoding"
-    :default 720
+    :default 1080
     :parse-fn #(Integer/parseInt %)
     :validate [#{480 720 1080 2160} "The size must be 480, 720, 1080 or 2160"]]
    [nil "--log-level LEVEL" "Override the default logging level"
