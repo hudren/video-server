@@ -1,4 +1,4 @@
-(defproject com.hudren.homevideo/video-server "0.4-SNAPSHOT"
+(defproject com.hudren.homevideo/video-server "0.4"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
