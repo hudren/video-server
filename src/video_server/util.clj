@@ -41,6 +41,11 @@
   (when-not (str/blank? string)
     (->> (re-find pattern string) (drop 1) (map #(Integer/parseInt %)))))
 
+(defn nil-or-blank?
+  "Returns true if the value is nil or a blank string."
+  [v]
+  (or (nil? v) (and (string? v) (str/blank? v))))
+
 (defn prune
   "Prunes entries with blank values from the map."
   [m]

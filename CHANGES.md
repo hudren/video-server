@@ -1,5 +1,9 @@
 # Videos@Home Changelog
 
+## Version 0.5
+
+* Switched from Freebase to The Movie Database
+
 ## Version 0.4
 
 * Added fetching for episode metadata

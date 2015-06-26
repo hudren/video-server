@@ -67,7 +67,7 @@
                    :directors (when-let [d (:director omdb)] (list d))
                    :stars (multi (:actors omdb))
                    :languages (multi (:language omdb))})]
-    (into {} (remove (comp nil? second) md))))
+    (into {} (remove (comp nil-or-blank? second) md))))
 
 (defn omdb-episode-info
   "Extracts and converts fields from the episode metadata."

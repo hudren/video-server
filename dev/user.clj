@@ -12,7 +12,6 @@
             [video-server.ffmpeg :as ffmpeg]
             [video-server.file :as file :refer :all]
             [video-server.format :refer :all]
-            [video-server.freebase :as freebase :refer :all]
             [video-server.handler :as handler]
             [video-server.html :as html]
             [video-server.library :as library :refer :all]
@@ -23,6 +22,7 @@
             [video-server.process :as process :refer :all]
             [video-server.server :as server]
             [video-server.title :as title :refer :all]
+            [video-server.tmdb :as tmdb :refer :all]
             [video-server.tvdb :as tvdb :refer :all]
             [video-server.util :as util :refer :all]
             [video-server.video :as video :refer :all]
@@ -127,17 +127,14 @@
 
 (defn fix-match [title imdb-id & [series?]]
   (when-let [title (title-for-title title)]
-    (let [matches (if series? (query-tv (:title title)) (query-film (:title title)))]
-      (let [fb (first (filter #(= (get-imdb-id %) imdb-id) (map (comp get-topic :mid) matches)))
-            info (fetch-metadata title fb imdb-id)]
-        (save-metadata title info)
-        (when-let [poster (:poster info)]
-          (save-poster title poster))))))
+    (let [info (fetch-metadata title imdb-id)]
+      (save-metadata title info)
+      (when-let [poster (:poster info)]
+        (save-poster title poster)))))
 
 (defn match [title & [series? year duration]]
   (when-let [title (title-for-title title)]
-    (let [fb (freebase-metadata (:title title) series? year duration)
-          info (fetch-metadata title fb)]
+    (let [info (fetch-metadata title)]
       (save-metadata title info)
       (when-let [poster (:poster info)]
         (save-poster title poster)))))

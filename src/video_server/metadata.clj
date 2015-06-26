@@ -15,9 +15,9 @@
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.file :refer [file-ext]]
-            [video-server.freebase :refer [freebase-info freebase-metadata get-imdb-id]]
             [video-server.library :refer [folders-for-title norm-title video-for-key]]
             [video-server.omdb :refer [omdb-info omdb-metadata retrieve-id]]
+            [video-server.tmdb :refer [search-for-ids tmdb-info tmdb-metadata]]
             [video-server.tvdb :refer [tvdb-season-metadata]]
             [video-server.util :refer :all]))
 
@@ -102,15 +102,16 @@
 
 (defn fetch-metadata
   "Returns the movie or series metadata including the poster URL."
-  [item & [fb imdb-id]]
+  [item & [imdb-id]]
   (let [[title year] (title-parts (:title item))
         duration (when-let [duration (:duration item)] (/ duration 60))
         series? (some? (:episode item))
-        fb (or fb (freebase-metadata title series? year duration))
-        db (when-let [id (or imdb-id (get-imdb-id fb))] (retrieve-id id))
-        db (or db (omdb-metadata title series? year duration))]
-    (merge (freebase-info fb) (omdb-info db)
-           {:title (best-title title (:name fb) (:title db))})))
+        {:keys [tmdb-id imdb-id]} (if imdb-id {:imdb-id imdb-id} (search-for-ids title series? year duration))
+        db (when imdb-id (retrieve-id imdb-id))
+        db (or db (omdb-metadata title series? year duration))
+        md (tmdb-metadata (or tmdb-id imdb-id (:imdbid db)) series?)]
+    (merge (tmdb-info md) (omdb-info db)
+           {:title (best-title title (:title db))})))
 
 (defn retrieve-metadata
   "Retrieves metadata from the Internet and persists it in the folder."

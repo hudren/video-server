@@ -1,9 +1,9 @@
-(defproject com.hudren.homevideo/video-server "0.4"
+(defproject com.hudren.homevideo/video-server "0.5-SNAPSHOT"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :dependencies [[org.clojure/clojure "1.7.0-RC1"]
+  :dependencies [[org.clojure/clojure "1.7.0-RC2"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.clojure/core.cache "0.6.4"]
                  [org.clojure/data.json "0.2.6"]
@@ -30,10 +30,10 @@
             [codox "0.8.10"]
             [lein-ns-dep-graph "0.1.0-SNAPSHOT"]]
 
-  :bower-dependencies [[polymer "~1.0.2"]
-                       [paper-styles "PolymerElements/paper-styles#~1.0.3"]
-                       [paper-header-panel "PolymerElements/paper-header-panel#~1.0.1"]
-                       [paper-toolbar "PolymerElements/paper-toolbar#~1.0.0"]
+  :bower-dependencies [[polymer "~1.0.4"]
+                       [paper-styles "PolymerElements/paper-styles#~1.0.7"]
+                       [paper-header-panel "PolymerElements/paper-header-panel#~1.0.2"]
+                       [paper-toolbar "PolymerElements/paper-toolbar#~1.0.2"]
                        [paper-button "PolymerElements/paper-button#~1.0.1"]
                        [paper-tabs "PolymerElements/paper-tabs#~1.0.0"]]
 
