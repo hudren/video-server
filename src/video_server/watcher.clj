@@ -174,7 +174,7 @@
 (defn file-event
   "Processes the file system events related to files."
   [folder event file]
-  (log/trace "file event" event file)
+  (log/trace "file event" event (str file))
   (when ((some-fn video? subtitle? image? metadata?) file)
     (try (case event
            :create (if (stable? file)
@@ -188,7 +188,7 @@
 (defn dir-event
   "Processes the file system events related to directories."
   [folder event dir]
-  (log/trace "dir event" event dir)
+  (log/trace "dir event" event (str dir))
   (try
     (case event
       :create (scan-dir folder dir)
