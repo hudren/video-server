@@ -41,6 +41,19 @@
   (when-not (str/blank? string)
     (->> (re-find pattern string) (drop 1) (map #(Integer/parseInt %)))))
 
+(defn ratio
+  "Returns the int or ratio described by the string."
+  [string]
+  (let [ns (parse-ints string)]
+    (if (> (count ns) 1)
+      (/ (first ns) (second ns))
+      (first ns))))
+
+(defn round
+  "Returns the number rounded to the nearest integer."
+  [n]
+  (Math/round (double n)))
+
 (defn nil-or-blank?
   "Returns true if the value is nil or a blank string."
   [v]
