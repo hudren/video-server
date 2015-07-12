@@ -75,7 +75,9 @@
   (when-let [container (container-to-encode (:containers video) size)]
     (let [file (io/file (:file folder) (:path container))
           info (video-info file)
-          source (source-container (:containers video))]
+          source (source-container (:containers video))
+          vs (video-stream info)
+          as (audio-streams info)]
       {:format fmt
        :size size
        :width (:width container)
@@ -88,9 +90,14 @@
        :video video
        :source? (= container source)
        :original? (and (= container source) (original? container))
-       :video-stream (video-stream info)
-       :audio-streams (audio-streams info)
-       :subtitle-streams (subtitle-streams info)})))
+       :video-stream vs
+       :audio-streams as
+       :subtitle-streams (subtitle-streams info)
+       :fps (ratio (:avg_frame_rate vs))
+       :sar (ratio (:sample_aspect_ratio vs))
+       :dar (ratio (:display_aspect_ratio vs))
+       :square? (= (:sample_aspect_ratio vs) "1:1")
+       :foreign? (not= (:language container) "English")})))
 
 (defn output-file
   "Returns the File representing the encoder output."
