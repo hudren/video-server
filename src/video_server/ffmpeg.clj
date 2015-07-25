@@ -100,10 +100,10 @@
 (defn video-options
   "Returns the ffmpeg options for encoding / copying the video
   stream."
-  [{:keys [video-stream source? size crop scale] :as spec}]
+  [{:keys [video-stream source? size crop scale fps] :as spec}]
   (let [quality (if (= size :480) 18 19)]
     (if (encode-video? spec)
-      ["-map" (str "0:" (:index video-stream)) "-c:v" "libx264" "-crf" quality "-profile:v" "high" "-level" 41]
+      ["-map" (str "0:" (:index video-stream)) "-c:v" "libx264" "-crf" quality "-profile:v" "high" "-level" 41 "-maxrate" "62500k" "-bufsize" "78125k" "-g" (* (round fps) 2) "-pix_fmt" "yuv420p"]
       ["-map" (str "0:" (:index video-stream)) "-c:v" "copy"])))
 
 (defn video-filter-options
