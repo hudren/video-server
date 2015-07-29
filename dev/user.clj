@@ -42,9 +42,6 @@
 (def args [])
 (def options {:name hostname :port port :fake fake :encode encode :fetch fetch :format output-format :size output-size})
 
-(defn video-for-title [title]
-  (first (filter #(.contains ^String (:title %) title) (library/current-videos))))
-
 (defn title-for-title [title]
   (title-for-id (:title (video-key title))))
 
