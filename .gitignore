@@ -7,3 +7,4 @@
 /*.edn
 *.key
 ns-dep-graph.png
+.DS_Store
