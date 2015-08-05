@@ -47,7 +47,7 @@
 (defn up-to-date?
   "Returns whether the file in the library is up to date with respect
   to the file on the file system."
-  [folder ^File file]
+  [folder file]
   (when-let [existing (@files file)]
     (= (.lastModified file) (second existing))))
 
@@ -169,7 +169,7 @@
             (if title-exists
               (alter titles update-in [(:title key) :videos] conj [folder key])
               (alter titles assoc (:title key) (title-record (:title video) folder key)))
-            (alter files assoc file [key (.lastModified ^File file)])
+            (alter files assoc file [key (.lastModified file)])
             (add-title (title-info file))
             {:video (not video-exists) :title (not title-exists)
              :season (and (:season key) (not season-exists))}))))))
@@ -206,7 +206,7 @@
          subtitle (->Subtitle path (filename file) (lang-name lang) lang subtitle-url (mimetype file))]
      (dosync
        (alter library update-in [folder (video-key video) :subtitles] conj subtitle)
-       (alter files assoc file [(video-key video) (.lastModified ^File file)])
+       (alter files assoc file [(video-key video) (.lastModified file)])
        true))))
 
 (defn remove-subtitle
@@ -255,7 +255,7 @@
          image (image-key path)]
      (dosync
        (alter titles assoc-in (cons (:title key) image) url)
-       (alter files assoc file [(:id title) (.lastModified ^File file)])
+       (alter files assoc file [(:id title) (.lastModified file)])
        (add-title file)))))
 
 (defn remove-image
