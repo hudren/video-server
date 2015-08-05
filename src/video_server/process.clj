@@ -29,6 +29,28 @@
 (def ^:private series-chan (chan 100))
 (def ^:private encoder-chan (chan 100))
 
+; Set of Files blocked from processing
+(defonce blocked (ref #{}))
+
+(defn- block-file
+  "Adds the file to the list of blocked files."
+  [file]
+  (let [file (.getCanonicalFile (io/file file))]
+    (log/trace "blocking" (str file))
+    (dosync (alter blocked conj file))))
+
+(defn- unblock-file
+  "Removed the files from the list of blocked files."
+  [file]
+  (let [file (.getCanonicalFile (io/file file))]
+    (log/trace "unblocking" (str file))
+    (dosync (alter blocked disj file))))
+
+(defn file-blocked?
+  [file]
+  (let [file (.getCanonicalFile (io/file file))]
+    (contains? @blocked file)))
+
 (defn should-process-file?
   "Determines whether the file or video should be queued for
   processing."
@@ -126,12 +148,16 @@
   "Processes requests in the encoder channel."
   []
   (go-loop []
-    (let [spec (<! encoder-chan)]
+    (let [spec (<! encoder-chan)
+          output (io/file (:output spec))]
       (when (.exists (:file spec))
         (log/trace "encoding" spec)
-        (when-not (:error (encode-video spec))
-          (add-video (:folder spec) (io/file (:output spec)))
-          (process-file (:folder spec) (:video spec)))))
+        (block-file output)
+        (let [spec (encode-video spec)]
+          (when-not (:error spec)
+            (unblock-file output)
+            (add-video (:folder spec) output)
+            (process-file (:folder spec) (:video spec))))))
     (recur)))
 
 (defn start-processing

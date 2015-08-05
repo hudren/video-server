@@ -16,7 +16,7 @@
             [video-server.library :as library :refer [add-image add-info add-subtitle current-videos files-for-dir has-file?
                                                       norm-title title-for-file up-to-date? video-for-file]]
             [video-server.metadata :refer [read-metadata title-dir]]
-            [video-server.process :refer [process-file process-title]]
+            [video-server.process :refer [file-blocked? process-file process-title]]
             [video-server.util :refer :all]
             [video-server.video :refer [modified]])
   (:import (java.io File FilenameFilter)))
@@ -150,15 +150,16 @@
   "Adds a newly discovered file to the library and queues it for
   processing."
   [folder file]
-  (log/info "adding file" (str file))
-  (when (has-file? folder file)
-    (library/remove-file folder file))
-  (cond
-    (video? file) (add-video folder file)
-    (subtitle? file) (add-subtitle folder file)
-    (image? file) (add-image folder file)
-    (metadata? file) (add-metadata folder file))
-  (process-file folder file))
+  (when-not (file-blocked? file)
+    (log/info "adding file" (str file))
+    (when (has-file? folder file)
+      (library/remove-file folder file))
+    (cond
+      (video? file) (add-video folder file)
+      (subtitle? file) (add-subtitle folder file)
+      (image? file) (add-image folder file)
+      (metadata? file) (add-metadata folder file))
+    (process-file folder file)))
 
 (defn check-pending-files
   "Checks the pending files and adds the stable ones to the library."
