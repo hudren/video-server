@@ -4,6 +4,7 @@
 
 * Switched from Freebase to The Movie Database
 * Added buffer limits for Android streaming requirements
+* Added command line option for using underscores in filenames
 
 ## Version 0.4
 

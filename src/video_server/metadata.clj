@@ -14,7 +14,7 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [video-server.file :refer [file-ext]]
+            [video-server.file :refer [adjust-filename file-ext title-filter]]
             [video-server.library :refer [folders-for-title norm-title video-for-key]]
             [video-server.omdb :refer [omdb-info omdb-metadata retrieve-id]]
             [video-server.tmdb :refer [search-for-ids tmdb-info tmdb-metadata]]
@@ -50,7 +50,8 @@
 (defn metadata-file
   "Returns the File for the video metadata."
   ^java.io.File [title]
-  (io/file (title-dir title) (str (norm-title (:title title)) ".json")))
+  (or (first (.listFiles (title-dir title) (title-filter title #{".json"})))
+      (io/file (title-dir title) (adjust-filename (norm-title (:title title)) ".json"))))
 
 (defn- clj-key
   "Returns a long for strings that represent a number, or a keyword."
@@ -76,7 +77,7 @@
 (defn save-poster
   "Downloads the poster for the specified video."
   [title url & [overwrite]]
-  (let [file (io/file (title-dir title) (str (norm-title (:title title)) (file-ext url)))]
+  (let [file (io/file (title-dir title) (adjust-filename (norm-title (:title title)) (file-ext url)))]
     (when (or overwrite (not (.exists file)))
       (log/info "downloading poster for" (:title title))
       (when-let [contents (retrieve-image url)]

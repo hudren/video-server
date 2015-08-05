@@ -14,6 +14,8 @@
             [video-server.format :refer [dimensions]])
   (:import (java.io File FilenameFilter)))
 
+(def ^:dynamic *use-underscores* false)
+
 (def movie-exts #{".mkv" ".mp4" ".m4v" ".webm" ".avi" ".mov" ".flv" ".f4v" ".wmv" ".mpg" ".mpeg"})
 (def subtitle-exts #{".vtt" ".srt"})
 (def image-exts #{".jpg" ".jpeg" ".png" ".webp"})
@@ -152,20 +154,28 @@
                {:episode (Integer/parseInt (nth nums 1))
                 :episode-title (clean-title episode)})))))
 
+(defn adjust-filename
+  "Returns a standard-conforming filename."
+  ([fname]
+   (if *use-underscores* (str/replace fname \space \_) fname))
+  ([fname ext]
+   (adjust-filename (str fname ext))))
+
 (defn video-filename
   "Returns the filename for the video at the optional size. The
   qualifier can be used to make the filename unique."
   [video ext & [size qual]]
-  (str (->> [(:title video)
-             (if (:season video)
-               (format "S%02dE%02d" (:season video) (:episode video))
-               (when (:episode video) (format "PT%02d" (:episode video))))
-             (:episode-title video)
-             ({:2160 "4K" :1080 "1080p" :720 "720p"} size)]
-            (remove nil?)
-            (str/join " - "))
-       (when qual (str "." qual))
-       ext))
+  (adjust-filename
+    (str (->> [(:title video)
+               (if (:season video)
+                 (format "S%02dE%02d" (:season video) (:episode video))
+                 (when (:episode video) (format "PT%02d" (:episode video))))
+               (:episode-title video)
+               ({:2160 "4K" :1080 "1080p" :720 "720p"} size)]
+              (remove nil?)
+              (str/join " - "))
+         (when qual (str "." qual))
+         ext)))
 
 (defn dir?
   "Returns true if the file represents a directory."

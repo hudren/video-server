@@ -13,7 +13,7 @@
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.ffmpeg :refer [encode-cmd filter-video metadata? video-info]]
-            [video-server.file :refer [file-type fullpath replace-ext video-filename]]
+            [video-server.file :refer [adjust-filename file-type fullpath replace-ext video-filename]]
             [video-server.format :refer [video-dimension video-size video-width]]
             [video-server.util :refer :all]
             [video-server.video :refer [audio-streams container-track subtitle-streams video-stream web-playback?]])
@@ -269,6 +269,6 @@
       (when (= (file-type file) :mkv)
         (when-let [info (mkv-info file)]
           (when-let [id (second (re-find #"Attachment ID (\d+):.*file name 'cover\.jpg'" info))]
-            (let [thumb (io/file (:file folder) (str (:title video) ".thumb.jpg"))]
+            (let [thumb (io/file (:file folder) (adjust-filename (:title video) ".thumb.jpg"))]
               (mkv-extract file id thumb))))))))
 

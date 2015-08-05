@@ -72,7 +72,7 @@
   [["-p" "--port PORT" "HTTP Port"
     :default 8090
     :parse-fn #(Integer/parseInt %)
-    :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
+    :validate [#(< 0 % 0x10000) "Must be a number between 1 and 65535"]]
    ["-n" "--name NAME" "Server name"
     :default (.getHostName (InetAddress/getLocalHost))]
    [nil "--encode BOOL" "Automatically transcode videos and subtitles"
@@ -89,6 +89,9 @@
     :default 720
     :parse-fn #(Integer/parseInt %)
     :validate [#{480 720 1080 2160} "The size must be 480, 720, 1080 or 2160"]]
+   ["-u" "--underscores" "Use underscores in generated filenames"
+    :default false
+    :flag true]
    [nil "--log-level LEVEL" "Override the default logging level"
     :parse-fn log-level
     :validate [identity "The log level must be one of ALL, TRACE, DEBUG, INFO, WARN, ERROR or OFF"]]
@@ -194,5 +197,6 @@
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
     (when-not (installed?) (exit 3 "ffmpeg not found on path."))
+    (when (:underscores options) (alter-var-root #'video-server.file/*use-underscores* (constantly true)))
     (.join (start arguments options))))
 
