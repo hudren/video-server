@@ -84,6 +84,11 @@
   (let [containers (filter web-playback? (:containers video))]
     (some #(and (= (file-type (:path %)) fmt) (= size (-> % :width video-size))) containers)))
 
+(defn- next-encode-size
+  "Returns the next size for the default encoding."
+  [video fmt size]
+  (if (has-fmt-size? video fmt size) ({:2160 :1080 :1080 :720} size) size))
+
 (defn should-encode-video?
   "Returns whether the video should be encoded for downloading or
   casting."
@@ -111,17 +116,18 @@
   (log/debug "processing video" (str video))
   (when (should-encode-subtitles? video)
     (encode-subtitles folder video))
-  (if (should-encode-video? video)
-    (encode folder video fmt (encode-size video size))
-    (when-not *fake-encode*
-      (loop [options options]
-        (when (seq options)
-          (let [{fmt :format size :size} (first options)
-                size (encode-size video size)]
-            (log/trace "checking" fmt size "for" (:title video))
-            (if (should-encode-video? video fmt size)
-              (encode folder video fmt size)
-              (recur (rest options)))))))))
+  (let [size (next-encode-size video fmt size)]
+    (if (and size (should-encode-video? video))
+      (encode folder video fmt (encode-size video size))
+      (when-not *fake-encode*
+        (loop [options options]
+          (when (seq options)
+            (let [{fmt :format size :size} (first options)
+                  size (encode-size video size)]
+              (log/trace "checking" fmt size "for" (:title video))
+              (if (should-encode-video? video fmt size)
+                (encode folder video fmt size)
+                (recur (rest options))))))))))
 
 (defn- start-fetching
   "Processes requests in the fetch channel using real threads."
