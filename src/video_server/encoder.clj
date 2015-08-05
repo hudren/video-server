@@ -90,6 +90,7 @@
        :video video
        :source? (= container source)
        :original? (and (= container source) (original? container))
+       :original-size (-> source :width video-size)
        :video-stream vs
        :audio-streams as
        :subtitle-streams (subtitle-streams info)
@@ -101,12 +102,13 @@
 
 (defn output-file
   "Returns the File representing the encoder output."
-  [{:keys [video ^File file format size scale width height] :as spec}]
-  (let [ext (str "." (name format))
-        filename (video-filename video ext (when scale size))
+  [{:keys [video ^File file format size original-size width height] :as spec}]
+  (let [resized (not= size original-size)
+        ext (str "." (name format))
+        filename (video-filename video ext (when resized size))
         output (io/file (.getParent file) filename)]
     (if (.exists output)
-      (let [filename (video-filename video ext (when scale size) (video-dimension width height))]
+      (let [filename (video-filename video ext (when resized size) (video-dimension width height))]
         (io/file (.getParent file) filename))
       output)))
 
