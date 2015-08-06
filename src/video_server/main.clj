@@ -76,10 +76,10 @@
    ["-n" "--name NAME" "Server name"
     :default (.getHostName (InetAddress/getLocalHost))]
    [nil "--encode BOOL" "Automatically transcode videos and subtitles"
-    :default "true"
+    :default true
     :parse-fn #(Boolean/parseBoolean %)]
    [nil "--fetch BOOL" "Automatically retreive metadata from the Internet"
-    :default "true"
+    :default true
     :parse-fn #(Boolean/parseBoolean %)]
    ["-f" "--format EXT" "Output format: mkv, mp4, m4v"
     :default "mkv"
@@ -90,7 +90,7 @@
     :parse-fn #(Integer/parseInt %)
     :validate [#{480 720 1080 2160} "The size must be 480, 720, 1080 or 2160"]]
    ["-u" "--underscores BOOL" "Use underscores in generated filenames"
-    :default "false"
+    :default false
     :parse-fn #(Boolean/parseBoolean %)]
    [nil "--log-level LEVEL" "Override the default logging level"
     :parse-fn log-level
@@ -196,7 +196,9 @@
       (:help options) (exit 0 (usage summary))
       errors (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
-    (when-not (installed?) (exit 3 "ffmpeg not found on path."))
-    (when (:underscores options) (alter-var-root #'video-server.file/*use-underscores* (constantly true)))
+    (when-not (installed?)
+      (exit 3 "ffmpeg not found on path."))
+    (when (:underscores options)
+      (alter-var-root #'video-server.file/*use-underscores* (constantly true)))
     (.join (start arguments options))))
 
