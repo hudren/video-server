@@ -89,9 +89,9 @@
     :default 720
     :parse-fn #(Integer/parseInt %)
     :validate [#{480 720 1080 2160} "The size must be 480, 720, 1080 or 2160"]]
-   ["-u" "--underscores" "Use underscores in generated filenames"
-    :default false
-    :flag true]
+   ["-u" "--underscores BOOL" "Use underscores in generated filenames"
+    :default "false"
+    :parse-fn #(Boolean/parseBoolean %)]
    [nil "--log-level LEVEL" "Override the default logging level"
     :parse-fn log-level
     :validate [identity "The log level must be one of ALL, TRACE, DEBUG, INFO, WARN, ERROR or OFF"]]
