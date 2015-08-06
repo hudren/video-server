@@ -9,7 +9,7 @@ Features include:
 
 * Streaming 1080p full Bluray quality video to your Android devices
 * Downloading videos and subtitles to your device
-* Casting to Google cast devices (including vtt subtitles)
+* Casting to Chromecast devices (including vtt subtitles)
 * Playback on Chromebooks and other browsers
 * Automatic encoding of videos for downloading and casting
 
