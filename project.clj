@@ -1,14 +1,14 @@
-(defproject com.hudren.homevideo/video-server "0.5-SNAPSHOT"
+(defproject com.hudren.homevideo/video-server "0.5"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+  :dependencies [[org.clojure/clojure "1.8.0-RC1"]
+                 [org.clojure/core.async "0.2.374"]
                  [org.clojure/core.cache "0.6.4"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.zip "0.1.1"]
-                 [org.clojure/tools.cli "0.3.2"]
+                 [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/tools.logging "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.3"]
                  [trptcolin/versioneer "0.2.0"]
