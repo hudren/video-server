@@ -8,3 +8,5 @@
 *.key
 ns-dep-graph.png
 .DS_Store
+*.iml
+/.idea
