@@ -12,7 +12,7 @@
   (:require [clojure.set :as set]
             [clojure.tools.logging :as log])
   (:import (java.io File)
-           (java.nio.file ClosedWatchServiceException FileSystems StandardWatchEventKinds WatchService)))
+           (java.nio.file ClosedWatchServiceException FileSystems StandardWatchEventKinds WatchEvent WatchKey WatchService)))
 
 (def ^:private events
   {StandardWatchEventKinds/ENTRY_CREATE :create
@@ -51,9 +51,9 @@
   (let [dirs (atom dirs)]
     (try
       (loop []
-        (let [k (.take ws)]
+        (let [^WatchKey k (.take ws)]
           (when (.isValid k)
-            (doseq [ev (.pollEvents k)]
+            (doseq [^WatchEvent ev (.pollEvents k)]
               (let [event (events (.kind ev))
                     path (.resolve (.watchable k) (.context ev))
                     file (.toFile path)]
@@ -68,7 +68,7 @@
           (when-not (.isValid k)
             (swap! dirs disj (.watchable k))))
         (recur))
-      (catch ClosedWatchServiceException e (log/info "watch service closed for" (str dir)))
+      (catch ClosedWatchServiceException _ (log/info "watch service closed for" (str dir)))
       (catch Exception e (log/error e "error watching folder" (str dir))))))
 
 (defn watch-directory

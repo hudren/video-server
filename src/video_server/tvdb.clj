@@ -21,7 +21,7 @@
 
 (def ^:private api-key
   (delay (try (str/trim (slurp (io/resource "tvdb.key")))
-              (catch Exception e))))
+              (catch Exception _))))
 
 (defn- multi
   "Returns the pipe separated values as a sequence."
@@ -43,7 +43,7 @@
   "Fetches complete series information as XML."
   [id]
   (try (get-xml cache (str "http://thetvdb.com/api/" @api-key "/series/" id "/all/en.xml"))
-       (catch Exception e)))
+       (catch Exception _)))
 
 (defn- thumbnail-info
   [episode]

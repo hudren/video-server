@@ -17,7 +17,7 @@
 
 (defn apk-version
   "Returns the version information for the specified apk file."
-  [file]
+  [^File file]
   (with-open [parser (ApkParser. file)]
     (let [apk (.getApkMeta parser)]
       {:label (.getLabel apk)
@@ -33,7 +33,7 @@
   [path]
   (try (let [file (io/file (io/resource path))]
          (apk-version file))
-       (catch IllegalArgumentException e
+       (catch IllegalArgumentException _
          (with-open [input (io/input-stream (io/resource path))]
            (let [file (File/createTempFile "video-server" nil)]
              (io/copy input file)

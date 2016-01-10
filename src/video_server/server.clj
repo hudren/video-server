@@ -12,11 +12,12 @@
   (:require [clojure.tools.logging :as log]
             [ring.util.servlet :as servlet])
   (:import (java.util EnumSet)
-           (javax.servlet DispatcherType)
+           (javax.servlet DispatcherType Servlet)
            (org.eclipse.jetty.server NCSARequestLog Request Server)
            (org.eclipse.jetty.server.handler AbstractHandler HandlerList RequestLogHandler)
            (org.eclipse.jetty.servlet DefaultServlet FilterHolder ServletContextHandler ServletHolder)
-           (org.eclipse.jetty.servlets CrossOriginFilter)))
+           (org.eclipse.jetty.servlets CrossOriginFilter)
+           (java.io File)))
 
 (defn proxy-handler
   "Returns an Jetty Handler implementation for the given Ring handler."
@@ -49,7 +50,7 @@
 
 (defn cors-filter-holder
   "Returns a CORS filter required by Google cast for subtitle tracks."
-  []
+  ^FilterHolder []
   (doto (FilterHolder. (CrossOriginFilter.))
     (.setInitParameter CrossOriginFilter/ALLOWED_ORIGINS_PARAM "*")
     (.setInitParameter CrossOriginFilter/ALLOWED_METHODS_PARAM "GET")
@@ -58,9 +59,9 @@
 (defn movies-servlet-holder
   "Returns a servlet that serves the movie files in the specified
   folder."
-  [folder]
-  (doto (ServletHolder. (:name folder) DefaultServlet)
-    (.setInitParameter "resourceBase" (.getAbsolutePath (:file folder)))
+  ^ServletHolder [folder]
+  (doto (ServletHolder. ^String (:name folder) ^Servlet DefaultServlet)
+    (.setInitParameter "resourceBase" (.getAbsolutePath ^File (:file folder)))
     (.setInitParameter "useFileMappedBuffer" "true")))
 
 (defn context
@@ -79,7 +80,7 @@
 
 (defn create-server
   "Returns a Jetty server instance."
-  [port handler folders]
+  [^long port handler folders]
   (doto (Server. port)
     (.setHandler (context handler folders))))
 

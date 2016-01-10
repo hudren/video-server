@@ -15,7 +15,8 @@
             [video-server.model :refer :all]
             [video-server.util :refer :all])
   (:import (java.util Locale UUID)
-           (video_server.model Container Video)))
+           (video_server.model Container Video)
+           (java.io File)))
 
 (def locales (into {} (map #(vector (.getISO3Language %) %) (map #(Locale. %) (Locale/getISOLanguages)))))
 
@@ -66,11 +67,10 @@
 
 (defn video-container
   "Returns a container record for the specified file."
-  [folder file info]
+  [folder ^File file info]
   (let [path (relative-path folder file)
         video (video-stream info)
         audio (audio-streams info)
-        subtitles (subtitle-streams info)
         width (parse-long (:width video))
         height (parse-long (:height video))
         fields {:path path

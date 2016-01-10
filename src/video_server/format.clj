@@ -79,7 +79,7 @@
 (defn format-runtime
   "Returns the duration in minutes."
   [duration]
-  (str (Math/round (/ duration 60)) " mins"))
+  (str (Math/round (double (/ duration 60))) " mins"))
 
 (defn format-date
   "Formats the ISO date string."
@@ -87,7 +87,7 @@
   (try (->> date
             (.parse (SimpleDateFormat. "yyyy-MM-dd"))
             (.format (DateFormat/getDateInstance DateFormat/MEDIUM)))
-       (catch Exception e date)))
+       (catch Exception _ date)))
 
 (defn video-dimension
   "Returns a human-readable description of the video dimensions."

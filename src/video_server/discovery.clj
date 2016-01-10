@@ -10,7 +10,7 @@
 
 (ns video-server.discovery
   (:require [clojure.tools.logging :as log])
-  (:import (java.net DatagramPacket DatagramSocket InetAddress)))
+  (:import (java.net DatagramPacket DatagramSocket)))
 
 (defn receive-request
   "Blocks waiting for a client to broadcast a discovery message."
@@ -28,7 +28,7 @@
 
 (defn send-response
   "Sends the response back to the requester."
-  [socket request url hostname]
+  [socket ^DatagramPacket request url hostname]
   (let [response (str url "|" hostname)
         data (.getBytes response)
         packet (DatagramPacket. data (count data) (.getAddress request) (.getPort request))]
@@ -38,7 +38,7 @@
 (defn listen-for-clients
   "Listens for client requests and responds with information to
   identify this server."
-  [url port hostname]
+  [url ^long port hostname]
   (let [socket (doto (DatagramSocket. port) (.setBroadcast true))]
     (loop []
       (try (let [request (receive-request socket)
@@ -52,7 +52,7 @@
   "Starts the discovery thread, listening for clients."
   [url port hostname]
   (log/info "starting discovery service for" hostname "on" port)
-  (doto (Thread. (partial listen-for-clients url port hostname) "discovery")
+  (doto (Thread. ^Runnable (partial listen-for-clients url port hostname) "discovery")
     (.setDaemon true)
     (.start)))
 

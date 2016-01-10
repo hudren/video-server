@@ -188,25 +188,25 @@
   (some? (exts (file-ext file))))
 
 (defn dir-filter
-  ^java.io.FilenameFilter []
+  ^FilenameFilter []
   (reify FilenameFilter
     (accept [_ dir name] (and (not (hidden? name))
                               (dir? (io/file dir name))))))
 
 (defn ext-filter
   "Returns a filename filter that matches the extensions."
-  ^java.io.FilenameFilter [exts]
+  ^FilenameFilter [exts]
   (reify FilenameFilter
-    (accept [_ dir name] (and (not (hidden? name))
+    (accept [_ _ name] (and (not (hidden? name))
                               (file-with-ext? name exts)))))
 
 (defn title-filter
   "Returns a filename filter that matches the video title and
   extensions."
-  ^java.io.FilenameFilter [title exts]
+  ^FilenameFilter [title exts]
   (let [title (str/lower-case (clean-title title))]
     (reify FilenameFilter
-      (accept [this dir name]
+      (accept [_ _ name]
         (and (not (hidden? name))
              (= title (str/lower-case (:title (title-info (file-base name)))))
              (file-with-ext? name exts))))))
@@ -233,18 +233,18 @@
 
 (defn movie-filter
   "A filter for listing movie files."
-  ^java.io.FilenameFilter []
+  ^FilenameFilter []
   (ext-filter movie-exts))
 
 (defn subtitle-filter
   "A filter for listing subtitle files. If a title is specified, the
   filter will only match files related to that title."
-  (^java.io.FilenameFilter [] (ext-filter subtitle-exts))
-  (^java.io.FilenameFilter [title] (title-filter title subtitle-exts)))
+  (^FilenameFilter [] (ext-filter subtitle-exts))
+  (^FilenameFilter [title] (title-filter title subtitle-exts)))
 
 (defn image-filter
   "A filter for listing image files. If a title is specified, the
   filter will only match files related to that title."
-  (^java.io.FilenameFilter [] (ext-filter image-exts))
-  (^java.io.FilenameFilter [title] (title-filter title image-exts)))
+  (^FilenameFilter [] (ext-filter image-exts))
+  (^FilenameFilter [title] (title-filter title image-exts)))
 

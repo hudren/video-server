@@ -111,8 +111,8 @@
 (defn best-video
   "Returns the best video for the specified season and episode."
   [videos season episode]
-  (let [videos (if season (filter (fn [[f k]] (= (:season k) season)) videos) videos)
-        videos (if episode (filter (fn [[f k]] (= (:episode k) episode)) videos) videos)]
+  (let [videos (if season (filter (fn [[_ k]] (= (:season k) season)) videos) videos)
+        videos (if episode (filter (fn [[_ k]] (= (:episode k) episode)) videos) videos)]
     (first (sort episodes videos))))
 
 (defn best-container

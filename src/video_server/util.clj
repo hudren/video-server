@@ -103,6 +103,11 @@
   [& exprs]
   `(doall (pvalues ~@exprs)))
 
+(defmacro parrun
+  "Executes the expressions in parallel, discarding the results."
+  [& exprs]
+  `(dorun (pvalues ~@exprs)))
+
 (defn merge-options
   "Merges two maps by combining their values."
   [options override]

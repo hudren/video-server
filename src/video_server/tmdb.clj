@@ -10,10 +10,8 @@
 
 (ns video-server.tmdb
   (:require [clojure.core.cache :as cache]
-            [clojure.data.zip.xml :as xml]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.zip :as zip]
             [video-server.util :refer :all])
   (:import (java.net URLEncoder)))
 
@@ -21,7 +19,7 @@
 
 (def ^:private api-key
   (delay (try (str/trim (slurp (io/resource "tmdb.key")))
-              (catch Exception e))))
+              (catch Exception _))))
 
 (defn- authorize
   "Adds the api key to the url."
@@ -73,7 +71,7 @@
             :auth authorize :key-fn norm-keyword))
 
 (defn search-for-ids
-  [title & [series? year duration]]
+  [title & [series? year]]
   (when-let [result (first (:results (search-tmdb title series? year)))]
     (let [id (:id result)
           md (if series? (fetch-tmdb-tv id) (fetch-tmdb-movie id))]

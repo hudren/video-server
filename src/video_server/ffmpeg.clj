@@ -100,7 +100,7 @@
 (defn video-options
   "Returns the ffmpeg options for encoding / copying the video
   stream."
-  [{:keys [video-stream source? size crop scale fps] :as spec}]
+  [{:keys [video-stream size fps] :as spec}]
   (let [quality (if (= size :480) 18 19)]
     (if (encode-video? spec)
       ["-map" (str "0:" (:index video-stream)) "-c:v" "libx264" "-crf" quality "-profile:v" "high" "-level" 41 "-maxrate" "62500k" "-bufsize" "78125k" "-g" (* (round fps) 2) "-pix_fmt" "yuv420p"]
@@ -116,7 +116,7 @@
 
 (defn audio-to-encode
   "Returns the best audio stream to use for the target codec."
-  [audio-streams codec]
+  [audio-streams]
   (let [audio (reverse (sort-by #(parse-long (:bit_rate %)) audio-streams))]
     (or (first (filter #(= (-> % :disposition :default) 1) audio))
         (first audio))))
@@ -138,7 +138,7 @@
   "Returns the ffmpeg options for encoding / copying the aac audio
   stream."
   [audio-streams index codec]
-  (let [audio (audio-to-encode audio-streams codec)
+  (let [audio (audio-to-encode audio-streams)
         exists (= (:codec_name audio) codec)]
     (conj ["-map" (str "0:" (:index audio))
            (str "-c:a:" index) (if exists "copy" codec)]
@@ -150,7 +150,7 @@
   streams."
   [{:keys [audio-streams]}]
   (into (audio-encoder-options audio-streams 0 "aac")
-        (when-let [audio (audio-to-encode audio-streams "ac3")]
+        (when-let [audio (audio-to-encode audio-streams)]
           (when (> (:channels audio) 2)
             (audio-encoder-options audio-streams 1 "ac3")))))
 

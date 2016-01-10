@@ -20,7 +20,8 @@
             [video-server.metadata :refer [read-metadata retrieve-season-metadata retrieve-metadata]]
             [video-server.title :refer [title-seasons]]
             [video-server.util :refer :all]
-            [video-server.video :refer [can-cast? can-download? web-playback?]]))
+            [video-server.video :refer [can-cast? can-download? web-playback?]])
+  (:import (java.io File)))
 
 (def ^:const fetch-threads 4)
 
@@ -156,7 +157,7 @@
   (go-loop []
     (let [spec (<! encoder-chan)
           output (io/file (:output spec))]
-      (when (.exists (:file spec))
+      (when (.exists ^File (:file spec))
         (log/trace "encoding" spec)
         (block-file output)
         (let [spec (encode-video spec)]

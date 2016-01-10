@@ -19,20 +19,21 @@
             [video-server.omdb :refer [omdb-info omdb-metadata retrieve-id]]
             [video-server.tmdb :refer [search-for-ids tmdb-info tmdb-metadata]]
             [video-server.tvdb :refer [tvdb-season-metadata]]
-            [video-server.util :refer :all]))
+            [video-server.util :refer :all])
+  (:import (java.io File)))
 
 (defn retrieve-image
   "Returns the image as a byte array."
-  [url]
+  ^bytes [url]
   (let [resp (client/get url {:as :byte-array})]
     (when (= (:status resp) 200)
       (:body resp))))
 
 (defn title-dir
   "Returns the root directory of the videos belonging to the title."
-  ([title]
+  (^File [title]
    (title-dir title (first (folders-for-title title))))
-  ([title folder]
+  (^File [title folder]
    (let [videos (map video-for-key (filter #(= (first %) folder) (:videos title)))
          containers (mapcat :containers videos)
          pos (-> folder :url decoded-url count inc)
@@ -49,7 +50,7 @@
 
 (defn metadata-file
   "Returns the File for the video metadata."
-  ^java.io.File [title]
+  ^File [title]
   (or (first (.listFiles (title-dir title) (title-filter title #{".json"})))
       (io/file (title-dir title) (adjust-filename (norm-title (:title title)) ".json"))))
 
@@ -72,7 +73,7 @@
   (let [file (metadata-file title)]
     (log/debug "saving metadata" (str file))
     (with-open [w (io/writer file)]
-      (.write w (with-out-str (json/pprint info))))))
+      (.write w ^String (with-out-str (json/pprint info))))))
 
 (defn save-poster
   "Downloads the poster for the specified video."
@@ -109,7 +110,7 @@
         series? (some? (:episode item))
         {:keys [tmdb-id imdb-id]} (if imdb-id {:imdb-id imdb-id} (search-for-ids title series? year duration))
         db (when imdb-id (retrieve-id imdb-id))
-        db (or db (omdb-metadata title series? year duration))
+        db (or db (omdb-metadata title series? year))
         md (tmdb-metadata (or tmdb-id imdb-id (:imdbid db)) series?)]
     (merge (tmdb-info md) (omdb-info db)
            {:title (best-title title (:title db))})))

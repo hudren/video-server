@@ -22,7 +22,7 @@
             [video-server.server :refer [start-server]]
             [video-server.watcher :refer [start-watcher]])
   (:import (ch.qos.logback.classic Level Logger)
-           (java.io PushbackReader)
+           (java.io File PushbackReader)
            (java.net InetAddress)
            (org.slf4j LoggerFactory))
   (:gen-class))
@@ -118,7 +118,7 @@
 
 (defn read-edn
   "Reads EDN data from a file."
-  [file]
+  [^File file]
   (when (.isFile file)
     (with-open [rdr (PushbackReader. (io/reader file))]
       (edn/read rdr))))

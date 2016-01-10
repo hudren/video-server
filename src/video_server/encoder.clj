@@ -102,7 +102,7 @@
 
 (defn output-file
   "Returns the File representing the encoder output."
-  [{:keys [video ^File file format size original-size width height] :as spec}]
+  [{:keys [video ^File file format size original-size width height]}]
   (let [resized (not= size original-size)
         ext (str "." (name format))
         filename (video-filename video ext (when resized size))

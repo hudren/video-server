@@ -98,7 +98,7 @@
   [folder path]
   (log/info "scanning" (str path) "as" (:name folder))
   (scan-videos folder path)
-  (parall (scan-images folder path)
+  (parrun (scan-images folder path)
           (scan-subtitles folder path))
   (doseq [video (sort-by modified (current-videos folder path))]
     (process-file folder video)))
