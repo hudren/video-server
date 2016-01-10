@@ -154,13 +154,14 @@
   [cache url & {:keys [auth key-fn]}]
   (if (cache/has? @cache url)
     (swap! cache #(cache/hit % url))
-    (do
+    (try
       (log/trace "fetching" url)
       (let [resp (client/get (if auth (auth url) url) {:accept :json})]
         (when (= (:status resp) 200)
           (log/trace "fetched" url)
           (let [json (json/read-str (:body resp) :key-fn (or key-fn (comp keyword str/lower-case)))]
-            (swap! cache #(cache/miss % url json)))))))
+            (swap! cache #(cache/miss % url json)))))
+      (catch Exception _ nil)))
   (get @cache url))
 
 (defn get-xml
@@ -168,12 +169,13 @@
   [cache url]
   (if (cache/has? @cache url)
     (swap! cache #(cache/hit % url))
-    (do
+    (try
       (log/trace "fetching" url)
       (let [resp (client/get url)]
         (when (= (:status resp) 200)
           (log/trace "fetched" url)
           (let [xml (xml/parse (ByteArrayInputStream. (.getBytes (:body resp))))]
-            (swap! cache #(cache/miss % url xml)))))))
+            (swap! cache #(cache/miss % url xml)))))
+      (catch Exception _ nil)))
   (get @cache url))
 
