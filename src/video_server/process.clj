@@ -118,7 +118,7 @@
   (when (should-encode-subtitles? video)
     (encode-subtitles folder video))
   (let [size (next-encode-size video fmt size)]
-    (if (and size (should-encode-video? video))
+    (if (and size (should-encode-video? video fmt size))
       (encode folder video fmt (encode-size video size))
       (when-not *fake-encode*
         (loop [options options]
