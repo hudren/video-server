@@ -32,7 +32,7 @@
 (def hostname (.getHostName (InetAddress/getLocalHost)))
 (def port 8090)
 (def output-format "mkv")
-(def output-size 720)
+(def output-size 1080)
 
 (def log-level "debug")
 (def fake true)
