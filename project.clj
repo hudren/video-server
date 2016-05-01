@@ -1,29 +1,29 @@
-(defproject com.hudren.homevideo/video-server "0.5.1"
+(defproject com.hudren.homevideo/video-server "0.5.2-SNAPSHOT"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.async "0.2.374"]
-                 [org.clojure/core.cache "0.6.4"]
+                 [org.clojure/core.cache "0.6.5"]
                  [org.clojure/data.json "0.2.6"]
-                 [org.clojure/data.zip "0.1.1"]
+                 [org.clojure/data.zip "0.1.2"]
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [ch.qos.logback/logback-classic "1.1.3"]
+                 [ch.qos.logback/logback-classic "1.1.7"]
                  [trptcolin/versioneer "0.2.0"]
-                 [net.dongliu/apk-parser "2.0.15"]
-                 [clj-http "2.0.1"]
-                 [org.eclipse.jetty/jetty-server "9.2.10.v20150310"]
-                 [org.eclipse.jetty/jetty-servlet "9.2.10.v20150310"]
-                 [org.eclipse.jetty/jetty-servlets "9.2.10.v20150310"]
+                 [net.dongliu/apk-parser "2.1.1"]
+                 [clj-http "3.0.1"]
+                 [org.eclipse.jetty/jetty-server "9.2.16.v20160414"]
+                 [org.eclipse.jetty/jetty-servlet "9.2.16.v20160414"]
+                 [org.eclipse.jetty/jetty-servlets "9.2.16.v20160414"]
                  [javax.servlet/javax.servlet-api "3.1.0"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-devel "1.4.0"]
                  [ring/ring-servlet "1.4.0" :exclusions [javax.servlet/servlet-api]]
-                 [ring/ring-defaults "0.1.5" :exclusions [javax.servlet/servlet-api]]
+                 [ring/ring-defaults "0.2.0" :exclusions [javax.servlet/servlet-api]]
                  [bk/ring-gzip "0.1.1"]
-                 [compojure "1.4.0"]
+                 [compojure "1.5.0"]
                  [enlive "1.1.6"]]
 
   :plugins [[lein-bower "0.5.1"]
