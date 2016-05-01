@@ -15,7 +15,8 @@
             [video-server.library :refer [video-for-key]]
             [video-server.title :refer [best-containers best-image best-video episode-title full-title has-episodes? has-parts?
                                         has-seasons? season-desc season-titles]]
-            [video-server.video :refer [rank-containers web-playback?]])
+            [video-server.video :refer [rank-containers web-playback?]]
+            [clojure.tools.logging :as log])
   (:import (java.net URLEncoder)
            (java.util Locale)))
 
@@ -216,7 +217,7 @@
   [:table#episode-containers :tbody] (content (for [container containers] (container-desc container))))
 
 (deftemplate title-template "templates/title.html"
-  [title info video containers season episode]
+  [title info video containers season episode exclude]
   [:head :title] (content (full-title title video))
   [:paper-toolbar :div] (content (full-title title video))
   [:div#desc] (when (or (:year info) (:plot info)) identity)
@@ -230,16 +231,17 @@
                     (content (episode-list title season episode)))
   [:div#episode] (when (has-episodes? title season)
                    (substitute (episode-info (get-in info [:seasons season :episodes episode]) video containers)))
-  [:video] (when (seq containers) (substitute (video-tag video containers))))
+  [:video] (when-let [containers (seq (remove #(get exclude (:filetype %)) containers))]
+             (substitute (video-tag video containers))))
 
 (defn title-page
   "Returns the page displaying the title w/episodes and parts."
-  [title season episode]
+  [title season episode exclude]
   (let [season (or season (ffirst (season-titles title)))
         episode (or episode (ffirst (episode-titles title season)))
         video (video-for-key (best-video (:videos title) season episode))
         containers (best-containers video)]
-    (title-template title (:info title) video containers season episode)))
+    (title-template title (:info title) video containers season episode exclude)))
 
 ;;; Downloads page
 

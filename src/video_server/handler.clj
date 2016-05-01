@@ -18,7 +18,8 @@
             [video-server.android :refer [android-version apk-filename]]
             [video-server.html :refer [downloads-template title-page titles-page]]
             [video-server.library :refer [current-titles library-etag title-for-id title-listing video-listing]]
-            [video-server.util :refer :all]))
+            [video-server.util :refer :all]
+            [clojure.tools.logging :as log]))
 
 (defonce ^:private base-url (atom "http://localhost"))
 (defonce ^:private dirs (atom []))
@@ -42,6 +43,19 @@
    :headers (merge {"Content-Type" "application/json"} headers)
    :body (json/write-str data)})
 
+(defn user-agent [request]
+  "Returns the user agent header from the request."
+  (-> request :headers (get "user-agent")))
+
+(defn safari? [^String agent]
+  "Returns whether the client browser is Safari."
+  (and (.contains agent "Safari") (not (.contains agent "Chrome"))))
+
+(defn excluded-filetypes [agent]
+  "Returns a set of keyword file types, or nil if there are no
+  restrictions."
+  (if (safari? agent) #{:mkv}))
+
 (defn titles
   "Returns the index or home page listing the titles."
   []
@@ -49,10 +63,10 @@
     (html-response (titles-page titles @dirs))))
 
 (defn title
-  "Returns a title page."
-  [id season episode]
+  "Returns a title page, excluding the specified filetypes."
+  [id season episode exclude]
   (when-let [title (title-for-id id)]
-    (html-response (title-page title season episode))))
+    (html-response (title-page title season episode exclude))))
 
 (defn downloads
   "Returns the downloads page."
@@ -79,7 +93,7 @@
 
 (defroutes app-routes
   (GET "/" [] (titles))
-  (GET "/title" [id s e] (title id (parse-long s) (parse-long e)))
+  (GET "/title" [id s e :as r] (title id (parse-long s) (parse-long e) (excluded-filetypes (user-agent r))))
   (GET "/downloads" [] (downloads))
   (GET "/api/v1/videos" [] (videos-api))
   (GET "/api/v1/titles" {:keys [headers]} (titles-api headers))
