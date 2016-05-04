@@ -167,9 +167,9 @@
 
 (defn set-default-track
   "Sets the default video, audio or subtitle track."
-  [file track]
+  [file track & [info]]
   (when (and (= (file-type file) :mkv) @mkvpropedit)
-    (let [info (video-info (io/file file))
+    (let [info (or info (video-info (io/file file)))
           streams (:streams info)
           default (container-track info track)
           codec (:codec_type default)
@@ -189,6 +189,13 @@
               exec (exec cmd)]
           (when-not (zero? (:exit exec))
             (log/warn "changing default track failed:" \newline cmd \newline exec)))))))
+
+(defn set-default-audio-track
+  "Ensures only one track is set as the default audio track."
+  [file]
+  (let [info (video-info (io/file file))
+        track (-> info audio-streams default-audio :index)]
+    (set-default-track file track info)))
 
 (def mkclean (delay (exec? "mkclean")))
 
@@ -220,7 +227,8 @@
       (if (zero? (:exit exec))
         (do
           (log/info "encoding was successful")
-          (clear-subtitles (:output spec))
+          (set-default-audio-track output)
+          (clear-subtitles output)
           (clean spec)
           spec)
         (do
