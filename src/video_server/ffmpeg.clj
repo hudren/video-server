@@ -116,9 +116,10 @@
 
 (defn audio-to-encode
   "Returns the best audio stream to use for the target codec."
-  [audio-streams]
+  [audio-streams codec]
   (let [audio (reverse (sort-by #(parse-long (:bit_rate %)) audio-streams))]
-    (or (first (filter #(= (-> % :disposition :default) 1) audio))
+    (or (first (filter #(= (-> % :codec_name) codec) audio))
+        (first (filter #(= (-> % :disposition :default) 1) audio))
         (first audio))))
 
 (defn audio-codec-options
@@ -138,7 +139,7 @@
   "Returns the ffmpeg options for encoding / copying the aac audio
   stream."
   [audio-streams index codec]
-  (let [audio (audio-to-encode audio-streams)
+  (let [audio (audio-to-encode audio-streams codec)
         exists (= (:codec_name audio) codec)]
     (conj ["-map" (str "0:" (:index audio))
            (str "-c:a:" index) (if exists "copy" codec)]
@@ -150,7 +151,7 @@
   streams."
   [{:keys [audio-streams]}]
   (into (audio-encoder-options audio-streams 0 "aac")
-        (when-let [audio (audio-to-encode audio-streams)]
+        (when-let [audio (audio-to-encode audio-streams "ac3")]
           (when (> (:channels audio) 2)
             (audio-encoder-options audio-streams 1 "ac3")))))
 
