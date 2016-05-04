@@ -177,6 +177,6 @@
    (subtitle-options spec)
    "-f" (ffmpeg-format (:format spec))
    (format-options spec)
-   "-threads" 0
+   ;"-threads" 0
    (:output spec)])
 
