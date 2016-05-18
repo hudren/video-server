@@ -1,0 +1,5 @@
+#!/bin/bash
+
+docker build --tag java .
+docker tag java java:8
+docker tag java java:1.8.0

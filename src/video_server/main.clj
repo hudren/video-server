@@ -43,12 +43,30 @@
     (or (some (partial exists? home) ["Videos" "Movies" "My Videos"])
         (.getCanonicalPath (io/file home "Videos")))))
 
+(defn additional-folders
+  "Returns a sequence of externally specified folders, or nil."
+  []
+  (if-let [volumes (System/getenv "VIDEOS_VOLUMES")]
+    (map (partial str "/Volumes/") (str/split volumes #","))))
+
+(defn external-address
+  "Returns a externally specified host by which clients can address
+  this server."
+  []
+  (try (InetAddress/getByName (or (System/getenv "VIDEOS_HOST") "dockerhost"))
+       (catch Exception _ nil)))
+
 (defn host-url
   "Returns a url for this web server based on the IP address and web port."
   [port]
-  (let [addr (.getAddress (InetAddress/getLocalHost))
+  (let [addr (.getAddress (or (external-address) (InetAddress/getLocalHost)))
         quads (mapv (partial bit-and 0xFF) addr)]
     (apply format "http://%d.%d.%d.%d:%d" (conj quads port))))
+
+(defn server-name
+  "Returns an externally specified server name."
+  []
+  (System/getenv "VIDEOS_NAME"))
 
 (defn log-level
   "Returns the Logback level from the string."
@@ -156,7 +174,7 @@
   (if (.isFile file)
     (let [settings (read-edn file)
           options (merge options (dissoc settings :folders))]
-      [(make-folders (:folders settings) url) options])
+      [(make-folders (concat (:folders settings) dirs) url) options])
     [(make-folders dirs url) options]))
 
 (defn process-args
@@ -168,7 +186,8 @@
         dirs (if (and file (.exists file))
                (or (next args) (list (default-folder)))
                (if (seq args) args (list (default-folder))))
-        dirs (filter #(.exists (io/file %)) dirs)]
+        dirs (concat dirs (additional-folders))
+        dirs (filter #(.isDirectory (io/file %)) dirs)]
     (process-settings file dirs options url)))
 
 (defn start
@@ -183,7 +202,7 @@
     (start-processing (:encode options) (:fetch options) fmt size)
     (start-watcher folders)
     (try (let [server (start-server url (:port options) (app url folders) folders)]
-           (start-discovery url discovery-port (:name options))
+           (start-discovery url discovery-port (or (server-name) (:name options)))
            server)
          (catch Exception e (exit 4 (str "Cannot start server: " (.getMessage e)))))))
 

@@ -10,3 +10,5 @@ ns-dep-graph.png
 .DS_Store
 *.iml
 /.idea
+*.jar
+*.rpm

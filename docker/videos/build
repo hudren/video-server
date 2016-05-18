@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Published Videos@Home and builds a Docker image
+
+# ./publish
+
+if [ -f ../../target/video-server.jar ]; then
+  rsync -a ../../target/video-server.jar .
+fi
+
+docker build --tag videos .

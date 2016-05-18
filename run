@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# Runs Videos@Home server in a docker container
+
+IP=$(ipconfig getifaddr en0)
+if [ -z "$IP" ]; then
+  IP=$(ip addr)
+fi
+
+NAME=$(cut -d '.' -f1 <<< "$HOSTNAME")
+NAME=${NAME//-/ }
+
+if [ "$1" == "new" ]; then
+  shift 1
+  docker rm -vf video-server >/dev/null
+fi
+
+docker inspect video-server >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "Starting existing container"
+  docker start video-server
+else
+  echo "Starting a new container"
+  docker run -d \
+    --restart="unless-stopped" \
+    -v ~/Movies:/Movies \
+    -v /Volumes:/Volumes \
+    -p 8090:8090 -p 8394:8394/udp \
+    -e VIDEOS_NAME="$NAME" \
+    -e VIDEOS_HOST=$IP \
+    -e VIDEOS_VOLUMES=Movies \
+    --name video-server \
+    videos
+fi

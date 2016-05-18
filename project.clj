@@ -1,4 +1,4 @@
-(defproject com.hudren.homevideo/video-server "0.5.2"
+(defproject com.hudren.homevideo/video-server "0.5.3-SNAPSHOT"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -8,12 +8,12 @@
                  [org.clojure/core.cache "0.6.5"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.zip "0.1.2"]
-                 [org.clojure/tools.cli "0.3.3"]
+                 [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.7"]
                  [trptcolin/versioneer "0.2.0"]
                  [net.dongliu/apk-parser "2.1.1"]
-                 [clj-http "3.0.1"]
+                 [clj-http "3.1.0"]
                  [org.eclipse.jetty/jetty-server "9.2.16.v20160414"]
                  [org.eclipse.jetty/jetty-servlet "9.2.16.v20160414"]
                  [org.eclipse.jetty/jetty-servlets "9.2.16.v20160414"]
@@ -46,7 +46,7 @@
   :repl-options {:init-ns user}
 
   :profiles {:dev {:source-paths ["dev"]}
-             :prod {}
+             :prod {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
              :uberjar {:aot :all}}
 
   :eastwood {:continue-on-exception true}

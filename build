@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Grab the latest android app
+if [ -f "../video-client/build/outputs/apk/video-client-release.apk" ] ; then
+  rsync -a ../video-client/build/outputs/apk/video-client-release.apk resources/public
+fi
+
+# Build the server app
+lein build
+
+pushd docker/videos >/dev/null
+./build
+popd >/dev/null
