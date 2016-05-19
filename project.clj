@@ -30,12 +30,12 @@
             [codox "0.8.10"]
             [lein-ns-dep-graph "0.1.0-SNAPSHOT"]]
 
-  :bower-dependencies [[polymer "~1.0.4"]
-                       [paper-styles "PolymerElements/paper-styles#~1.0.7"]
-                       [paper-header-panel "PolymerElements/paper-header-panel#~1.0.2"]
-                       [paper-toolbar "PolymerElements/paper-toolbar#~1.0.2"]
-                       [paper-button "PolymerElements/paper-button#~1.0.1"]
-                       [paper-tabs "PolymerElements/paper-tabs#~1.0.0"]]
+  :bower-dependencies [[polymer "1.4.0"]
+                       [paper-styles "PolymerElements/paper-styles#1.1.4"]
+                       [paper-header-panel "PolymerElements/paper-header-panel#1.1.5"]
+                       [paper-toolbar "PolymerElements/paper-toolbar#1.1.4"]
+                       [paper-button "PolymerElements/paper-button#1.0.11"]
+                       [paper-tabs "PolymerElements/paper-tabs#1.5.0"]]
 
   :bower {:directory "resources/public/components"}
 
