@@ -35,7 +35,8 @@
                        [paper-header-panel "PolymerElements/paper-header-panel#1.1.5"]
                        [paper-toolbar "PolymerElements/paper-toolbar#1.1.4"]
                        [paper-button "PolymerElements/paper-button#1.0.11"]
-                       [paper-tabs "PolymerElements/paper-tabs#1.5.0"]]
+                       [paper-tabs "PolymerElements/paper-tabs#1.5.0"]
+                       [iron-icons "PolymerElements/iron-icons#1.1.3"]]
 
   :bower {:directory "resources/public/components"}
 

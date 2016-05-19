@@ -49,9 +49,9 @@
 (defn video-link
   "Returns a button for the specified link."
   [link title & [icon]]
-  [:paper-button {:raised nil}
-   [:iron-icon {:icon (or icon "open-in-new")}]
-   [:a {:href link :target "_blank"} title]])
+  [:a {:href link :target "_blank"}
+   [:paper-button {:raised nil}
+    [:div [:iron-icon {:icon (or icon "open-in-new")}] title]]])
 
 (defn video-links
   "Returns a sequence of links for the video."
