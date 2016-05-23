@@ -1,7 +1,0 @@
-#!/bin/bash
-
-if [ ! -f mkclean-0.8.7-1.1.x86_64.rpm ]; then
-  curl -O ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/Simmphonie/openSUSE_13.2/x86_64/mkclean-0.8.7-1.1.x86_64.rpm
-fi
-
-docker build -t ffmpeg .

@@ -30,5 +30,5 @@ else
     -e VIDEOS_HOST=$IP \
     -e VIDEOS_VOLUMES=Movies \
     --name video-server \
-    videos
+    hudren/video-server
 fi
