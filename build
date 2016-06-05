@@ -1,15 +1,23 @@
 #!/bin/bash
 
+NAME=hudren/video-server
+VERSION=$(echo $(head -n 1 project.clj) | sed 's/.*"\(.*\)".*/\1/')
+MINOR_VERSION=$(echo $VERSION | sed 's/\([0-9]*\)\.\([0-9]*\).*/\1.\2/')
+
 # Grab the latest android app
 if [ -f "../video-client/build/outputs/apk/video-client-release.apk" ] ; then
   rsync -a ../video-client/build/outputs/apk/video-client-release.apk resources/public
 fi
 
 # Build the server app
-lein build
-
-if [ ! -f mkclean-0.8.7-1.1.x86_64.rpm ]; then
-  curl -O ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/Simmphonie/openSUSE_13.2/x86_64/mkclean-0.8.7-1.1.x86_64.rpm
+if [ ! -f "target/video-server.jar" ]; then
+  lein with-profiles prod uberjar
 fi
 
-docker build -t hudren/video-server .
+echo "Building docker image for Videos@Home $VERSION ($MINOR_VERSION)"
+docker build -t $NAME .
+
+docker tag $NAME $NAME:$VERSION
+if [[ ! $VERSION =~ .*-SNAPSHOT$ ]] && [[ $MINOR_VERSION ]]; then
+    docker tag $NAME $NAME:$MINOR_VERSION
+fi
