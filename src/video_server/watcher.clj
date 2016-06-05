@@ -13,8 +13,8 @@
             [clojure.tools.logging :as log]
             [video-server.directory :refer [watch-directory]]
             [video-server.file :refer [image-filter image? metadata? movie-filter subtitle-filter subtitle? video?]]
-            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos files-for-dir has-file?
-                                                      norm-title title-for-file up-to-date? video-for-file]]
+            [video-server.library :as library :refer [add-image add-info add-subtitle current-videos files-for-dir
+                                                      has-file? norm-title title-for-file up-to-date? video-for-file]]
             [video-server.metadata :refer [read-metadata title-dir]]
             [video-server.process :refer [file-blocked? process-file process-title]]
             [video-server.util :refer :all]

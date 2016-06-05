@@ -12,7 +12,8 @@
   (:require [clojure.set :as set]
             [clojure.tools.logging :as log])
   (:import (java.io File)
-           (java.nio.file ClosedWatchServiceException FileSystems StandardWatchEventKinds WatchEvent WatchKey WatchService)))
+           (java.nio.file ClosedWatchServiceException FileSystems StandardWatchEventKinds WatchEvent WatchKey
+                          WatchService)))
 
 (def ^:private events
   {StandardWatchEventKinds/ENTRY_CREATE :create

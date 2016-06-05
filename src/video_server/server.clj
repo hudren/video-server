@@ -11,13 +11,13 @@
 (ns video-server.server
   (:require [clojure.tools.logging :as log]
             [ring.util.servlet :as servlet])
-  (:import (java.util EnumSet)
-           (javax.servlet DispatcherType Servlet)
+  (:import (java.io File)
+           (java.util EnumSet)
+           (javax.servlet DispatcherType)
            (org.eclipse.jetty.server NCSARequestLog Request Server)
            (org.eclipse.jetty.server.handler AbstractHandler HandlerList RequestLogHandler)
            (org.eclipse.jetty.servlet DefaultServlet FilterHolder ServletContextHandler ServletHolder)
-           (org.eclipse.jetty.servlets CrossOriginFilter)
-           (java.io File)))
+           (org.eclipse.jetty.servlets CrossOriginFilter)))
 
 (defn proxy-handler
   "Returns an Jetty Handler implementation for the given Ring handler."
