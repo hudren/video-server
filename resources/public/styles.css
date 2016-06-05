@@ -41,6 +41,11 @@ a {
   text-decoration: none;
 }
 
+a.inline {
+  font-style: italic;
+  font-weight: bold;
+}
+
 div.actions {
   margin-top: 2em;
   text-align: center;

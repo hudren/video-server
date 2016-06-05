@@ -1,4 +1,4 @@
-(defproject com.hudren.homevideo/video-server "0.5.3"
+(defproject com.hudren.homevideo/video-server "0.5.4-SNAPSHOT"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -24,7 +24,7 @@
                  [ring/ring-defaults "0.2.0" :exclusions [javax.servlet/servlet-api]]
                  [bk/ring-gzip "0.1.1"]
                  [compojure "1.5.0"]
-                 [enlive "1.1.6"]]
+                 [hiccup "1.0.5"]]
 
   :plugins [[lein-bower "0.5.1"]
             [codox "0.8.10"]

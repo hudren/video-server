@@ -16,10 +16,9 @@
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version apk-filename]]
-            [video-server.html :refer [downloads-template title-page titles-page]]
+            [video-server.html :refer [downloads-page legal-page not-found-page title-page titles-page]]
             [video-server.library :refer [current-titles library-etag title-for-id title-listing video-listing]]
-            [video-server.util :refer :all]
-            [clojure.tools.logging :as log]))
+            [video-server.util :refer :all]))
 
 (defonce ^:private base-url (atom "http://localhost"))
 (defonce ^:private dirs (atom []))
@@ -32,16 +31,16 @@
 (defn html-response
   "Generates a HTML response from the data."
   [data & [status headers]]
-  {:status (or status 200)
+  {:status  (or status 200)
    :headers (merge {"Content-Type" "text/html;charset=utf-8"} headers)
-   :body data})
+   :body    data})
 
 (defn json-response
   "Generates a JSON response from the data."
   [data & [status headers]]
-  {:status (or status 200)
+  {:status  (or status 200)
    :headers (merge {"Content-Type" "application/json"} headers)
-   :body (json/write-str data)})
+   :body    (json/write-str data)})
 
 (defn user-agent [request]
   "Returns the user agent header from the request."
@@ -71,7 +70,12 @@
 (defn downloads
   "Returns the downloads page."
   []
-  (html-response (downloads-template @base-url (apk-filename))))
+  (html-response (downloads-page @base-url (apk-filename))))
+
+(defn legal
+  "Returns the legal page."
+  []
+  (html-response (legal-page)))
 
 (defn videos-api
   "Responds with a list of available videos."
@@ -91,15 +95,17 @@
   []
   (json-response @android-version))
 
-(defroutes app-routes
+(defroutes
+  app-routes
   (GET "/" [] (titles))
   (GET "/title" [id s e :as r] (title id (parse-long s) (parse-long e) (excluded-filetypes (user-agent r))))
-  (GET "/downloads" [] (downloads))
   (GET "/api/v1/videos" [] (videos-api))
   (GET "/api/v1/titles" {:keys [headers]} (titles-api headers))
   (GET "/api/v1/android" [] (android-api))
+  (GET "/downloads" [] (downloads))
+  (GET "/legal" [] (legal))
   (resources "/" {:root "public"})
-  (not-found "Not Found"))
+  (not-found (not-found-page)))
 
 (defn app
   [url folders]

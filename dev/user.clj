@@ -4,7 +4,8 @@
             [clojure.java.browse :refer [browse-url]]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [net.cgrand.reload :refer [auto-reload]]
+            [hiccup.core :refer [html]]
+            [hiccup.page :refer [html5]]
             [video-server.android :as android]
             [video-server.directory :as directory]
             [video-server.discovery :as discovery]
@@ -27,7 +28,8 @@
             [video-server.util :as util :refer :all]
             [video-server.video :as video :refer :all]
             [video-server.watcher :as watcher])
-  (:import (java.net InetAddress)))
+  (:import (java.net InetAddress)
+           (java.io File)))
 
 (def hostname (.getHostName (InetAddress/getLocalHost)))
 (def port 8090)
@@ -144,7 +146,7 @@
 
 (defn update-file
   "Processes a file, preserving it's modification time."
-  [file f & [output]]
+  [^File file f & [output]]
   (let [modified (.lastModified file)]
     (f file)
     (.setLastModified (or output file) modified)))
@@ -166,8 +168,7 @@
 (defn start []
   (main/set-log-level (main/log-level log-level))
   (binding [encoder/*fake-encode* (and fake (nil? (:encode options)))]
-    (main/start args options))
-  (auto-reload (find-ns 'video-server.html)))
+    (main/start args options)))
 
 (defn encode-title [title]
   (when-let [[folder video] (folder-video title)]
@@ -185,5 +186,5 @@
   ([] (browse-url (str "http://localhost:" port)))
   ([title]
    (when-let [title (title-for-title title)]
-     (when title (browse-url (str "http://localhost:" port "/" (html/title-url title)))))))
+     (when title (browse-url (str "http://localhost:" port "/" (video-server.templates.title/title-url title)))))))
 
