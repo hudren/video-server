@@ -10,9 +10,9 @@
 
 (ns video-server.html
   (:require [video-server.library :refer [video-for-key]]
-            [video-server.templates.pages :refer [downloads-template legal-template not-found-template]]
-            [video-server.templates.title :refer [episode-titles title-template]]
-            [video-server.templates.titles :refer [no-titles-template titles-template]]
+            [video-server.html.pages :refer [downloads-template legal-template not-found-template]]
+            [video-server.html.title :refer [episode-titles title-template]]
+            [video-server.html.titles :refer [no-titles-template titles-template]]
             [video-server.title :refer [best-containers best-video episode-title season-titles]]))
 
 ;;; Titles
@@ -27,8 +27,8 @@
   (let [season (or season (ffirst (season-titles title)))
         episode (or episode (ffirst (episode-titles title season)))
         video (video-for-key (best-video (:videos title) season episode))
-        containers (best-containers video)]
-    (title-template title (:info title) video containers season episode exclude)))
+        playable (remove #(get exclude (:filetype %)) (best-containers video))]
+    (title-template title (:info title) video playable season episode)))
 
 ;;; Download
 

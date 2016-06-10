@@ -1,27 +1,21 @@
 html,body {
-  height: 100%;
-  margin: 0;
-  color: rgba(0,0,0,0.87);
+  font-size: initial;
   background-color: #FAFAFA;
-  font-family: Roboto, Noto, 'Helvetica Neue', Helvetica, sans-serif;
 }
 
-paper-button:hover {
+p, ul, ol {
+  font-size: initial;
+  line-height: normal;
+}
+
+button.mdl-button:hover {
   background: white;
 }
-paper-button.default {
-  color: #FAFAFA;
-  background: #00B0FF;
+button.mdl-button i {
+  padding-right: 0.35em;
 }
-paper-button.default:hover {
-  background: #40C4FF;
-}
-paper-button iron-icon {
-  padding-right: 0.57em;
-}
-paper-button a:link, paper-button a:visited {
-  color: inherit;
-  text-decoration: none;
+.mdl-navigation__link button.mdl-button i {
+  padding-right: 0;
 }
 
 div#content {
@@ -51,3 +45,8 @@ div.actions {
   text-align: center;
 }
 
+@media (max-width: 693px) {
+  .mdl-layout__header-row {
+    padding-left: 16px;
+  }
+}

@@ -26,19 +26,8 @@
                  [compojure "1.5.0"]
                  [hiccup "1.0.5"]]
 
-  :plugins [[lein-bower "0.5.1"]
-            [codox "0.8.10"]
+  :plugins [[codox "0.8.10"]
             [lein-ns-dep-graph "0.1.0-SNAPSHOT"]]
-
-  :bower-dependencies [[polymer "1.4.0"]
-                       [paper-styles "PolymerElements/paper-styles#1.1.4"]
-                       [paper-header-panel "PolymerElements/paper-header-panel#1.1.5"]
-                       [paper-toolbar "PolymerElements/paper-toolbar#1.1.4"]
-                       [paper-button "PolymerElements/paper-button#1.0.11"]
-                       [paper-tabs "PolymerElements/paper-tabs#1.5.0"]
-                       [iron-icons "PolymerElements/iron-icons#1.1.3"]]
-
-  :bower {:directory "resources/public/components"}
 
   :main video-server.main
   :aot [video-server.main]
@@ -57,7 +46,7 @@
           :src-dir-uri "http://github.com/hudren/video-server/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
-  :aliases {"build" ["with-profiles" "prod" "do" "clean" ["bower" "install"] "uberjar"]
+  :aliases {"build" ["with-profiles" "prod" "do" "uberjar"]
             "docs" ["do" "doc" ["shell" "open" "docs/index.html"]]
             "graph" ["with-profiles" "prod" "ns-dep-graph"]})
 

@@ -24,13 +24,16 @@ div.poster.small img {
 div.desc
 {
   vertical-align: top;
+  margin-top: 0.5em;
   margin-left: 7em;
 }
 
 span.title {
   font-size: 1.4em;
   font-weight: bold;
-  margin-right: 1em;
+  font-family: "Roboto","Helvetica","Arial",sans-serif;
+  letter-spacing: 0.02em;
+  margin-right: 0.5em;
 }
 
 span.info {

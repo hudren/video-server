@@ -186,5 +186,5 @@
   ([] (browse-url (str "http://localhost:" port)))
   ([title]
    (when-let [title (title-for-title title)]
-     (when title (browse-url (str "http://localhost:" port "/" (video-server.templates.title/title-url title)))))))
+     (when title (browse-url (str "http://localhost:" port "/" (video-server.html.title/title-url title)))))))
 

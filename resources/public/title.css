@@ -20,16 +20,22 @@ div#poster img {
 
 span.year, span.released, span.rated, span.duration {
   color: rgba(0,0,0,0.54);
-  margin-right: 0.7em;
+  margin-right: 0.5em;
 }
 
 table {
   color: rgba(0,0,0,0.54);
   font-size: 0.9em;
+  padding-left: 0;
+  margin-left: 0;
 }
 
 table td {
   padding-right: 1em;
+}
+
+table td:first-child {
+  padding-left: 0;
 }
 
 span.label {
@@ -53,6 +59,18 @@ li {
   color: rgba(0,0,0,0.54);
 }
 
+div#links a {
+  margin-right: 1em;
+}
+
+div#links a button {
+  background: #fafafa;
+}
+
+div#links a button:hover {
+  background: white;
+}
+
 div#seasons {
   max-width: 1280px;
 }
@@ -63,14 +81,18 @@ div#season.has-episodes {
 
 ul {
   margin-before: 0;
-  margin-after: 0;
+  /* margin-after: 0; */
   -webkit-margin-before: 0;
-  -webkit-margin-after: 0;
+  /* -webkit-margin-after: 0; */
 }
 
 li.selected {
   color: inherit;
   font-weight: bold;
+}
+
+p.overview {
+  line-height: 125%;
 }
 
 div#episodes {
@@ -108,3 +130,6 @@ video {
   }
 }
 
+.js .js-hidden {
+	visibility: hidden;
+}
