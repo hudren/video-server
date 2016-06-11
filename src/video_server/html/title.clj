@@ -1,8 +1,18 @@
+;;;; Copyright (c) Jeff Hudren. All rights reserved.
+;;;;
+;;;; Use and distribution of this software are covered by the
+;;;; Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php).
+;;;;
+;;;; By using this software in any fashion, you are agreeing to be bound by
+;;;; the terms of this license.
+;;;;
+;;;; You must not remove this notice, or any other, from this software.
+
 (ns video-server.html.title
-  (:require [clojure.string :as str]
-            [video-server.format :refer [format-date format-filetype format-runtime format-size lang-two-letter]]
+  (:require [video-server.format :refer [format-date format-filetype format-runtime format-size lang-two-letter]]
             [video-server.library :refer [video-for-key]]
             [video-server.html.site :refer :all]
+            [video-server.html.table :refer [condense-table html-table]]
             [video-server.title :refer [best-image episode-title full-title has-episodes? has-parts? has-seasons?
                                         season-titles]]
             [video-server.video :refer [quality web-playback?]])
@@ -12,14 +22,13 @@
   "Returns a description of the contents of the container."
   [container]
   (let [lang (:language container)]
-    [:tr (->> [(:dimension container)
-               (if-not (= lang (.getDisplayLanguage (Locale/getDefault))) lang)
-               (:video container)
-               (:audio container)
-               (format-size (:size container))
-               [:a {:href (:url container) :download nil}
-                (format-filetype (:filetype container))]]
-              (map #(vector :td %)))]))
+    [(:dimension container)
+     (if-not (= lang (.getDisplayLanguage (Locale/getDefault))) lang)
+     (:video container)
+     (:audio container)
+     (format-size (:size container))
+     [:a {:href (:url container) :download nil}
+      (format-filetype (:filetype container))]]))
 
 (defn video-link
   "Returns a button for the specified link."
@@ -116,11 +125,10 @@
    (if-content :p.directors (combine "Directed by" (:directors info)))
    (if-content :p.cast (combine "Cast" (:stars info) (:actors info)))
    (if-content :p.languages (when-let [languages (:languages info)]
-                                (when-not (= languages (list "English"))
-                                  (combine "Languages" languages))))
+                              (when-not (= languages (list "English"))
+                                (combine "Languages" languages))))
    (if-not (has-episodes? title season)
-     [:table#containers.containers
-      [:tbody (for [container containers] (container-desc container))]])])
+     [:table#containers.containers (-> (map container-desc containers) condense-table html-table)])])
 
 (defn episode-info [info video containers]
   [:div
@@ -130,8 +138,7 @@
          (if-let [runtime (:duration video)] [:span.duration (format-runtime runtime)]))]
    (if-content :p.writers (combine "Written by" (:writers info)))
    (if-content :p.directors (combine "Directed by" (:directors info)))
-   [:table#episode-containers.containers
-    [:tbody (for [container containers] (container-desc container))]]])
+   [:table#episode-containers.containers (-> (map container-desc containers) condense-table html-table)]])
 
 (defn title-template
   [title info video playable season episode]
