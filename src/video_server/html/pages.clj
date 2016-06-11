@@ -30,7 +30,7 @@
       [:p (blank-link "http://creativecommons.org/licenses/by/2.5"
                       "Creative Commons Attribution Only (or CC-BY) license")]]
      [:li
-      [:h4 (blank-link "https://www.freebase.com" "OMDb")]
+      [:h4 (blank-link "https://www.omdbapi.com" "OMDb")]
       [:p (blank-link "http://creativecommons.org/licenses/by/4.0"
                       "Creative Commons Attribute 4.0 International License")]]
      [:li
