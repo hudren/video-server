@@ -59,8 +59,13 @@ li {
   color: rgba(0,0,0,0.54);
 }
 
+div#links {
+  line-height: 300%;
+}
+
 div#links a {
-  margin-right: 1em;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
 }
 
 div#links a button {
