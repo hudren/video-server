@@ -4,6 +4,10 @@ div.video {
   border-top: 1px solid rgba(0,0,0,0.12);
 }
 
+div.video:first-child {
+  border-top: 1px solid rgba(0,0,0,0);
+}
+
 div.poster {
   float: left;
 }
