@@ -21,3 +21,5 @@ docker tag $NAME $NAME:$VERSION
 if [[ ! $VERSION =~ .*-SNAPSHOT$ ]] && [[ $MINOR_VERSION ]]; then
     docker tag $NAME $NAME:$MINOR_VERSION
 fi
+
+echo "Publish on Docker Hub: docker push hudren/video-server"
