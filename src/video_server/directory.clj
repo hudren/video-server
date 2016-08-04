@@ -25,10 +25,10 @@
 
 (defn hidden?
   "Returns whether the file or directory is hidden using common file
-  nameing conventions."
+  naming conventions."
   [^File file]
   (or (.isHidden file)
-      (some #(.startsWith (.getName file) %) ["." "$"])))
+      (some #(.startsWith (.getName file) %) ["." "$" "@"])))
 
 (defn- register
   "Recursively registers a directory, calling the dir-fn with a
