@@ -23,7 +23,7 @@
             [video-server.watcher :refer [start-watcher]])
   (:import (ch.qos.logback.classic Level Logger)
            (java.io File PushbackReader)
-           (java.net InetAddress)
+           (java.net InetAddress NetworkInterface)
            (org.slf4j LoggerFactory))
   (:gen-class))
 
@@ -56,10 +56,20 @@
   (try (InetAddress/getByName (or (System/getenv "VIDEOS_HOST") "dockerhost"))
        (catch Exception _ nil)))
 
+(defn external-addresses []
+  (->> (for [interface (enumeration-seq (NetworkInterface/getNetworkInterfaces))
+             address (enumeration-seq (.getInetAddresses interface))]
+         [(.getDisplayName interface) address])
+       (filter (fn [[n a]] (.isSiteLocalAddress a)))))
+
+(defn best-external-address [addresses]
+  (second (or (->> addresses (filter (fn [[n a]] (str/starts-with? n "eth"))) first)
+              (->> addresses (filter (fn [[n a]] (str/starts-with? n "en"))) first))))
+
 (defn host-url
   "Returns a url for this web server based on the IP address and web port."
   [port]
-  (let [addr (.getAddress (or (external-address) (InetAddress/getLocalHost)))
+  (let [addr (.getAddress (or (external-address) (best-external-address (external-addresses)) (InetAddress/getLocalHost)))
         quads (mapv (partial bit-and 0xFF) addr)]
     (apply format "http://%d.%d.%d.%d:%d" (conj quads port))))
 
@@ -163,7 +173,7 @@
         (if (.isDirectory file)
           (let [options (if (coll? dir) (second dir) {})
                 name (unique-name (.getName file) names)
-                folder (->Folder name file (str url "/videos/" name) (merge options (read-options file)))]
+                folder (->Folder name file (str #_url "/videos/" name) (merge options (read-options file)))]
             (recur (rest dirs) (conj folders folder) (conj names name)))
           (recur (rest dirs) folders names)))
       folders)))
