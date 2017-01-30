@@ -32,9 +32,11 @@ if [ ! -f "$JAR" ]; then
   popd
 fi
 
+OPTS=-Djava.awt.headless=true
+
 # Execute the jar, passing the arguments
 if [ -f "$JAR" ]; then
-  exec java -jar "$JAR" $@
+  exec java $OPTS -jar "$JAR" $@
 else
   echo "Could not find video-server.jar file"
   exit 1

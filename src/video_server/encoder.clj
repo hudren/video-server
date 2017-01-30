@@ -30,7 +30,7 @@
   "Executes the specified command unless *fake-encode* is true."
   [& cmd]
   (if-not *fake-encode*
-    (apply exec cmd)
+    (exec-no-sleep cmd)
     (let [args (->> cmd flatten (remove nil?) (map str))]
       (log/info "FAKE ENCODE" (str/join " " args))
       {:exit 0})))
@@ -209,7 +209,7 @@
             temp (io/file (replace-ext output ".tmp"))]
         (.renameTo out temp)
         (let [cmd ["mkclean" "--optimize" temp out]
-              exec (exec cmd)]
+              exec (exec-no-sleep cmd)]
           (if (zero? (:exit exec))
             (io/delete-file temp false)
             (do (log/warn "cleaning failed:" \newline cmd \newline exec)

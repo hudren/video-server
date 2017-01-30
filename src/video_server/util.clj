@@ -123,13 +123,7 @@
                 (assoc m k (if (sequential? nv) (distinct nv) nv))))))
           (or options {}) override))
 
-(defn exec
-  "Flattens and sanitizes the arguments before executing the shell
-  command."
-  [& cmd]
-  (let [args (->> cmd flatten (remove nil?) (map str))]
-    (log/trace "executing" (str/join " " args))
-    (apply shell/sh args)))
+(declare exec)
 
 (defn exec?
   "Returns whether the executable is found on the path."
@@ -138,6 +132,22 @@
         ["where.exe" (str cmd ".exe")]
         ["which" cmd])
       exec :exit zero?))
+
+(def ^:private caffeine? (delay (exec? "caffeinate")))
+
+(defn exec
+  "Flattens and sanitizes the arguments before executing the shell
+  command."
+  [& cmd]
+  (let [args (->> cmd flatten (remove nil?) (map str))]
+    (log/trace "executing" (str/join " " args))
+    (apply shell/sh args)))
+
+(defn exec-no-sleep
+  "Attempts to prevent the computer from sleeping while executing
+  the shell command via exec."
+  [& cmd]
+  (apply exec (if caffeine? (concat ["caffeinate" "-s"] cmd) cmd)))
 
 (defn periodically
   "Peridoically calls a function. Returns a stopping function."
