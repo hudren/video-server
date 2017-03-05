@@ -147,7 +147,7 @@
   "Attempts to prevent the computer from sleeping while executing
   the shell command via exec."
   [& cmd]
-  (apply exec (if caffeine? (concat ["caffeinate" "-s"] cmd) cmd)))
+  (apply exec (if @caffeine? (concat ["caffeinate" "-s"] cmd) cmd)))
 
 (defn periodically
   "Peridoically calls a function. Returns a stopping function."
