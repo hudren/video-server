@@ -55,7 +55,7 @@
   (site-template
     {:title "Videos@Home" :toolbar titles-toolbar}
     [:h2 "No Titles"]
-    [:p "No vidoes were found in the following folders:"]
+    [:p "No videos were found in the following folders:"]
     [:ul (for [dir dirs]
            [:li dir])]))
 
