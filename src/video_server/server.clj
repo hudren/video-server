@@ -13,7 +13,7 @@
             [ring.util.servlet :as servlet])
   (:import (java.io File)
            (java.util EnumSet)
-           (javax.servlet DispatcherType)
+           (javax.servlet DispatcherType Servlet)
            (org.eclipse.jetty.server NCSARequestLog Request Server)
            (org.eclipse.jetty.server.handler AbstractHandler HandlerList RequestLogHandler)
            (org.eclipse.jetty.servlet DefaultServlet FilterHolder ServletContextHandler ServletHolder)
@@ -80,13 +80,13 @@
 
 (defn create-server
   "Returns a Jetty server instance."
-  [^long port handler folders]
+  ^Server [^long port handler folders]
   (doto (Server. port)
     (.setHandler (context handler folders))))
 
-(defn ^Server start-server
+(defn start-server
   "Starts the web server for the ring handler and video folders."
-  [url port handler folders]
+  ^Server [url port handler folders]
   (log/info "starting the web server at" url)
   (doto (create-server port handler folders)
     (.start)))
