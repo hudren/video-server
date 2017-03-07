@@ -40,9 +40,12 @@
 (def fake true)
 (def encode true)
 (def fetch true)
+(def apple true)
+(def download "2G")
+(def min-download true)
 
-(def args [])
-(def options {:name hostname :port port :fake fake :encode encode :fetch fetch :format output-format :size output-size})
+(def args ["movies"])
+(def options {:name hostname :port port :fake fake :encode encode :fetch fetch :format output-format :size output-size :apple apple :download download :min-download min-download})
 
 (defn title-for-title [title]
   (title-for-id (:title (video-key title))))
@@ -174,7 +177,7 @@
   (when-let [[folder video] (folder-video title)]
     (let [fmt (keyword output-format)
           size (encode-size video (keyword (str output-size)))]
-      (when-let [spec (video-encode-spec folder video fmt size)]
+      (when-let [spec (video-encode-spec folder video fmt size false)]
         (future (encode-video spec))))))
 
 (defn ls []

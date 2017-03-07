@@ -118,7 +118,7 @@
   "Returns the best audio stream to use for the target codec."
   [audio-streams original? codec]
   (let [audio (reverse (sort-by #(parse-long (:bit_rate %)) audio-streams))]
-    (or (and (not original?) (first (filter #(= (-> % :codec_name) codec) audio)))
+    (or (and (not original?) (first (filter #(= (:codec_name %) codec) audio)))
         (first (filter #(= (-> % :disposition :default) 1) audio))
         (first audio))))
 
@@ -149,10 +149,10 @@
 (defn audio-options
   "Returns the ffmpeg options for encoding / copying the audio
   streams."
-  [{:keys [audio-streams original?]}]
+  [{:keys [audio-streams original? minimize?]}]
   (into (audio-encoder-options audio-streams 0 original? "aac")
         (when-let [audio (audio-to-encode audio-streams original? "ac3")]
-          (when (> (:channels audio) 2)
+          (when (and (not minimize?) (> (:channels audio) 2))
             (audio-encoder-options audio-streams 1 original? "ac3")))))
 
 (defn subtitle-options

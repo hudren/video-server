@@ -1,6 +1,7 @@
 /.lein-*
 /.nrepl-port
 /docs
+/movies
 /target
 /publish
 /install

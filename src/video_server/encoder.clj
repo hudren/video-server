@@ -71,7 +71,7 @@
 
 (defn encode-spec
   "Returns the specification for an encoding job."
-  [folder video fmt size]
+  [folder video fmt size minimize?]
   (when-let [container (container-to-encode (:containers video) size)]
     (let [file (io/file (:file folder) (:path container))
           info (video-info file)
@@ -94,6 +94,7 @@
        :video-stream vs
        :audio-streams as
        :subtitle-streams (subtitle-streams info)
+       :minimize? minimize?
        :fps (ratio (:avg_frame_rate vs))
        :sar (ratio (:sample_aspect_ratio vs))
        :dar (ratio (:display_aspect_ratio vs))
@@ -119,8 +120,8 @@
 
 (defn video-encode-spec
   "Returns a spec for encoding a video."
-  [folder video fmt size]
-  (when-let [spec (encode-spec folder video fmt size)]
+  [folder video fmt size minimize?]
+  (when-let [spec (encode-spec folder video fmt size minimize?)]
     (-> spec filter-video output-options)))
 
 (def mkvpropedit (delay (exec? "mkvpropedit")))

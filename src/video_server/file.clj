@@ -171,7 +171,7 @@
                  (format "S%02dE%02d" (:season video) (:episode video))
                  (when (:episode video) (format "PT%02d" (:episode video))))
                (:episode-title video)
-               ({:2160 "4K" :1080 "1080p" :720 "720p"} size)]
+               ({:2160 "4K" :1080 "1080p" :720 "720p" :480 "480p"} size)]
               (remove nil?)
               (str/join " - "))
          (when qual (str "." qual))

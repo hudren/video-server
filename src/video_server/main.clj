@@ -9,6 +9,7 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.main
+  (:refer-clojure :exclude [parse-opts])
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -20,6 +21,7 @@
             [video-server.model :refer [->Folder]]
             [video-server.process :refer [start-processing]]
             [video-server.server :refer [start-server]]
+            [video-server.util :refer :all]
             [video-server.watcher :refer [start-watcher]])
   (:import (ch.qos.logback.classic Level Logger)
            (java.io File PushbackReader)
@@ -57,14 +59,14 @@
        (catch Exception _ nil)))
 
 (defn external-addresses []
-  (->> (for [interface (enumeration-seq (NetworkInterface/getNetworkInterfaces))
-             address (enumeration-seq (.getInetAddresses interface))]
-         [(.getDisplayName interface) address])
-       (filter (fn [[n a]] (.isSiteLocalAddress a)))))
+  (filter (fn [[_ a]] (.isSiteLocalAddress a))
+          (for [interface (enumeration-seq (NetworkInterface/getNetworkInterfaces))
+                address (enumeration-seq (.getInetAddresses interface))]
+            [(.getDisplayName interface) address])))
 
 (defn best-external-address [addresses]
-  (second (or (->> addresses (filter (fn [[n a]] (str/starts-with? n "eth"))) first)
-              (->> addresses (filter (fn [[n a]] (str/starts-with? n "en"))) first))))
+  (second (or (->> addresses (filter (fn [[n _]] (str/starts-with? n "eth"))) first)
+              (->> addresses (filter (fn [[n _]] (str/starts-with? n "en"))) first))))
 
 (defn host-url
   "Returns a url for this web server based on the IP address and web port."
@@ -117,6 +119,14 @@
     :default 1080
     :parse-fn #(Integer/parseInt %)
     :validate [#{480 720 1080 2160} "The size must be 480, 720, 1080 or 2160"]]
+   [nil "--apple BOOL" "Create an additional .m4v file when encoding"
+    :default false
+    :parse-fn #(Boolean/parseBoolean %)]
+   [nil "--download BYTES" "Encode additional, smaller files for downloading"
+    :validate [parse-bytes "The number of bytes are required, i.e. 4GB"]]
+   [nil "--min-download BOOL" "Minimize size/quality for downloadable files"
+    :default true
+    :parse-fn #(Boolean/parseBoolean %)]
    ["-u" "--underscores BOOL" "Use underscores in generated filenames"
     :default false
     :parse-fn #(Boolean/parseBoolean %)]
@@ -192,8 +202,9 @@
   to serve. The settings file may override options provided on the
   command line and provide folder-specific options."
   [args options url]
-  (let [file (io/file (or (first args) "settings.edn"))
-        dirs (if (and file (.exists file))
+  (let [first-arg-if-file (if (some-> args first io/file .isFile) (first args))
+        file (io/file (or first-arg-if-file "settings.edn"))
+        dirs (if (.isFile file)
                (or (next args) (list (default-folder)))
                (if (seq args) args (list (default-folder))))
         dirs (concat dirs (additional-folders))
@@ -209,7 +220,7 @@
         [folders options] (process-args args options url)]
     (when-not (seq folders)
       (exit 2 (str "Specified video folder(s) were not found: " (str/join ", " args))))
-    (start-processing (:encode options) (:fetch options) fmt size)
+    (start-processing fmt size options)
     (start-watcher folders)
     (try (let [server (start-server url (:port options) (app url folders) folders)]
            (start-discovery url discovery-port (or (server-name) (:name options)))

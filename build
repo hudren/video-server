@@ -11,7 +11,7 @@ fi
 
 # Build the server app
 if [ ! -f "target/video-server.jar" ]; then
-  lein with-profiles prod uberjar
+  lein build
 fi
 
 echo "Building docker image for Videos@Home $VERSION ($MINOR_VERSION)"

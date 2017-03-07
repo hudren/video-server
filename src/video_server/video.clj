@@ -18,6 +18,9 @@
            (video_server.model Container Video)
            (java.io File)))
 
+; Magic number for Android file system / download manager limit (~4GB)
+(def ^:const max-download-size 4187593114)
+
 (def locales (into {} (map #(vector (.getISO3Language %) %) (map #(Locale. %) (Locale/getISOLanguages)))))
 
 (defn quality
@@ -106,8 +109,10 @@
 
 (defn can-download?
   "Returns whether the file is small enough for downloading."
-  [video]
-  (some #(< (:size %) 4187593114) (:containers video)))
+  ([video]
+   (can-download? video max-download-size))
+  ([video download-size]
+   (some #(< (:size %) (min (parse-bytes download-size) max-download-size)) (:containers video))))
 
 (defn video-title
   "Returns the video title based on the metadata or filename."

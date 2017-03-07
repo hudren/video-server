@@ -10,7 +10,7 @@ fi
 NAME=$(cut -d '.' -f1 <<< "$HOSTNAME")
 NAME=${NAME//-/ }
 
-DIR=~/Movies/New
+MOVIES_DIR=~/Movies/New
 
 if [ "$1" == "new" ]; then
   shift 1
@@ -23,12 +23,12 @@ if [ $? -eq 0 ]; then
   docker start video-server
 else
   echo "Starting a new container"
-  if [ ! -d "$DIR" ]; then
-    mkdir -p "$DIR"
+  if [ ! -d "$MOVIES_DIR" ]; then
+    mkdir -p "$MOVIES_DIR"
   fi
   docker run -d \
     --restart="unless-stopped" \
-    -v "$DIR":/Movies \
+    -v "$MOVIES_DIR":/Movies \
     -v /Volumes:/Volumes \
     -p 8090:8090 -p 8394:8394/udp \
     -e VIDEOS_NAME="$NAME" \

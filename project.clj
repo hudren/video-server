@@ -1,17 +1,17 @@
-(defproject com.hudren.homevideo/video-server "0.5.6"
+(defproject com.hudren.homevideo/video-server "0.5.8"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/core.async "0.2.395"]
+                 [org.clojure/core.async "0.3.441"]
                  [org.clojure/core.cache "0.6.5"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.zip "0.1.2"]
                  [org.clojure/test.check  "0.9.0"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [ch.qos.logback/logback-classic "1.1.9"]
+                 [ch.qos.logback/logback-classic "1.2.1"]
                  [trptcolin/versioneer "0.2.0"]
                  [net.dongliu/apk-parser "2.2.0"]
                  [clj-http "3.4.1"]
@@ -22,7 +22,7 @@
                  [ring/ring-core "1.5.1"]
                  [ring/ring-devel "1.5.1"]
                  [ring/ring-servlet "1.5.1" :exclusions [javax.servlet/servlet-api]]
-                 [ring/ring-defaults "0.2.2" :exclusions [javax.servlet/servlet-api]]
+                 [ring/ring-defaults "0.2.3" :exclusions [javax.servlet/servlet-api]]
                  [bk/ring-gzip "0.2.1"]
                  [compojure "1.5.2"]
                  [hiccup "1.0.5"]]

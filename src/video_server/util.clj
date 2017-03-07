@@ -35,11 +35,21 @@
   (when-not (str/blank? string)
     (map #(Integer/parseInt %) (re-seq #"\d+" string))))
 
-(defn find-ints
-  "Returns the integers targeted by the regex pattern."
-  [pattern string]
-  (when-not (str/blank? string)
-    (->> (re-find pattern string) (drop 1) (map #(Integer/parseInt %)))))
+(defn parse-bytes
+  "Parses the number of bytes from a string or number. The string can
+  have an optional unit such as MB or GB."
+  [v]
+  (try
+    (cond
+      (number? v) (long v)
+      (string? v) (let [[_ n u] (re-find #"([1-9.]+)\s*([A-Z]*)" (str/upper-case v))]
+                    (when-not (str/blank? n)
+                      (cond
+                        (#{"G" "GB"} u) (long (* (parse-double n) 1024 1024 1024))
+                        (#{"M" "MB"} u) (long (* (parse-double n) 1024 1024))
+                        (#{"K" "KB"} u) (long (* (parse-double n) 1024))
+                        :default (parse-long n)))))
+    (catch NumberFormatException _ nil)))
 
 (defn ratio
   "Returns the int or ratio described by the string."

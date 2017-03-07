@@ -1,5 +1,11 @@
 # Videos@Home Changelog
 
+## Version 0.5.8
+
+* Modified default encoding rules
+* Added --apple option to create additional .m4v files
+* Added --download and --min-download options to create smaller files for downloading
+
 ## Version 0.5
 
 * Switched from Freebase to The Movie Database
