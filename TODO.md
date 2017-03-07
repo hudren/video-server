@@ -3,7 +3,7 @@
 ## TBD
 
 * Extract text subtitles into .srt and .vtt formats
-* Embed sutitles in mp4 outputs
+* Embed subtitles in mp4 outputs
 
 ## Ideas
 
