@@ -38,13 +38,13 @@
 
 (def log-level "debug")
 (def fake true)
-(def encode true)
+(def encode false)
 (def fetch true)
-(def apple true)
-(def download "2G")
+(def apple false)
+(def download nil)
 (def min-download true)
 
-(def args ["movies"])
+(def args ["/Volumes/home/Movies"])
 (def options {:name hostname :port port :fake fake :encode encode :fetch fetch :format output-format :size output-size :apple apple :download download :min-download min-download})
 
 (defn title-for-title [title]

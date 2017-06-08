@@ -10,12 +10,22 @@
 
 (ns video-server.omdb
   (:require [clojure.core.cache :as cache]
+            [clojure.java.io :as io]
             [clojure.string :as str]
             [video-server.util :refer :all])
   (:import (java.net URLEncoder)
            (java.text SimpleDateFormat)))
 
 (defonce ^:private cache (atom (cache/lru-cache-factory {})))
+
+(def ^:private api-key
+  (delay (try (str/trim (slurp (io/resource "omdb.key")))
+              (catch Exception _))))
+
+(defn- authorize
+  "Adds the api key to the url."
+  [url]
+  (str url (when-let [key @api-key] (str (if (.contains url "?") "&" "?") "apikey=" key))))
 
 (defn- filter-values
   [m]
@@ -37,7 +47,8 @@
 (defn retrieve-id
   "Fetches the metadata for the given id."
   [id]
-  (when-let [resp (get-json cache (str "http://www.omdbapi.com/?plot=full&r=json&i=" id))]
+  (when-let [resp (get-json cache (str "http://www.omdbapi.com/?plot=full&r=json&i=" id)
+                            :auth authorize)]
     (when (= (:response resp) "True")
       (filter-values resp))))
 
@@ -46,14 +57,16 @@
   [title & [series? year]]
   (let [resp (get-json cache (str "http://www.omdbapi.com/?plot=full&r=json&t=" (URLEncoder/encode title "UTF-8")
                                   (when-not (nil? series?) (if series? "&type=series" "&type=movie"))
-                                  (when year (str "&y=" year))))]
+                                  (when year (str "&y=" year)))
+                       :auth authorize)]
     (filter-values resp)))
 
 (defn retrieve-episode
   "Fetches the metadata for the given episode."
   [title season episode]
   (let [resp (get-json cache (str "http://www.omdbapi.com/?plot=full&r=json&t=" (URLEncoder/encode title "UTF-8")
-                                  "&type=episode&season=" season "&episode=" episode))]
+                                  "&type=episode&season=" season "&episode=" episode)
+                       :auth authorize)]
     (filter-values resp)))
 
 (defn omdb-info
