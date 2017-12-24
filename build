@@ -6,8 +6,10 @@ VERSION=$(echo $(head -n 1 project.clj) | sed 's/.*"\(.*\)".*/\1/')
 MINOR_VERSION=$(echo $VERSION | sed 's/\([0-9]*\)\.\([0-9]*\).*/\1.\2/')
 
 # Grab the latest android app
-if [ -f "../video-client/build/outputs/apk/video-client-release.apk" ] ; then
-  rsync -a ../video-client/build/outputs/apk/video-client-release.apk resources/public
+if [ -f "../video-android/video-client/build/outputs/apk/release/video-client-release.apk" ] ; then
+  rsync -a ../video-android/video-client/build/outputs/apk/release/video-client-release.apk resources/public
+else
+  echo "WARNING: release apk not found"
 fi
 
 # Build the server app

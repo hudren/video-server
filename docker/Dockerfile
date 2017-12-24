@@ -1,4 +1,4 @@
-FROM fedora:25
+FROM fedora:27
 
 ENV JAVA_HOME /usr/java/latest
 

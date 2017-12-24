@@ -22,8 +22,8 @@ if [ ! -f "$JAR" ]; then
   pushd $DIR
 
   # Grab the latest android app
-  if [ -f "../video-client/build/outputs/apk/video-client-release.apk" ] ; then
-    rsync -a ../video-client/build/outputs/apk/video-client-release.apk resources/public
+  if [ -f "../video-android/video-client/build/outputs/apk/release/video-client-release.apk" ] ; then
+    rsync -a ../video-android/video-client/build/outputs/apk/release/video-client-release.apk resources/public
   fi
 
   # Build the server app
