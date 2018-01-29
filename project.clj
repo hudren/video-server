@@ -47,7 +47,7 @@
           :src-dir-uri "http://github.com/hudren/video-server/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
-  :aliases {"build" ["with-profiles" "prod" "do" "uberjar"]
+  :aliases {"build" ["uberjar"]
             "docs" ["do" "doc" ["shell" "open" "docs/index.html"]]
             "graph" ["with-profiles" "prod" "ns-dep-graph"]})
 
