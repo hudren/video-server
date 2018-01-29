@@ -10,8 +10,8 @@
 
 (ns video-server.android
   (:require [clojure.java.io :as io])
-  (:import (java.io File)
-           (net.dongliu.apk.parser ApkParser)))
+  (:import java.io.File
+           net.dongliu.apk.parser.ApkParser))
 
 (defn apk-filename [] "video-client-release.apk")
 
@@ -20,12 +20,12 @@
   [^File file]
   (with-open [parser (ApkParser. file)]
     (let [apk (.getApkMeta parser)]
-      {:label (.getLabel apk)
-       :package-name (.getPackageName apk)
-       :version-code (.getVersionCode apk)
-       :version-name (.getVersionName apk)
+      {:label           (.getLabel apk)
+       :package-name    (.getPackageName apk)
+       :version-code    (.getVersionCode apk)
+       :version-name    (.getVersionName apk)
        :min-sdk-version (.getMinSdkVersion apk)
-       :filename (apk-filename)})))
+       :filename        (apk-filename)})))
 
 (defn read-apk-version
   "Attemps to read the apk version from the resource found on the
@@ -42,4 +42,3 @@
                response))))))
 
 (def android-version (delay (read-apk-version (str "public/" (apk-filename)))))
-

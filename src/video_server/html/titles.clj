@@ -11,7 +11,7 @@
 (ns video-server.html.titles
   (:require [video-server.html.site :refer :all]
             [video-server.title :refer [best-image has-seasons? season-desc]])
-  (:import (java.net URLEncoder)))
+  (:import java.net.URLEncoder))
 
 (def titles-toolbar (toolbar "Videos@Home" (nav-icon-button "downloads" :file-download)))
 
@@ -23,7 +23,7 @@
 (defn title-item
   [title]
   (let [info (:info title)
-        url (title-url title)]
+        url  (title-url title)]
     [:div.video
      [:div.poster.small
       [:a {:href url}
@@ -44,18 +44,17 @@
 (defn titles-template
   [titles]
   (site-template
-    {:title   "Videos@Home"
-     :style   "titles.css"
-     :toolbar titles-toolbar
-     :footer  [:p "Content metadata may be provided by third parties, see " (inline-link "legal" "attribution") " for details."]}
-    (map title-item titles)))
+   {:title   "Videos@Home"
+    :style   "titles.css"
+    :toolbar titles-toolbar
+    :footer  [:p "Content metadata may be provided by third parties, see " (inline-link "legal" "attribution") " for details."]}
+   (map title-item titles)))
 
 (defn no-titles-template
   [dirs]
   (site-template
-    {:title "Videos@Home" :toolbar titles-toolbar}
-    [:h2 "No Titles"]
-    [:p "No videos were found in the following folders:"]
-    [:ul (for [dir dirs]
-           [:li dir])]))
-
+   {:title "Videos@Home" :toolbar titles-toolbar}
+   [:h2 "No Titles"]
+   [:p "No videos were found in the following folders:"]
+   [:ul (for [dir dirs]
+          [:li dir])]))

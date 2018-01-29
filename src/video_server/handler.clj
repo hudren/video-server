@@ -10,14 +10,18 @@
 
 (ns video-server.handler
   (:require [clojure.data.json :as json]
-            [compojure.core :refer [GET defroutes]]
+            [compojure.core :refer [defroutes GET]]
             [compojure.route :refer [not-found resources]]
             [ring.middleware.defaults :refer [api-defaults wrap-defaults]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [video-server.android :refer [android-version apk-filename]]
-            [video-server.html :refer [downloads-page legal-page not-found-page title-page titles-page]]
-            [video-server.library :refer [current-titles library-etag title-for-id title-listing video-listing]]
+            [video-server.html
+             :refer
+             [downloads-page legal-page not-found-page title-page titles-page]]
+            [video-server.library
+             :refer
+             [current-titles library-etag title-for-id title-listing video-listing]]
             [video-server.util :refer :all]))
 
 (defonce ^:private base-url (atom "http://localhost"))
@@ -112,4 +116,3 @@
   (reset! base-url url)
   (reset! dirs (map (comp str :file) folders))
   (wrap-gzip (wrap-stacktrace (wrap-defaults app-routes api-defaults))))
-

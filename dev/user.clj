@@ -1,3 +1,13 @@
+;;;; Copyright (c) Jeff Hudren. All rights reserved.
+;;;;
+;;;; Use and distribution of this software are covered by the
+;;;; Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php).
+;;;;
+;;;; By using this software in any fashion, you are agreeing to be bound by
+;;;; the terms of this license.
+;;;;
+;;;; You must not remove this notice, or any other, from this software.
+
 (ns user
   (:require [clojure.edn :as edn]
             [clojure.data.json :as json]
@@ -15,6 +25,7 @@
             [video-server.format :refer :all]
             [video-server.handler :as handler]
             [video-server.html :as html]
+            [video-server.html.title :refer [title-url]]
             [video-server.library :as library :refer :all]
             [video-server.main :as main]
             [video-server.metadata :as metadata :refer :all]
@@ -28,8 +39,10 @@
             [video-server.util :as util :refer :all]
             [video-server.video :as video :refer :all]
             [video-server.watcher :as watcher])
-  (:import (java.net InetAddress)
-           (java.io File)))
+  (:import java.net.InetAddress
+           java.io.File))
+
+(declare open)
 
 (def hostname (.getHostName (InetAddress/getLocalHost)))
 (def port 8090)
@@ -57,10 +70,10 @@
 
 (defn video-for-title
   ([title]
-  (when-let [title (title-for-title title)]
-    (let [videos (:videos title)]
-      (if (= (count videos) 1)
-        (apply video-for-key (first videos))))))
+   (when-let [title (title-for-title title)]
+     (let [videos (:videos title)]
+       (if (= (count videos) 1)
+         (apply video-for-key (first videos))))))
   ([title season episode]
    (when-let [title (title-for-title title)]
      (video-for-key (folder-for-title title) (video-key {:title (:id title) :season season :episode episode})))))
@@ -75,7 +88,7 @@
   [video & [options]]
   (let [{:keys [fmt size]} (if (map? options) options (apply hash-map options))]
     (first (filter #(and (or (nil? fmt) (= (:filetype %) fmt))
-                       (or (nil? size) (= (video-size (:width %)) size)))
+                         (or (nil? size) (= (video-size (:width %)) size)))
                    (rank-containers video)))))
 
 (defn info [title & [options]]
@@ -145,7 +158,7 @@
   (when-let [title (title-for-title title)]
     (save-metadata title (merge (select-keys title [:title]) info))
     #_(when-let [image (poster-for-title title)]
-      (io/delete-file image))))
+        (io/delete-file image))))
 
 (defn update-file
   "Processes a file, preserving it's modification time."
@@ -175,7 +188,7 @@
 
 (defn encode-title [title]
   (when-let [[folder video] (folder-video title)]
-    (let [fmt (keyword output-format)
+    (let [fmt  (keyword output-format)
           size (encode-size video (keyword (str output-size)))]
       (when-let [spec (video-encode-spec folder video fmt size false)]
         (future (encode-video spec))))))
@@ -189,5 +202,4 @@
   ([] (browse-url (str "http://localhost:" port)))
   ([title]
    (when-let [title (title-for-title title)]
-     (when title (browse-url (str "http://localhost:" port "/" (video-server.html.title/title-url title)))))))
-
+     (when title (browse-url (str "http://localhost:" port "/" (title-url title)))))))

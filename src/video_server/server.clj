@@ -11,20 +11,20 @@
 (ns video-server.server
   (:require [clojure.tools.logging :as log]
             [ring.util.servlet :as servlet])
-  (:import (java.io File)
-           (java.util EnumSet)
-           (javax.servlet DispatcherType Servlet)
-           (org.eclipse.jetty.server NCSARequestLog Request Server)
-           (org.eclipse.jetty.server.handler AbstractHandler HandlerList RequestLogHandler)
-           (org.eclipse.jetty.servlet DefaultServlet FilterHolder ServletContextHandler ServletHolder)
-           (org.eclipse.jetty.servlets CrossOriginFilter)))
+  (:import java.io.File
+           java.util.EnumSet
+           [javax.servlet DispatcherType Servlet]
+           [org.eclipse.jetty.server NCSARequestLog Request Server]
+           [org.eclipse.jetty.server.handler AbstractHandler HandlerList RequestLogHandler]
+           [org.eclipse.jetty.servlet DefaultServlet FilterHolder ServletContextHandler ServletHolder]
+           org.eclipse.jetty.servlets.CrossOriginFilter))
 
 (defn proxy-handler
   "Returns an Jetty Handler implementation for the given Ring handler."
   [handler]
   (proxy [AbstractHandler] []
     (handle [_ ^Request base-request request response]
-      (let [request-map (servlet/build-request-map request)
+      (let [request-map  (servlet/build-request-map request)
             response-map (handler request-map)]
         (when response-map
           (servlet/update-servlet-response response response-map)
@@ -90,4 +90,3 @@
   (log/info "starting the web server at" url)
   (doto (create-server port handler folders)
     (.start)))
-

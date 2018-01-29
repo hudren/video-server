@@ -41,14 +41,14 @@
   "Returns the base filename up to but not including the first period."
   [file]
   (let [name (filename file)
-        pos (.indexOf name ".")]
+        pos  (.indexOf name ".")]
     (if (>= pos 0) (subs name 0 pos) name)))
 
 (defn file-ext
   "Returns the file extension including the last period."
   [file]
   (let [name (filename file)
-        pos (.lastIndexOf name ".")]
+        pos  (.lastIndexOf name ".")]
     (when (>= pos 0) (subs name pos))))
 
 (defn replace-ext
@@ -82,15 +82,15 @@
 (defn mimetype
   "Returns a mimetype based on the file metadata or extension."
   [file]
-  ({".mp4" "video/mp4"
-    ".m4v" "video/mp4"
-    ".mkv" "video/x-matroska"
-    ".avi" "video/x-msvideo"
-    ".mov" "video/quicktime"
-    ".vtt" "text/vtt"
-    ".srt" "application/x-subrip"
-    ".png" "image/png"
-    ".jpg" "image/jpeg"
+  ({".mp4"  "video/mp4"
+    ".m4v"  "video/mp4"
+    ".mkv"  "video/x-matroska"
+    ".avi"  "video/x-msvideo"
+    ".mov"  "video/quicktime"
+    ".vtt"  "text/vtt"
+    ".srt"  "application/x-subrip"
+    ".png"  "image/png"
+    ".jpg"  "image/jpeg"
     ".jpeg" "image/jpeg"
     ".webp" "image/webp"}
    (file-ext file)))
@@ -99,7 +99,7 @@
   "Returns the relative path of the file to the folder, or the
   absolute path if the file is not contained within a subfolder."
   [folder file]
-  (let [dir (fullpath (:file folder))
+  (let [dir  (fullpath (:file folder))
         path (fullpath file)]
     (if (.startsWith path dir)
       (subs path (inc (count dir)))
@@ -127,31 +127,31 @@
   title extracted from a string in the format of `title - S01E01 -
   episode` or `title - Part 1`."
   [path]
-  (let [file (io/file path)
-        dirname (when-let [parent (.getParent (.toPath file))] (.getFileName parent))
-        name (-> file .getName file-base)
+  (let [file                     (io/file path)
+        dirname                  (when-let [parent (.getParent (.toPath file))] (.getFileName parent))
+        name                     (-> file .getName file-base)
         [series program episode] (map str/trim (str/split (clean-title name) #" - "))
-        episode (when-not (dimensions episode) episode)]
+        episode                  (when-not (dimensions episode) episode)]
     (merge {:title (clean-title series)}
            (when dirname
              (let [[season title] (map str/trim (str/split (clean-title dirname) #" - "))]
                (when-let [nums (re-find #"^s(?:eason)?\s*(\d+)" (str/lower-case season))]
-                 {:season (Integer/parseInt (nth nums 1))
+                 {:season       (Integer/parseInt (nth nums 1))
                   :season-title (clean-title title)})))
            (when program
              (if-let [nums (re-find #"s(\d+)e(\d+)" (str/lower-case program))]
-               {:season (Integer/parseInt (nth nums 1))
-                :episode (Integer/parseInt (nth nums 2))
+               {:season        (Integer/parseInt (nth nums 1))
+                :episode       (Integer/parseInt (nth nums 2))
                 :episode-title (clean-title episode)}
                (if-let [nums (re-find #"s(\d+)" (str/lower-case program))]
-                 {:season (Integer/parseInt (nth nums 1))
+                 {:season       (Integer/parseInt (nth nums 1))
                   :season-title (clean-title episode)}
                  (if-let [nums (re-find #"e(\d+)" (str/lower-case program))]
-                   {:episode (Integer/parseInt (nth nums 1))
+                   {:episode       (Integer/parseInt (nth nums 1))
                     :episode-title (clean-title episode)}))))
            (when program
              (when-let [nums (re-find #"p(?:ar)?t\s*(\d+)" (str/lower-case program))]
-               {:episode (Integer/parseInt (nth nums 1))
+               {:episode       (Integer/parseInt (nth nums 1))
                 :episode-title (clean-title episode)})))))
 
 (defn adjust-filename
@@ -166,16 +166,16 @@
   qualifier can be used to make the filename unique."
   [video ext & [size qual]]
   (adjust-filename
-    (str (->> [(:title video)
-               (if (:season video)
-                 (format "S%02dE%02d" (:season video) (:episode video))
-                 (when (:episode video) (format "PT%02d" (:episode video))))
-               (:episode-title video)
-               ({:2160 "4K" :1080 "1080p" :720 "720p" :480 "480p"} size)]
-              (remove nil?)
-              (str/join " - "))
-         (when qual (str "." qual))
-         ext)))
+   (str (->> [(:title video)
+              (if (:season video)
+                (format "S%02dE%02d" (:season video) (:episode video))
+                (when (:episode video) (format "PT%02d" (:episode video))))
+              (:episode-title video)
+              ({:2160 "4K" :1080 "1080p" :720 "720p" :480 "480p"} size)]
+             (remove nil?)
+             (str/join " - "))
+        (when qual (str "." qual))
+        ext)))
 
 (defn dir?
   "Returns true if the file represents a directory."
@@ -198,7 +198,7 @@
   ^FilenameFilter [exts]
   (reify FilenameFilter
     (accept [_ _ name] (and (not (hidden? name))
-                              (file-with-ext? name exts)))))
+                            (file-with-ext? name exts)))))
 
 (defn title-filter
   "Returns a filename filter that matches the video title and
@@ -247,4 +247,3 @@
   filter will only match files related to that title."
   (^FilenameFilter [] (ext-filter image-exts))
   (^FilenameFilter [title] (title-filter title image-exts)))
-

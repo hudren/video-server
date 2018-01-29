@@ -15,7 +15,7 @@
             [clojure.string :as str]
             [clojure.zip :as zip]
             [video-server.util :refer :all])
-  (:import (java.net URLEncoder)))
+  (:import java.net.URLEncoder))
 
 (defonce ^:private cache (atom (cache/lru-cache-factory {})))
 
@@ -33,7 +33,7 @@
   "Searches for the series information based on series title."
   [title & [imdb]]
   (when-let [xml (get-xml cache (str "http://thetvdb.com/api/GetSeries.php?seriesname=" (URLEncoder/encode title "UTF-8")))]
-    (let [root (zip/xml-zip xml)
+    (let [root   (zip/xml-zip xml)
           series (seq (if imdb (xml/xml1-> root :Series [:IMDB_ID imdb])))
           series (or series (xml/xml1-> root :Series [:SeriesName title]))
           values (into {} (map (juxt :tag #(first (:content %))) (-> series first :content)))]
@@ -55,10 +55,10 @@
   [episode]
   [(xml/xml1-> episode :SeasonNumber xml/text parse-long)
    (xml/xml1-> episode :EpisodeNumber xml/text parse-long)
-   {:title (xml/xml1-> episode :EpisodeName xml/text)
-    :plot (xml/xml1-> episode :Overview xml/text)
-    :released (xml/xml1-> episode :FirstAired xml/text)
-    :writers (multi (xml/xml1-> episode :Writer xml/text))
+   {:title     (xml/xml1-> episode :EpisodeName xml/text)
+    :plot      (xml/xml1-> episode :Overview xml/text)
+    :released  (xml/xml1-> episode :FirstAired xml/text)
+    :writers   (multi (xml/xml1-> episode :Writer xml/text))
     :directors (multi (xml/xml1-> episode :Director xml/text))}])
 
 (defn- fetch-info
@@ -66,7 +66,7 @@
   [extract title imdb]
   (when-let [series (search-tvdb title imdb)]
     (when-let [info (fetch-tvdb (:seriesid series))]
-      (loop [seasons nil
+      (loop [seasons  nil
              episodes (for [episode (xml/xml-> (zip/xml-zip info) :Episode)] (extract episode))]
         (if-let [ep (first episodes)]
           (recur (assoc-in seasons [:seasons (first ep) :episodes (second ep)] (prune (get ep 2)))
@@ -96,4 +96,3 @@
    (tvdb-episode-metadata title nil season episode))
   ([title imdb season episode]
    (get-in (tvdb-season-metadata title imdb season) [:episodes episode])))
-

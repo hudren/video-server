@@ -10,13 +10,15 @@
 
 (ns video-server.video
   (:require [clojure.string :as str]
-            [video-server.file :refer [file-type filename mimetype relative-path title-info]]
+            [video-server.file
+             :refer
+             [file-type filename mimetype relative-path title-info]]
             [video-server.format :refer [audio-desc video-desc video-dimension]]
             [video-server.model :refer :all]
             [video-server.util :refer :all])
-  (:import (java.util Locale UUID)
-           (video_server.model Container Video)
-           (java.io File)))
+  (:import java.io.File
+           [java.util Locale UUID]
+           [video_server.model Container Video]))
 
 ; Magic number for Android file system / download manager limit (~4GB)
 (def ^:const max-download-size 4187593114)
@@ -71,25 +73,25 @@
 (defn video-container
   "Returns a container record for the specified file."
   [folder ^File file info]
-  (let [path (relative-path folder file)
-        video (video-stream info)
-        audio (audio-streams info)
-        width (parse-long (:width video))
+  (let [path   (relative-path folder file)
+        video  (video-stream info)
+        audio  (audio-streams info)
+        width  (parse-long (:width video))
         height (parse-long (:height video))
-        fields {:path path
-                :filename (filename file)
-                :filetype (file-type file)
-                :language (audio-language info)
-                :size (parse-long (-> info :format :size))
-                :bitrate (parse-long (-> info :format :bit_rate))
-                :width width
-                :height height
+        fields {:path      path
+                :filename  (filename file)
+                :filetype  (file-type file)
+                :language  (audio-language info)
+                :size      (parse-long (-> info :format :size))
+                :bitrate   (parse-long (-> info :format :bit_rate))
+                :width     width
+                :height    height
                 :dimension (video-dimension width height)
-                :video (video-desc (:codec_name video))
-                :audio (str/join ", " (distinct (map #(audio-desc (:codec_name %)) audio)))
-                :modified (.lastModified file)
-                :url (encoded-url (:url folder) path)
-                :mimetype (mimetype file)}]
+                :video     (video-desc (:codec_name video))
+                :audio     (str/join ", " (distinct (map #(audio-desc (:codec_name %)) audio)))
+                :modified  (.lastModified file)
+                :url       (encoded-url (:url folder) path)
+                :mimetype  (mimetype file)}]
     (make-record Container fields)))
 
 (defn rank-containers
@@ -124,20 +126,19 @@
   "Returns a title suitable for sorting."
   [title]
   (str/trim
-    (condp #(.startsWith %2 %1) title
-      "The " (subs title 4)
-      "An " (subs title 3)
-      "A " (subs title 2)
-      title title)))
+   (condp #(.startsWith %2 %1) title
+     "The " (subs title 4)
+     "An "  (subs title 3)
+     "A "   (subs title 2)
+     title  title)))
 
 (defn video-record
   "Returns a new video record with the specified container."
   [container info]
   (let [duration (parse-double (-> info :format :duration))
-        title (video-title container info)]
-    (make-record Video (merge {:id (str (UUID/randomUUID))
-                               :sorting (sorting-title (:title title))
-                               :duration duration
+        title    (video-title container info)]
+    (make-record Video (merge {:id         (str (UUID/randomUUID))
+                               :sorting    (sorting-title (:title title))
+                               :duration   duration
                                :containers (list container)}
                               title))))
-

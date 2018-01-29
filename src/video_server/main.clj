@@ -10,6 +10,7 @@
 
 (ns video-server.main
   (:refer-clojure :exclude [parse-opts])
+  (:gen-class)
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -23,11 +24,10 @@
             [video-server.server :refer [start-server]]
             [video-server.util :refer :all]
             [video-server.watcher :refer [start-watcher]])
-  (:import (ch.qos.logback.classic Level Logger)
-           (java.io File PushbackReader)
-           (java.net InetAddress NetworkInterface)
-           (org.slf4j LoggerFactory))
-  (:gen-class))
+  (:import [ch.qos.logback.classic Level Logger]
+           [java.io File PushbackReader]
+           [java.net InetAddress NetworkInterface]
+           org.slf4j.LoggerFactory))
 
 (def ^:const discovery-port 8394)
 
@@ -61,7 +61,7 @@
 (defn external-addresses []
   (filter (fn [[_ a]] (.isSiteLocalAddress a))
           (for [interface (enumeration-seq (NetworkInterface/getNetworkInterfaces))
-                address (enumeration-seq (.getInetAddresses interface))]
+                address   (enumeration-seq (.getInetAddresses interface))]
             [(.getDisplayName interface) address])))
 
 (defn best-external-address [addresses]
@@ -71,7 +71,7 @@
 (defn host-url
   "Returns a url for this web server based on the IP address and web port."
   [port]
-  (let [addr (.getAddress (or (external-address) (best-external-address (external-addresses)) (InetAddress/getLocalHost)))
+  (let [addr  (.getAddress (or (external-address) (best-external-address (external-addresses)) (InetAddress/getLocalHost)))
         quads (mapv (partial bit-and 0xFF) addr)]
     (apply format "http://%d.%d.%d.%d:%d" (conj quads port))))
 
@@ -84,13 +84,13 @@
   "Returns the Logback level from the string."
   [level]
   (case (str/lower-case level)
-    "all" Level/ALL
+    "all"   Level/ALL
     "trace" Level/TRACE
     "debug" Level/DEBUG
-    "info" Level/INFO
-    "warn" Level/WARN
+    "info"  Level/INFO
+    "warn"  Level/WARN
     "error" Level/ERROR
-    "off" Level/OFF
+    "off"   Level/OFF
     nil))
 
 (defn set-log-level
@@ -182,8 +182,8 @@
       (let [file (io/file (if (coll? dir) (first dir) dir))]
         (if (.isDirectory file)
           (let [options (if (coll? dir) (second dir) {})
-                name (unique-name (.getName file) names)
-                folder (->Folder name file (str #_url "/videos/" name) (merge options (read-options file)))]
+                name    (unique-name (.getName file) names)
+                folder  (->Folder name file (str #_url "/videos/" name) (merge options (read-options file)))]
             (recur (rest dirs) (conj folders folder) (conj names name)))
           (recur (rest dirs) folders names)))
       folders)))
@@ -193,7 +193,7 @@
   [file dirs options url]
   (if (.isFile file)
     (let [settings (read-edn file)
-          options (merge options (dissoc settings :folders))]
+          options  (merge options (dissoc settings :folders))]
       [(make-folders (concat (:folders settings) dirs) url) options])
     [(make-folders dirs url) options]))
 
@@ -203,20 +203,20 @@
   command line and provide folder-specific options."
   [args options url]
   (let [first-arg-if-file (if (some-> args first io/file .isFile) (first args))
-        file (io/file (or first-arg-if-file "settings.edn"))
-        dirs (if (.isFile file)
-               (or (next args) (list (default-folder)))
-               (if (seq args) args (list (default-folder))))
-        dirs (concat dirs (additional-folders))
-        dirs (filter #(.isDirectory (io/file %)) dirs)]
+        file              (io/file (or first-arg-if-file "settings.edn"))
+        dirs              (if (.isFile file)
+                            (or (next args) (list (default-folder)))
+                            (if (seq args) args (list (default-folder))))
+        dirs              (concat dirs (additional-folders))
+        dirs              (filter #(.isDirectory (io/file %)) dirs)]
     (process-settings file dirs options url)))
 
 (defn start
   "Starts all of the components, returning the Jetty web server."
   [args options]
-  (let [fmt (-> options :format keyword)
-        size (-> options :size str keyword)
-        url (host-url (:port options))
+  (let [fmt               (-> options :format keyword)
+        size              (-> options :size str keyword)
+        url               (host-url (:port options))
         [folders options] (process-args args options url)]
     (when-not (seq folders)
       (exit 2 (str "Specified video folder(s) were not found: " (str/join ", " args))))
@@ -233,12 +233,11 @@
   (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
     (cond
       (:version options) (exit 0 (version))
-      (:help options) (exit 0 (usage summary))
-      errors (exit 1 (str/join \newline errors)))
+      (:help options)    (exit 0 (usage summary))
+      errors             (exit 1 (str/join \newline errors)))
     (set-log-level (:log-level options))
     (when-not (installed?)
       (exit 3 "ffmpeg not found on path."))
     (when (:underscores options)
       (alter-var-root #'video-server.file/*use-underscores* (constantly true)))
     (.join (start arguments options))))
-

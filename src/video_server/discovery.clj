@@ -30,8 +30,8 @@
   "Sends the response back to the requester."
   [socket ^DatagramPacket request url hostname]
   (let [response (str url "|" hostname)
-        data (.getBytes response)
-        packet (DatagramPacket. data (count data) (.getAddress request) (.getPort request))]
+        data     (.getBytes response)
+        packet   (DatagramPacket. data (count data) (.getAddress request) (.getPort request))]
     (log/trace "sending" response)
     (.send socket packet)))
 
@@ -55,4 +55,3 @@
   (doto (Thread. ^Runnable (partial listen-for-clients url port hostname) "discovery")
     (.setDaemon true)
     (.start)))
-

@@ -10,9 +10,9 @@
 
 (ns video-server.format
   (:require [clojure.string :as str])
-  (:import (java.text DateFormat SimpleDateFormat)
-           (java.util Locale)
-           (java.util.concurrent TimeUnit)))
+  (:import [java.text DateFormat SimpleDateFormat]
+           java.util.concurrent.TimeUnit
+           java.util.Locale))
 
 (def dimensions #{"4K" "1080p" "720p" "FUHD" "UHD" "FHD" "HD" "SD"})
 
@@ -38,8 +38,8 @@
   (let [size (if (string? size) (Long/parseLong size) size)]
     (condp #(> %2 %1) size
       1073741824 (format "%.1f GB" (double (/ size 1073741824)))
-      1028196 (format "%.0f MB" (double (/ size 1028196)))
-      1024 (format "%.0f KB" (double (/ size 1024)))
+      1028196    (format "%.0f MB" (double (/ size 1028196)))
+      1024       (format "%.0f KB" (double (/ size 1024)))
       (str size " B"))))
 
 (defn format-bitrate
@@ -48,7 +48,7 @@
   (let [rate (if (string? rate) (Long/parseLong rate) rate)]
     (condp #(> %2 %1) rate
       1028196 (format "%.1f Mb/s" (double (/ rate 1028196)))
-      1024 (format "%.0f Kb/s" (double (/ rate 1024)))
+      1024    (format "%.0f Kb/s" (double (/ rate 1024)))
       (str rate " b/s"))))
 
 (defn format-filetype
@@ -61,19 +61,19 @@
   [mimetype]
   (case mimetype
     "video/x-matroska" "MKV"
-    "video/mp4" "MP4"
+    "video/mp4"        "MP4"
     mimetype))
 
 (defn format-duration
   "Returns the duration in seconds as a human-readable string."
   [duration]
   (let [duration (if (string? duration) (Double/parseDouble duration) duration)
-        ms (* duration 1000)
-        hours (.toHours TimeUnit/MILLISECONDS ms)
-        minutes (- (.toMinutes TimeUnit/MILLISECONDS ms)
-                   (.toMinutes TimeUnit/HOURS hours))
-        seconds (- (.toSeconds TimeUnit/MILLISECONDS ms)
-                   (.toSeconds TimeUnit/MINUTES (.toMinutes TimeUnit/MILLISECONDS ms)))]
+        ms       (* duration 1000)
+        hours    (.toHours TimeUnit/MILLISECONDS ms)
+        minutes  (- (.toMinutes TimeUnit/MILLISECONDS ms)
+                    (.toMinutes TimeUnit/HOURS hours))
+        seconds  (- (.toSeconds TimeUnit/MILLISECONDS ms)
+                    (.toSeconds TimeUnit/MINUTES (.toMinutes TimeUnit/MILLISECONDS ms)))]
     (format "%d:%02d:%02d" hours minutes seconds)))
 
 (defn format-runtime
@@ -95,13 +95,13 @@
   (cond
     (<= 4086 width 4096) "4K"
     (<= 1910 width 1920) "FHD" ; "1080p"
-    (<= 1270 width 1280) "HD" ; "720p"
-    (>= width 7680) "FUHD"
-    (>= width 3840) "UHD"
-    (>= width 1920) "FHD"
-    (>= width 1280) "HD"
-    (>= width 710) "SD"
-    :default (str width "x" height)))
+    (<= 1270 width 1280) "HD"  ; "720p"
+    (>= width 7680)      "FUHD"
+    (>= width 3840)      "UHD"
+    (>= width 1920)      "FHD"
+    (>= width 1280)      "HD"
+    (>= width 710)       "SD"
+    :default             (str width "x" height)))
 
 (defn video-size
   "Returns the probable video size based on the width."
@@ -109,8 +109,8 @@
   (cond
     (> width 1920) :2160
     (> width 1280) :1080
-    (> width 720) :720
-    :default :480))
+    (> width 720)  :720
+    :default       :480))
 
 (defn video-width
   "Returns the video width for the given size."
@@ -164,4 +164,3 @@
   "Formats ranges to be human readable."
   [ranges]
   (str/join "," (map (fn [[f l]] (if (or (nil? l) (= f l)) f (str f "-" l))) ranges)))
-

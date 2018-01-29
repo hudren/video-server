@@ -9,19 +9,30 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.process
-  (:require [clojure.java.io :as io]
+  (:require [clojure.core.async :refer [<! <!! >! chan go go-loop thread]]
+            [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [clojure.core.async :refer [chan go go-loop thread <! <!! >!]]
+            [video-server.encoder
+             :refer
+             [*fake-encode*
+              can-source?
+              container-to-encode
+              encode-size
+              encode-subtitles
+              encode-video
+              extract-thumbnail
+              video-encode-spec]]
             [video-server.file :refer [file-type subtitle? video?]]
-            [video-server.encoder :refer [*fake-encode* can-source? container-to-encode encode-size encode-subtitles encode-video
-                                          extract-thumbnail video-encode-spec]]
             [video-server.format :refer [video-size]]
-            [video-server.library :refer [add-info add-video title-for-key video-key video-for-key]]
-            [video-server.metadata :refer [read-metadata retrieve-season-metadata retrieve-metadata]]
+            [video-server.library
+             :refer
+             [add-info add-video title-for-key video-for-key video-key]]
+            [video-server.metadata
+             :refer
+             [read-metadata retrieve-metadata retrieve-season-metadata]]
             [video-server.title :refer [title-seasons]]
-            [video-server.util :refer :all]
             [video-server.video :refer [can-cast? can-download? web-playback?]])
-  (:import (java.io File)))
+  (:import java.io.File))
 
 (def ^:const fetch-threads 4)
 
@@ -69,7 +80,7 @@
 (defn process-title
   "Enqueues the title for processing."
   [folder file]
-  (let [key (video-key file)
+  (let [key  (video-key file)
         chan (if (:season key) series-chan movie-chan)]
     (go (>! chan [folder key]))))
 
@@ -146,7 +157,7 @@
         (loop [containers containers]
           (when (seq containers)
             (let [{fmt :format size :size} (first containers)
-                  size (encode-size video size)]
+                  size                     (encode-size video size)]
               (log/trace "checking" fmt size "for" (:title video))
               (if (should-encode-video? video fmt size)
                 (encode folder video fmt size false)
@@ -159,7 +170,7 @@
     (thread
       (loop []
         (let [[folder key] (<!! chan)
-              options (:options folder)]
+              options      (:options folder)]
           (log/trace "fetching" folder key)
           (when (get options :fetch fetch?)
             (when-let [title (title-for-key key)]
@@ -177,7 +188,7 @@
   "Processes requests in the encoder channel."
   []
   (go-loop []
-    (let [spec (<! encoder-chan)
+    (let [spec   (<! encoder-chan)
           output (io/file (:output spec))]
       (when (.exists ^File (:file spec))
         (log/trace "encoding" spec)
@@ -198,7 +209,7 @@
   (start-encoding)
   (go-loop []
     (let [[folder key] (<! process-chan)
-          options (:options folder)]
+          options      (:options folder)]
       (log/trace "processing" folder key)
       (when-let [video (video-for-key folder key)]
         (try (when (get options :fetch fetch?)
@@ -213,4 +224,3 @@
                               (-> options :encoder :containers)))
              (catch Exception e (log/error e "error processing video" (str video))))))
     (recur)))
-

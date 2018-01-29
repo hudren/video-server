@@ -13,7 +13,7 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [video-server.util :refer :all])
-  (:import (java.net URLEncoder)))
+  (:import java.net.URLEncoder))
 
 (defonce ^:private cache (atom (cache/lru-cache-factory {})))
 
@@ -107,19 +107,18 @@
   "Returns normalized information regarding the movie."
   [md]
   (let [info (merge (select-keys md [:title :imdb-id :tagline])
-                    {:released (:release-date md)
-                     :genres (-> md :genres names)
-                     :plot (:overview md)
-                     :creators (-> md :created-by names)
-                     :producers (crew md "Producer")
+                    {:released            (:release-date md)
+                     :genres              (-> md :genres names)
+                     :plot                (:overview md)
+                     :creators            (-> md :created-by names)
+                     :producers           (crew md "Producer")
                      :executive-producers (crew md "Executive Producer")
-                     :directors (crew md "Director")
-                     :writers (crew md "Writer")
-                     :actors (-> md :credits :cast names)
-                     :networks (-> md :networks names)
-                     :languages (-> md :spoken-langauges names)
-                     :keywords (-> md :keywords :keywords names)
-                     :website (:homepage md)
-                     :trailer (trailer md)})]
+                     :directors           (crew md "Director")
+                     :writers             (crew md "Writer")
+                     :actors              (-> md :credits :cast names)
+                     :networks            (-> md :networks names)
+                     :languages           (-> md :spoken-langauges names)
+                     :keywords            (-> md :keywords :keywords names)
+                     :website             (:homepage md)
+                     :trailer             (trailer md)})]
     (into {} (remove (comp nil-or-blank? second) info))))
-

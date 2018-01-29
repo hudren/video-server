@@ -13,8 +13,8 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [video-server.util :refer :all])
-  (:import (java.net URLEncoder)
-           (java.text SimpleDateFormat)))
+  (:import java.net.URLEncoder
+           java.text.SimpleDateFormat))
 
 (defonce ^:private cache (atom (cache/lru-cache-factory {})))
 
@@ -40,7 +40,7 @@
 (defn- date
   "Returns an ISO formatted date."
   [d]
-  (let [input (SimpleDateFormat. "dd MMM yyyy")
+  (let [input  (SimpleDateFormat. "dd MMM yyyy")
         output (SimpleDateFormat. "yyyy-MM-dd")]
     (when d (.format output (.parse input d)))))
 
@@ -73,12 +73,12 @@
   "Extracts fields for storage from the metadata."
   [omdb]
   (let [md (merge (select-keys omdb [:title :runtime :rated :plot :type :poster])
-                  {:imdb-id (:imdbid omdb)
-                   :released (date (:released omdb))
-                   :year (first (parse-ints (:year omdb)))
-                   :genres (multi (:genre omdb))
+                  {:imdb-id   (:imdbid omdb)
+                   :released  (date (:released omdb))
+                   :year      (first (parse-ints (:year omdb)))
+                   :genres    (multi (:genre omdb))
                    :directors (when-let [d (:director omdb)] (list d))
-                   :stars (multi (:actors omdb))
+                   :stars     (multi (:actors omdb))
                    :languages (multi (:language omdb))})]
     (into {} (remove (comp nil-or-blank? second) md))))
 
@@ -86,9 +86,9 @@
   "Extracts and converts fields from the episode metadata."
   [omdb]
   (merge (select-keys omdb [:title :runtime :plot])
-         {:released (date (:released omdb))
+         {:released  (date (:released omdb))
           :directors (multi (:director omdb))
-          :writers (multi (:writer omdb))}))
+          :writers   (multi (:writer omdb))}))
 
 (defn omdb-metadata
   "Queries for metadata related to the given title and year."
@@ -112,4 +112,3 @@
   (let [resp (retrieve-episode title season episode)]
     (when (= (:response resp) "True")
       (omdb-episode-info resp))))
-

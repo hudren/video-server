@@ -12,15 +12,27 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.ffmpeg :refer [video-info]]
-            [video-server.file :refer [descendant? file-base file-subtype filename image? mimetype relative-path subtitle?
-                                       title-info video?]]
+            [video-server.file
+             :refer
+             [descendant?
+              file-base
+              file-subtype
+              filename
+              image?
+              mimetype
+              relative-path
+              subtitle?
+              title-info
+              video?]]
             [video-server.format :refer [lang-name]]
             [video-server.model :refer :all]
-            [video-server.title :refer [best-image episode-title season-title title-seasons]]
+            [video-server.title
+             :refer
+             [best-image episode-title season-title title-seasons]]
             [video-server.util :refer :all]
             [video-server.video :refer [sorting-title video-container video-record]])
-  (:import (java.io File)
-           (video_server.model Title VideoKey)))
+  (:import java.io.File
+           [video_server.model Title VideoKey]))
 
 ; Map of folders to video keys to Videos
 (defonce library (ref {}))
@@ -35,9 +47,9 @@
   "Removes all videos from the library."
   []
   (dosync
-    (ref-set library {})
-    (ref-set titles {})
-    (ref-set files {})))
+   (ref-set library {})
+   (ref-set titles {})
+   (ref-set files {})))
 
 (defn has-file?
   "Returns whether the file belongs to the library."
@@ -75,9 +87,9 @@
   [data]
   (cond
     (instance? VideoKey data) data
-    (map? data) (make-record VideoKey (norm-key data))
-    (string? data) (video-key (title-info data))
-    (instance? File data) (video-key (file-base data))))
+    (map? data)               (make-record VideoKey (norm-key data))
+    (string? data)            (video-key (title-info data))
+    (instance? File data)     (video-key (file-base data))))
 
 (defn video-for-key
   "Returns the video for the specified video key."
@@ -146,10 +158,10 @@
 (defn title-record
   "Returns a new Title containing the video."
   [title folder key]
-  (make-record Title {:id (:title key)
-                      :title title
+  (make-record Title {:id      (:title key)
+                      :title   title
                       :sorting (sorting-title title)
-                      :videos #{[folder key]}}))
+                      :videos  #{[folder key]}}))
 
 (defn add-video
   "Adds a container to the library, returning a map indicating whether
@@ -159,20 +171,20 @@
     (when-let [container (video-container folder file info)]
       (when-let [video (video-record container info)]
         (dosync
-          (let [key (video-key video)
-                video-exists (get-in @library [folder key])
-                title-exists (get @titles (:title key))
-                season-exists (get (title-seasons title-exists) (:season key))]
-            (if video-exists
-              (alter library update-in [folder key :containers] conj (first (:containers video)))
-              (alter library update-in [folder] assoc key video))
-            (if title-exists
-              (alter titles update-in [(:title key) :videos] conj [folder key])
-              (alter titles assoc (:title key) (title-record (:title video) folder key)))
-            (alter files assoc file [key (.lastModified file)])
-            (add-title (title-info file))
-            {:video (not video-exists) :title (not title-exists)
-             :season (and (:season key) (not season-exists))}))))))
+         (let [key           (video-key video)
+               video-exists  (get-in @library [folder key])
+               title-exists  (get @titles (:title key))
+               season-exists (get (title-seasons title-exists) (:season key))]
+           (if video-exists
+             (alter library update-in [folder key :containers] conj (first (:containers video)))
+             (alter library update-in [folder] assoc key video))
+           (if title-exists
+             (alter titles update-in [(:title key) :videos] conj [folder key])
+             (alter titles assoc (:title key) (title-record (:title video) folder key)))
+           (alter files assoc file [key (.lastModified file)])
+           (add-title (title-info file))
+           {:video  (not video-exists) :title (not title-exists)
+            :season (and (:season key) (not season-exists))}))))))
 
 (defn remove-video
   "Removes a file from a video. When the last file is removed, the
@@ -180,18 +192,18 @@
   [folder file video]
   (log/debug "removing video" (str file))
   (dosync
-    (let [key (video-key video)
-          title (@titles (:title key))
-          containers (remove #(= (filename file) (:filename %)) (:containers video))
-          videos (remove #(= % [folder key]) (:videos title))]
-      (if (empty? containers)
-        (do (alter library update-in [folder] dissoc key)
-            (alter files (partial apply dissoc) (files-for-video key))
-            (if (empty? videos)
-              (alter titles dissoc (:title key))
-              (alter titles update-in [(:title key)] assoc :videos videos)))
-        (do (alter library update-in [folder key] assoc :containers containers)
-            (alter files dissoc file))))))
+   (let [key        (video-key video)
+         title      (@titles (:title key))
+         containers (remove #(= (filename file) (:filename %)) (:containers video))
+         videos     (remove #(= % [folder key]) (:videos title))]
+     (if (empty? containers)
+       (do (alter library update-in [folder] dissoc key)
+           (alter files (partial apply dissoc) (files-for-video key))
+           (if (empty? videos)
+             (alter titles dissoc (:title key))
+             (alter titles update-in [(:title key)] assoc :videos videos)))
+       (do (alter library update-in [folder key] assoc :containers containers)
+           (alter files dissoc file))))))
 
 (defn add-subtitle
   "Returns true if the subtitle was added to an existing video."
@@ -200,31 +212,31 @@
      (add-subtitle folder file video)))
   ([folder file video]
    (log/debug "adding subtitle" (str file))
-   (let [[_ lang _] (str/split (filename file) #"\.")
-         path (relative-path folder file)
+   (let [[_ lang _]   (str/split (filename file) #"\.")
+         path         (relative-path folder file)
          subtitle-url (encoded-url (:url folder) path)
-         subtitle (->Subtitle path (filename file) (lang-name lang) lang subtitle-url (mimetype file))]
+         subtitle     (->Subtitle path (filename file) (lang-name lang) lang subtitle-url (mimetype file))]
      (dosync
-       (alter library update-in [folder (video-key video) :subtitles] conj subtitle)
-       (alter files assoc file [(video-key video) (.lastModified file)])
-       true))))
+      (alter library update-in [folder (video-key video) :subtitles] conj subtitle)
+      (alter files assoc file [(video-key video) (.lastModified file)])
+      true))))
 
 (defn remove-subtitle
   "Removes a subtitle file from a video."
   [folder file video]
-  (let [key (video-key video)
+  (let [key       (video-key video)
         subtitles (remove #(= (filename file) (:filename %)) (:subtitles video))]
     (log/debug "removing subtitle" (str file))
     (dosync
-      (alter library assoc-in [folder key :subtitles] subtitles)
-      (alter files dissoc file))))
+     (alter library assoc-in [folder key :subtitles] subtitles)
+     (alter files dissoc file))))
 
 (defn add-info
   "Adds the metadata to the Title, merging info for the folder."
   [folder title info]
   (log/debug "adding metadata for" (:title title))
   (dosync
-    (alter titles assoc-in [(:title (video-key title)) :info] (merge-options info (-> folder :options :info)))))
+   (alter titles assoc-in [(:title (video-key title)) :info] (merge-options info (-> folder :options :info)))))
 
 (defn- image-type
   "Returns the image type, :thumb or :poster."
@@ -234,8 +246,8 @@
 (defn- image-key
   "Returns the indexes to uniquely store the image."
   [path]
-  (let [title (title-info path)
-        season (:season title)
+  (let [title   (title-info path)
+        season  (:season title)
         episode (:episode title)]
     (->> [(if episode [:seasons (or season -1) :episodes episode])
           (image-type path)]
@@ -249,27 +261,27 @@
      (add-image folder file title)))
   ([folder file title]
    (log/debug "adding image" (str file))
-   (let [key (video-key title)
-         path (relative-path folder file)
-         url (encoded-url (:url folder) path)
+   (let [key   (video-key title)
+         path  (relative-path folder file)
+         url   (encoded-url (:url folder) path)
          image (image-key path)]
      (dosync
-       (alter titles assoc-in (cons (:title key) image) url)
-       (alter files assoc file [(:id title) (.lastModified file)])
-       (add-title file)))))
+      (alter titles assoc-in (cons (:title key) image) url)
+      (alter files assoc file [(:id title) (.lastModified file)])
+      (add-title file)))))
 
 (defn remove-image
   "Removes an image file from a video."
   [folder file title]
-  (let [key (video-key title)
-        path (relative-path folder file)
-        url (encoded-url (:url folder) path)
+  (let [key   (video-key title)
+        path  (relative-path folder file)
+        url   (encoded-url (:url folder) path)
         image (image-key path)]
     (log/debug "removing image" (str file))
     (dosync
-      (when (= url (get-in @titles (cons (:title key) image)))
-        (alter titles assoc-in (cons (:title key) image) nil)
-        (alter files dissoc file)))))
+     (when (= url (get-in @titles (cons (:title key) image)))
+       (alter titles assoc-in (cons (:title key) image) nil)
+       (alter files dissoc file)))))
 
 (defn remove-file
   "Removes a file from the library."
@@ -279,7 +291,7 @@
       (image? file) (remove-image folder file title)))
   (when-let [video (video-for-file folder file)]
     (cond
-      (video? file) (remove-video folder file video)
+      (video? file)    (remove-video folder file video)
       (subtitle? file) (remove-subtitle folder file video))))
 
 (defn current-videos
@@ -306,10 +318,10 @@
   (if-let [title (@titles (:title (video-key video)))]
     (let [info (:info title)]
       (merge video
-             {:title (or (:title info) (:title title))
+             {:title   (or (:title info) (:title title))
               :sorting (:sorting title)
-              :poster (best-image :poster title video)
-              :thumb (:thumb title)}
+              :poster  (best-image :poster title video)
+              :thumb   (:thumb title)}
              (when-let [st (season-title title (:season video))]
                {:season-title st})
              (when-let [et (episode-title title video)]
@@ -336,4 +348,3 @@
   changed."
   []
   (hash @library))
-

@@ -11,9 +11,8 @@
 (ns video-server.directory
   (:require [clojure.set :as set]
             [clojure.tools.logging :as log])
-  (:import (java.io File)
-           (java.nio.file ClosedWatchServiceException FileSystems StandardWatchEventKinds WatchEvent WatchKey
-                          WatchService)))
+  (:import java.io.File
+           [java.nio.file ClosedWatchServiceException FileSystems StandardWatchEventKinds WatchEvent WatchKey WatchService]))
 
 (def ^:private events
   {StandardWatchEventKinds/ENTRY_CREATE :create
@@ -56,11 +55,11 @@
           (when (.isValid k)
             (doseq [^WatchEvent ev (.pollEvents k)]
               (let [event (events (.kind ev))
-                    path (.resolve (.watchable k) (.context ev))
-                    file (.toFile path)]
+                    path  (.resolve (.watchable k) (.context ev))
+                    file  (.toFile path)]
                 (when-not (.isHidden file)
                   (cond
-                    (.isFile file) (file-fn event file)
+                    (.isFile file)    (file-fn event file)
                     (= event :create) (swap! dirs set/union (register ws file dir-fn))
                     (= event :delete) (if (contains? @dirs path)
                                         (when dir-fn (dir-fn :delete file))
@@ -78,8 +77,7 @@
   removals. The initial scan will invoke the dir-fn for each dir."
   [dir file-fn & [dir-fn]]
   (log/debug "watching" (str dir))
-  (let [ws (.newWatchService (FileSystems/getDefault))
+  (let [ws   (.newWatchService (FileSystems/getDefault))
         dirs (register ws dir dir-fn)]
     (future (process-events ws dir dirs file-fn dir-fn))
     (fn [] (.close ws))))
-

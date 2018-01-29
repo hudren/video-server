@@ -15,12 +15,14 @@
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [video-server.file :refer [adjust-filename file-ext title-filter]]
-            [video-server.library :refer [folders-for-title norm-title video-for-key]]
+            [video-server.library
+             :refer
+             [folders-for-title norm-title video-for-key]]
             [video-server.omdb :refer [omdb-info omdb-metadata retrieve-id]]
             [video-server.tmdb :refer [search-for-ids tmdb-info tmdb-metadata]]
             [video-server.tvdb :refer [tvdb-season-metadata]]
             [video-server.util :refer :all])
-  (:import (java.io File)))
+  (:import java.io.File))
 
 (defn retrieve-image
   "Returns the image as a byte array."
@@ -34,11 +36,11 @@
   (^File [title]
    (title-dir title (first (folders-for-title title))))
   (^File [title folder]
-   (let [videos (map video-for-key (filter #(= (first %) folder) (:videos title)))
+   (let [videos     (map video-for-key (filter #(= (first %) folder) (:videos title)))
          containers (mapcat :containers videos)
-         pos (-> folder :url decoded-url count inc)
-         files (map #(subs (-> % :url decoded-url) pos) containers)
-         dirs (distinct (map #(str/join "/" (remove nil? (drop-last 1 (str/split % #"/")))) files))]
+         pos        (-> folder :url decoded-url count inc)
+         files      (map #(subs (-> % :url decoded-url) pos) containers)
+         dirs       (distinct (map #(str/join "/" (remove nil? (drop-last 1 (str/split % #"/")))) files))]
      (if (seq dirs)
        (loop [common [] segments (apply map list (map #(str/split % #"/") dirs))]
          (if (and (seq segments) (apply = (first segments)))
@@ -97,7 +99,7 @@
   [title & titles]
   (loop [title title titles (remove nil? titles)]
     (if (seq titles)
-      (let [norm (str/lower-case (str/join (re-seq #"[A-Za-z]" title)))
+      (let [norm  (str/lower-case (str/join (re-seq #"[A-Za-z]" title)))
             norm2 (str/lower-case (str/join (re-seq #"[A-Za-z]" (first titles))))]
         (recur (if-not (= norm norm2) title (first titles)) (rest titles)))
       title)))
@@ -105,21 +107,21 @@
 (defn fetch-metadata
   "Returns the movie or series metadata including the poster URL."
   [item & [imdb-id]]
-  (let [[title year] (title-parts (:title item))
-        duration (when-let [duration (:duration item)] (/ duration 60))
-        series? (some? (:episode item))
+  (let [[title year]              (title-parts (:title item))
+        duration                  (when-let [duration (:duration item)] (/ duration 60))
+        series?                   (some? (:episode item))
         {:keys [tmdb-id imdb-id]} (if imdb-id {:imdb-id imdb-id} (search-for-ids title series? year duration))
-        db (when imdb-id (retrieve-id imdb-id))
-        db (or db (omdb-metadata title series? year))
-        md (tmdb-metadata (or tmdb-id imdb-id (:imdbid db)) series?)]
+        db                        (when imdb-id (retrieve-id imdb-id))
+        db                        (or db (omdb-metadata title series? year))
+        md                        (tmdb-metadata (or tmdb-id imdb-id (:imdbid db)) series?)]
     (merge (tmdb-info md) (omdb-info db)
            {:title (best-title title (:title db))})))
 
 (defn retrieve-metadata
   "Retrieves metadata from the Internet and persists it in the folder."
   [title]
-  (let [video (video-for-key (-> title :videos first))
-        info (fetch-metadata (or video title))
+  (let [video  (video-for-key (-> title :videos first))
+        info   (fetch-metadata (or video title))
         poster (:poster info)]
     (save-metadata title (dissoc info :poster))
     (when (and (not (:poster title)) poster)
@@ -136,4 +138,3 @@
         (save-metadata title new-info)
         new-info)
       info)))
-

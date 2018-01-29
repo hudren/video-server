@@ -46,4 +46,3 @@
     (is (= 2 (:season spec)))
     (is (= 1 (:episode spec)))
     (is (= "episode" (:episode-title spec)))))
-

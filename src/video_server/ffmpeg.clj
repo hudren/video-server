@@ -77,10 +77,10 @@
   "Returns an updated spec with scaling information."
   [spec]
   (merge spec
-         (let [width (:width spec)
+         (let [width     (:width spec)
                new-width (:target-width spec)]
            (when (< new-width width)
-             (let [height (:height spec)
+             (let [height     (:height spec)
                    new-height (int (* height (/ new-width width)))
                    new-height (if (even? new-height) new-height (dec new-height))]
                {:scale (str "scale=" new-width ":" new-height) :width new-width :height new-height})))))
@@ -139,7 +139,7 @@
   "Returns the ffmpeg options for encoding / copying the aac audio
   stream."
   [audio-streams index original? codec]
-  (let [audio (audio-to-encode audio-streams original? codec)
+  (let [audio  (audio-to-encode audio-streams original? codec)
         exists (= (:codec_name audio) codec)]
     (conj ["-map" (str "0:" (:index audio))
            (str "-c:a:" index) (if exists "copy" codec)]
@@ -180,4 +180,3 @@
    (format-options spec)
    ;"-threads" 0
    (:output spec)])
-

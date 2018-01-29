@@ -12,7 +12,7 @@
   (:require [clojure.string :as str]
             [hiccup.core :refer [html]]
             [hiccup.page :refer [html5 include-css include-js]])
-  (:import (java.net URLEncoder)))
+  (:import java.net.URLEncoder))
 
 (defn head
   [title style script]
@@ -87,4 +87,3 @@
   "Encodes text appropriately for inclusion in a URL."
   [text]
   (URLEncoder/encode text "UTF-8"))
-

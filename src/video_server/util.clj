@@ -16,8 +16,8 @@
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [clojure.xml :as xml])
-  (:import (java.io ByteArrayInputStream)
-           (java.net URLDecoder URLEncoder)))
+  (:import java.io.ByteArrayInputStream
+           [java.net URLDecoder URLEncoder]))
 
 (defn parse-long
   "Parses a long value from a string or number."
@@ -48,7 +48,7 @@
                         (#{"G" "GB"} u) (long (* (parse-double n) 1024 1024 1024))
                         (#{"M" "MB"} u) (long (* (parse-double n) 1024 1024))
                         (#{"K" "KB"} u) (long (* (parse-double n) 1024))
-                        :default (parse-long n)))))
+                        :default        (parse-long n)))))
     (catch NumberFormatException _ nil)))
 
 (defn ratio
@@ -90,10 +90,10 @@
 (defn split-equally
   "Split a collection into a sequence of equally sized parts."
   [num coll]
-  (loop [num num
+  (loop [num   num
          parts []
-         coll coll
-         c (count coll)]
+         coll  coll
+         c     (count coll)]
     (if (<= num 0)
       parts
       (let [t (quot (+ c num -1) num)]
@@ -103,10 +103,10 @@
   "Creates a number of doseq blocks that run in parallel."
   [thread-count [sym coll] & body]
   `(dorun (pmap
-            (fn [vals#]
-              (doseq [~sym vals#]
-                ~@body))
-            (split-equally ~thread-count ~coll))))
+           (fn [vals#]
+             (doseq [~sym vals#]
+               ~@body))
+           (split-equally ~thread-count ~coll))))
 
 (defmacro parall
   "Executes the expressions in parallel, returning the results."
@@ -127,10 +127,10 @@
                 (assoc m k v)
                 (let [nv (cond
                            (and (coll? ov) (coll? v)) (into ov v)
-                           (coll? ov) (conj ov v)
-                           (coll? v) (conj v ov)
-                           :default v)]
-                (assoc m k (if (sequential? nv) (distinct nv) nv))))))
+                           (coll? ov)                 (conj ov v)
+                           (coll? v)                  (conj v ov)
+                           :default                   v)]
+                  (assoc m k (if (sequential? nv) (distinct nv) nv))))))
           (or options {}) override))
 
 (declare exec)
@@ -165,7 +165,7 @@
   (let [p (promise)]
     (future
       (while
-        (= (deref p ms "running") "running")
+       (= (deref p ms "running") "running")
         (f)))
     #(deliver p "stop")))
 
@@ -198,4 +198,3 @@
             (swap! cache #(cache/miss % url xml)))))
       (catch Exception _ nil)))
   (get @cache url))
-

@@ -9,14 +9,27 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.html.title
-  (:require [video-server.format :refer [format-date format-filetype format-runtime format-size lang-two-letter]]
-            [video-server.library :refer [video-for-key]]
+  (:require [video-server.format
+             :refer
+             [format-date
+              format-filetype
+              format-runtime
+              format-size
+              lang-two-letter]]
             [video-server.html.site :refer :all]
             [video-server.html.table :refer [condense-table html-table]]
-            [video-server.title :refer [best-image episode-title full-title has-episodes? has-parts? has-seasons?
-                                        season-titles]]
+            [video-server.library :refer [video-for-key]]
+            [video-server.title
+             :refer
+             [best-image
+              episode-title
+              full-title
+              has-episodes?
+              has-parts?
+              has-seasons?
+              season-titles]]
             [video-server.video :refer [quality web-playback?]])
-  (:import (java.util Locale)))
+  (:import java.util.Locale))
 
 (defn container-desc
   "Returns a description of the contents of the container."
@@ -42,15 +55,15 @@
   [info]
   (if (seq (select-keys info [:website :trailer :wikipedia :imdb-id :netflix-id]))
     (list
-      (if (:website info) (video-link (:website info) "Website" "home"))
-      (if (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
-      (if (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
-      (if (:imdb-id info)
-        (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDb")
-        (video-link (str "http://www.imdb.com/find?q=" (url-encode (:title info))) "IMDb" "search"))
-      (if (:netflix-id info)
-        (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix")
-        (video-link (str "http://dvd.netflix.com/Search?v1=" (url-encode (:title info))) "Netflix" "search")))))
+     (if (:website info) (video-link (:website info) "Website" "home"))
+     (if (:trailer info) (video-link (:trailer info) "Trailer" "theaters"))
+     (if (:wikipedia info) (video-link (:wikipedia info) "Wikipedia"))
+     (if (:imdb-id info)
+       (video-link (str "http://www.imdb.com/title/" (:imdb-id info)) "IMDb")
+       (video-link (str "http://www.imdb.com/find?q=" (url-encode (:title info))) "IMDb" "search"))
+     (if (:netflix-id info)
+       (video-link (str "http://dvd.netflix.com/Movie/" (:netflix-id info)) "Netflix")
+       (video-link (str "http://dvd.netflix.com/Search?v1=" (url-encode (:title info))) "Netflix" "search")))))
 
 (defn- video-type
   "Conditionally promotes the video type for better web playability."
@@ -117,9 +130,9 @@
   [:div
    [:p.plot (:plot info)]
    [:p (separate
-         (if-let [year (:year info)] [:span.year year])
-         (if-let [rated (:rated info)] [:span.rated rated])
-         (if-let [runtime (when-not (= (:type info) "series") (:runtime info))] [:span.duration runtime]))]
+        (if-let [year (:year info)] [:span.year year])
+        (if-let [rated (:rated info)] [:span.rated rated])
+        (if-let [runtime (when-not (= (:type info) "series") (:runtime info))] [:span.duration runtime]))]
    (if-content :p.subjects (combine "Subjects" (:subjects info)))
    (if-content :p.genres (combine "Genres" (:genres info) (:netflix-genres info)))
    (if-content :p.directors (combine "Directed by" (:directors info)))
@@ -134,8 +147,8 @@
   [:div
    [:p.overview (:plot info)]
    [:p (separate
-         (if-let [date (:released info)] [:span.released (format-date date)])
-         (if-let [runtime (:duration video)] [:span.duration (format-runtime runtime)]))]
+        (if-let [date (:released info)] [:span.released (format-date date)])
+        (if-let [runtime (:duration video)] [:span.duration (format-runtime runtime)]))]
    (if-content :p.writers (combine "Written by" (:writers info)))
    (if-content :p.directors (combine "Directed by" (:directors info)))
    [:table#episode-containers.containers (-> (map container-desc containers) condense-table html-table)]])
@@ -144,24 +157,23 @@
   [title info video playable season episode]
   (let [containers (sort quality (:containers video))]
     (site-template
-      {:title  (full-title title video)
-       :style  "title.css"
-       :script "title.js"
-       :onload "hideVideo()"}
-      (if (or (:year info) (:plot info))
-        (title-desc (best-image :poster title season episode)
-                    (title-info title info containers season)))
-      [:div#links.block (video-links info)]
-      (if (has-seasons? title)
-        [:div#seasons.block (season-tabs (title-url title) (season-titles title) season)])
-      [:div#season.block.two-columns {:class (if (or (has-episodes? title season) (has-parts? title)) "has-episodes")}
-       [:div#episodes.left-column
-        (when (has-episodes? title season)
-          (episode-list title season episode))]
-       [:div#episode.right-column
-        (when (has-episodes? title season)
-          (episode-info (get-in info [:seasons season :episodes episode]) video containers))]]
-      (if (seq playable)
-        [:div#player.block.js-hidden
-         (video-tag video playable)]))))
-
+     {:title  (full-title title video)
+      :style  "title.css"
+      :script "title.js"
+      :onload "hideVideo()"}
+     (if (or (:year info) (:plot info))
+       (title-desc (best-image :poster title season episode)
+                   (title-info title info containers season)))
+     [:div#links.block (video-links info)]
+     (if (has-seasons? title)
+       [:div#seasons.block (season-tabs (title-url title) (season-titles title) season)])
+     [:div#season.block.two-columns {:class (if (or (has-episodes? title season) (has-parts? title)) "has-episodes")}
+      [:div#episodes.left-column
+       (when (has-episodes? title season)
+         (episode-list title season episode))]
+      [:div#episode.right-column
+       (when (has-episodes? title season)
+         (episode-info (get-in info [:seasons season :episodes episode]) video containers))]]
+     (if (seq playable)
+       [:div#player.block.js-hidden
+        (video-tag video playable)]))))

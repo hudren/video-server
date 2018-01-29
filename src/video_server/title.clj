@@ -74,16 +74,16 @@
   [fk1 fk2]
   (let [k1 (second fk1)
         k2 (second fk2)
-        c (compare (:season k1) (:season k2))]
+        c  (compare (:season k1) (:season k2))]
     (if-not (zero? c) c
-      (compare (:episode k1) (:episode k2)))))
+            (compare (:episode k1) (:episode k2)))))
 
 (defn full-title
   "Returns the full title including part and episode."
   [title video]
-  (let [series (or (:title (:info title)) (:title title))
-        season (:season video)
-        episode (:episode video)
+  (let [series        (or (:title (:info title)) (:title title))
+        season        (:season video)
+        episode       (:episode video)
         episode-title (episode-title title video)]
     (if episode
       (str series " - "
@@ -125,4 +125,3 @@
   [video]
   (let [container (best-container video)]
     (seq (filter #(and (= (:dimension %) (:dimension container)) (web-playback? %)) (:containers video)))))
-

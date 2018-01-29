@@ -64,14 +64,14 @@
 (defn scan-videos
   "Scans the directory for videos."
   [folder path]
-  (let [dir (io/file (or path (:file folder)))
+  (let [dir   (io/file (or path (:file folder)))
         files (group-by stable? (.listFiles dir (movie-filter)))]
     (parseq scan-threads [file (get files true)]
-      (log/info "adding video" (str file))
-      (let [added (library/add-video folder file)]
-        (cond
-          (:title added) (add-metadata folder file)
-          (:season added) (process-title folder file))))
+            (log/info "adding video" (str file))
+            (let [added (library/add-video folder file)]
+              (cond
+                (:title added)  (add-metadata folder file)
+                (:season added) (process-title folder file))))
     (doseq [file (get files false)]
       (add-pending-file folder file))))
 
@@ -80,18 +80,18 @@
   [folder path]
   (let [dir (io/file (or path (:file folder)))]
     (parseq scan-threads [file (.listFiles dir (image-filter))]
-      (when-let [title (title-for-file file)]
-        (log/info "adding image" (str file))
-        (add-image folder file title)))))
+            (when-let [title (title-for-file file)]
+              (log/info "adding image" (str file))
+              (add-image folder file title)))))
 
 (defn scan-subtitles
   "Scans the directory for subtitles."
   [folder path]
   (let [dir (io/file (or path (:file folder)))]
     (parseq scan-threads [file (.listFiles dir (subtitle-filter))]
-      (when-let [video (video-for-file folder file)]
-        (log/info "adding subtitle" (str file))
-        (add-subtitle folder file video)))))
+            (when-let [video (video-for-file folder file)]
+              (log/info "adding subtitle" (str file))
+              (add-subtitle folder file video)))))
 
 (defn scan-dir
   "Loads all of the videos and subtitles in the folder."
@@ -155,9 +155,9 @@
     (when (has-file? folder file)
       (library/remove-file folder file))
     (cond
-      (video? file) (add-video folder file)
+      (video? file)    (add-video folder file)
       (subtitle? file) (add-subtitle folder file)
-      (image? file) (add-image folder file)
+      (image? file)    (add-image folder file)
       (metadata? file) (add-metadata folder file))
     (process-file folder file)))
 
@@ -203,4 +203,3 @@
   (doseq [folder folders]
     (watch-directory (:file folder) (partial #'file-event folder) (partial #'dir-event folder)))
   (periodically check-pending-files check-time))
-

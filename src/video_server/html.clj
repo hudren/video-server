@@ -9,11 +9,13 @@
 ;;;; You must not remove this notice, or any other, from this software.
 
 (ns video-server.html
-  (:require [video-server.library :refer [video-for-key]]
-            [video-server.html.pages :refer [downloads-template legal-template not-found-template]]
+  (:require [video-server.html.pages
+             :refer
+             [downloads-template legal-template not-found-template]]
             [video-server.html.title :refer [episode-titles title-template]]
             [video-server.html.titles :refer [no-titles-template titles-template]]
-            [video-server.title :refer [best-containers best-video episode-title season-titles]]))
+            [video-server.library :refer [video-for-key]]
+            [video-server.title :refer [best-containers best-video season-titles]]))
 
 ;;; Titles
 
@@ -24,9 +26,9 @@
 (defn title-page
   "Returns the page displaying the title w/episodes and parts."
   [title season episode exclude]
-  (let [season (or season (ffirst (season-titles title)))
-        episode (or episode (ffirst (episode-titles title season)))
-        video (video-for-key (best-video (:videos title) season episode))
+  (let [season   (or season (ffirst (season-titles title)))
+        episode  (or episode (ffirst (episode-titles title season)))
+        video    (video-for-key (best-video (:videos title) season episode))
         playable (remove #(get exclude (:filetype %)) (best-containers video))]
     (title-template title (:info title) video playable season episode)))
 
@@ -48,4 +50,3 @@
   "Returns the not found (404) page."
   []
   (not-found-template))
-

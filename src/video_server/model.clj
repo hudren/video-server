@@ -10,7 +10,7 @@
 
 (ns video-server.model
   (:require [clojure.string :as str])
-  (:import (java.lang.reflect Modifier)))
+  (:import java.lang.reflect.Modifier))
 
 ;; A folder containing videos to be served
 (defrecord Folder [name file url options]
@@ -40,7 +40,7 @@
   (toString [_]
     (str title
          (if season (str " Season " season " Episode " episode)
-           (if episode (str " Part " episode))))))
+             (if episode (str " Part " episode))))))
 
 ;; Title containing one or more related videos
 (defrecord Title [id title sorting poster thumb info seasons videos]
@@ -63,6 +63,5 @@
   the data map. The resulting record will not have extra fields."
   [record data]
   (let [constructor (symbol (str "map->" (name record)))
-        fields (get-record-fields (resolve record))]
+        fields      (get-record-fields (resolve record))]
     `(~constructor (select-keys ~data ~fields))))
-

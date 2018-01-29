@@ -12,12 +12,22 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [video-server.ffmpeg :refer [encode-cmd filter-video metadata? video-info]]
-            [video-server.file :refer [adjust-filename file-type fullpath replace-ext video-filename]]
+            [video-server.ffmpeg
+             :refer
+             [encode-cmd filter-video metadata? video-info]]
+            [video-server.file
+             :refer
+             [adjust-filename file-type fullpath replace-ext video-filename]]
             [video-server.format :refer [video-dimension video-size video-width]]
             [video-server.util :refer :all]
-            [video-server.video :refer [audio-streams container-track subtitle-streams video-stream web-playback?]])
-  (:import (java.io File)))
+            [video-server.video
+             :refer
+             [audio-streams
+              container-track
+              subtitle-streams
+              video-stream
+              web-playback?]])
+  (:import java.io.File))
 
 (def ^:dynamic *fake-encode* false)
 
@@ -49,13 +59,13 @@
   "Selects the best (highest quality) container to encode."
   [containers size]
   (let [source (source-container containers)
-        same (filter #(= (video-size (:width %)) size) (remove #(= % source) containers))]
+        same   (filter #(= (video-size (:width %)) size) (remove #(= % source) containers))]
     (or (first same) source)))
 
 (defn can-source?
   "Returns true if the first size is bigger or equal to the second."
   [source-size dest-size]
-  (>= (parse-long (name source-size)) (parse-long (name dest-size))))
+  (>= (parse-long (log/spy (name source-size))) (parse-long (log/spy (name dest-size)))))
 
 (defn min-size
   "Returns the minimum of the two sizes."
@@ -73,41 +83,41 @@
   "Returns the specification for an encoding job."
   [folder video fmt size minimize?]
   (when-let [container (container-to-encode (:containers video) size)]
-    (let [file (io/file (:file folder) (:path container))
-          info (video-info file)
+    (let [file   (io/file (:file folder) (:path container))
+          info   (video-info file)
           source (source-container (:containers video))
-          vs (video-stream info)
-          as (audio-streams info)]
-      {:format fmt
-       :size size
-       :width (:width container)
-       :height (:height container)
-       :target-width (min (:width container) (video-width size))
-       :folder folder
-       :file file
-       :input (fullpath file)
-       :info info
-       :video video
-       :source? (= container source)
-       :original? (and (= container source) (original? container))
-       :original-size (-> source :width video-size)
-       :video-stream vs
-       :audio-streams as
+          vs     (video-stream info)
+          as     (audio-streams info)]
+      {:format           fmt
+       :size             size
+       :width            (:width container)
+       :height           (:height container)
+       :target-width     (min (:width container) (video-width size))
+       :folder           folder
+       :file             file
+       :input            (fullpath file)
+       :info             info
+       :video            video
+       :source?          (= container source)
+       :original?        (and (= container source) (original? container))
+       :original-size    (-> source :width video-size)
+       :video-stream     vs
+       :audio-streams    as
        :subtitle-streams (subtitle-streams info)
-       :minimize? minimize?
-       :fps (ratio (:avg_frame_rate vs))
-       :sar (ratio (:sample_aspect_ratio vs))
-       :dar (ratio (:display_aspect_ratio vs))
-       :square? (= (:sample_aspect_ratio vs) "1:1")
-       :foreign? (not= (:language container) "English")})))
+       :minimize?        minimize?
+       :fps              (ratio (:avg_frame_rate vs))
+       :sar              (ratio (:sample_aspect_ratio vs))
+       :dar              (ratio (:display_aspect_ratio vs))
+       :square?          (= (:sample_aspect_ratio vs) "1:1")
+       :foreign?         (not= (:language container) "English")})))
 
 (defn output-file
   "Returns the File representing the encoder output."
   [{:keys [video ^File file format size original-size width height]}]
-  (let [resized (not= size original-size)
-        ext (str "." (name format))
+  (let [resized  (not= size original-size)
+        ext      (str "." (name format))
         filename (video-filename video ext (when resized size))
-        output (io/file (.getParent file) filename)]
+        output   (io/file (.getParent file) filename)]
     (if (.exists output)
       (let [filename (video-filename video ext (when resized size) (video-dimension width height))]
         (io/file (.getParent file) filename))
@@ -148,10 +158,10 @@
   [file]
   (when (and (= (file-type file) :mkv) @mkvpropedit)
     (log/debug "clearing subtitles")
-    (let [info (video-info (io/file file))
+    (let [info      (video-info (io/file file))
           subtitles (subtitle-streams info)
-          lang (-> (default-audio (audio-streams info)) :tags :language)
-          actions (atom [])]
+          lang      (-> (default-audio (audio-streams info)) :tags :language)
+          actions   (atom [])]
       (doseq [subtitle subtitles]
         (when (and (= (-> subtitle :disposition :default) 1)
                    (= (-> subtitle :disposition :forced) 0)
@@ -161,7 +171,7 @@
                  "--edit" (str "track:s" (relative-track-index subtitles (:index subtitle)))
                  "--set" "flag-default=0")))
       (when (seq @actions)
-        (let [cmd ["mkvpropedit" file @actions]
+        (let [cmd  ["mkvpropedit" file @actions]
               exec (exec cmd)]
           (when-not (zero? (:exit exec))
             (log/warn "clearing subtitle tracks failed:" \newline cmd \newline exec)))))))
@@ -170,10 +180,10 @@
   "Sets the default video, audio or subtitle track."
   [file track & [info]]
   (when (and (= (file-type file) :mkv) @mkvpropedit)
-    (let [info (or info (video-info (io/file file)))
+    (let [info    (or info (video-info (io/file file)))
           streams (:streams info)
           default (container-track info track)
-          codec (:codec_type default)
+          codec   (:codec_type default)
           actions (atom [])]
       (log/debug "setting default" codec "track" track)
       (when (get-in default [:disposition :default])
@@ -186,7 +196,7 @@
                      "--edit" (str "track:" (first codec) (relative-track-index streams codec (:index stream)))
                      "--set" (str "flag-default=" value))))))
       (when (seq @actions)
-        (let [cmd ["mkvpropedit" file @actions]
+        (let [cmd  ["mkvpropedit" file @actions]
               exec (exec cmd)]
           (when-not (zero? (:exit exec))
             (log/warn "changing default track failed:" \newline cmd \newline exec)))))))
@@ -194,7 +204,7 @@
 (defn set-default-audio-track
   "Ensures only one track is set as the default audio track."
   [file]
-  (let [info (video-info (io/file file))
+  (let [info  (video-info (io/file file))
         track (-> info audio-streams default-audio :index)]
     (set-default-track file track info)))
 
@@ -206,10 +216,10 @@
   (let [output (:output spec)]
     (when (and (= (file-type output) :mkv) @mkclean)
       (log/debug "cleaning" output)
-      (let [out (io/file output)
+      (let [out  (io/file output)
             temp (io/file (replace-ext output ".tmp"))]
         (.renameTo out temp)
-        (let [cmd ["mkclean" "--optimize" temp out]
+        (let [cmd  ["mkclean" "--optimize" temp out]
               exec (exec-no-sleep cmd)]
           (if (zero? (:exit exec))
             (io/delete-file temp false)
@@ -222,7 +232,7 @@
   [spec]
   (log/info "encoding video" (str (:video spec)))
   (let [output (:output spec)
-        cmd (encode-cmd spec)]
+        cmd    (encode-cmd spec)]
     (log/info "encoding into" output)
     (let [exec (encode cmd)]
       (if (zero? (:exit exec))
@@ -280,4 +290,3 @@
           (when-let [id (second (re-find #"Attachment ID (\d+):.*file name 'cover\.jpg'" info))]
             (let [thumb (io/file (:file folder) (adjust-filename (:title video) ".thumb.jpg"))]
               (mkv-extract file id thumb))))))))
-

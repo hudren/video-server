@@ -45,4 +45,3 @@
   "Returns the table as a :tbody."
   [t]
   [:tbody (map (fn [r] (vector :tr (map (fn [c] (vector :td c)) r))) t)])
-
