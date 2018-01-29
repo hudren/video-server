@@ -1,10 +1,10 @@
-(defproject com.hudren.homevideo/video-server "0.5.10"
+(defproject com.hudren.homevideo/video-server "0.5.11"
   :description "Videos@Home server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [org.clojure/core.async "0.3.465"]
+                 [org.clojure/core.async "0.4.474"]
                  [org.clojure/core.cache "0.6.5"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.zip "0.1.2"]
@@ -13,7 +13,7 @@
                  [org.clojure/tools.logging "0.4.0"]
                  [ch.qos.logback/logback-classic "1.2.3"]
                  [trptcolin/versioneer "0.2.0"]
-                 [net.dongliu/apk-parser "2.4.2"]
+                 [net.dongliu/apk-parser "2.5.0"]
                  [clj-http "3.7.0"]
                  [org.eclipse.jetty/jetty-server "9.2.21.v20170120"]
                  [org.eclipse.jetty/jetty-servlet "9.2.21.v20170120"]
