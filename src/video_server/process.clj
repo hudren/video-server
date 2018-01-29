@@ -103,6 +103,12 @@
        (map (comp #(Integer/parseInt %) name video-size :width))
        sort first str keyword))
 
+(defn- largest-size
+  [video]
+  (->> (:containers video)
+       (map (comp #(Integer/parseInt %) name video-size :width))
+       sort last str keyword))
+
 (defn- next-encode-size
   "Returns the next size for the default encoding."
   [video fmt size]
@@ -138,6 +144,12 @@
   (and (not-any? #(= (:mimetype %) "text/vtt") (:subtitles video))
        (some #(not= (:mimetype %) "text/vtt") (:subtitles video))))
 
+(defn largest-encode-size
+  "Returns the largest encoding size determined by the minimum of the
+  video size and requested encoding size."
+  [video size]
+  (keyword (str (min (->> size name (Integer/valueOf)) (->> (largest-size video) name (Integer/valueOf))))))
+
 (defn- encode
   "Creates an encoding spec and queues it for processing."
   [folder video fmt size minimize?]
@@ -150,7 +162,8 @@
   (log/debug "processing video" (str video))
   (when (should-encode-subtitles? video)
     (encode-subtitles folder video))
-  (let [[fmt size minimize?] (next-encoding video fmt size apple? download min-download?)]
+  (let [size (largest-encode-size video size)
+        [fmt size minimize?] (next-encoding video fmt size apple? download min-download?)]
     (if (and size fmt)
       (encode folder video fmt (encode-size video size) minimize?)
       (when-not *fake-encode*
