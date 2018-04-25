@@ -26,8 +26,8 @@
 
 (defn retrieve-image
   "Returns the image as a byte array."
-  ^bytes [url]
-  (let [resp (client/get url {:as :byte-array})]
+  ^java.io.InputStream [url]
+  (let [resp (client/get url {:as :stream})]
     (when (= (:status resp) 200)
       (:body resp))))
 
@@ -81,11 +81,12 @@
   "Downloads the poster for the specified video."
   [title url & [overwrite]]
   (let [file (io/file (title-dir title) (adjust-filename (norm-title (:title title)) (file-ext url)))]
-    (when (or overwrite (not (.exists file)))
+    (when (or overwrite (not (.exists file)) (zero? (.length file)))
       (log/info "downloading poster for" (:title title))
-      (when-let [contents (retrieve-image url)]
-        (with-open [w (io/output-stream file)]
-          (.write w contents))))))
+      (when-let [stream (retrieve-image url)]
+        (with-open [r stream]
+          (with-open [w (io/output-stream file)]
+           (io/copy r w)))))))
 
 (defn title-parts
   "Extracts the year from the title to aid in metadata lookup."
