@@ -60,7 +60,7 @@
 
 (defmacro make-record
   "Contructs a new record by extracting only the defined fields from
-  the data map. The resulting record will not have extra fields."
+  the data map. The resulting record will not have any extra fields."
   [record data]
   (let [constructor (symbol (str "map->" (name record)))
         fields      (get-record-fields (resolve record))]
